@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\PosCart;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CartController extends Controller
 {
@@ -63,101 +66,117 @@ class CartController extends Controller
 
         $product_id = $request->id;
 
-        // Fetch the product
-        $product = Product::find($product_id);
+        return DB::transaction(function () use ($product_id) {
+            $userId = auth()->id();
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $product = Product::whereKey($product_id)->lockForUpdate()->firstOrFail();
+            $cartItem = PosCart::where('user_id', $userId)
+                ->where('product_id', $product_id)
+                ->lockForUpdate()
+                ->first();
 
-        // Check if the product is active and has sufficient stock
-        if (!$product->status) {
-            return response()->json(['message' => 'Product is not available'], 400);
-        }
-
-        if ($product->quantity <= 0) {
-            return response()->json(['message' => 'Insufficient stock available'], 400);
-        }
-
-        // Fetch the cart item for the current user and product
-        $cartItem = PosCart::where('user_id', auth()->id())->where('product_id', $product_id)->first();
-
-        if ($cartItem) {
-            // If the product is already in the cart, increment the quantity
-            if ($cartItem->quantity < $product->quantity) {
-                $cartItem->quantity += 1;
-                $cartItem->save();
-                return response()->json(['message' => 'Quantity updated', 'quantity' => $cartItem->quantity], 200);
-            } else {
-                return response()->json(['message' => 'Cannot add more, stock limit reached'], 400);
+            if (!$product->status) {
+                return response()->json(['message' => __('Product is not available')], 400);
             }
-        } else {
-            // If not in the cart, create a new cart item
-            $cart = new PosCart();
-            $cart->user_id = auth()->id();
-            $cart->product_id = $product_id;
-            $cart->quantity = 1;
-            $cart->save();
-            return response()->json(['message' => 'Product added to cart', 'quantity' => 1], 201);
-        }
+            if ($product->quantity <= 0) {
+                return response()->json(['message' => __('Insufficient stock available')], 400);
+            }
+
+            if ($cartItem) {
+                if ($cartItem->quantity >= $product->quantity) {
+                    return response()->json(['message' => __('Cannot add more, stock limit reached')], 400);
+                }
+                $cartItem->increment('quantity');
+                return response()->json(['message' => __('Quantity updated'), 'quantity' => $cartItem->quantity], 200);
+            }
+
+            PosCart::create([
+                'user_id' => $userId,
+                'product_id' => $product_id,
+                'quantity' => 1,
+            ]);
+            return response()->json(['message' => __('Product added to cart'), 'quantity' => 1], 201);
+        });
     }
 
     public function increment(Request $request)
     {
         $this->authorizePos();
-        $request->validate([
-            'id' => 'required|integer|exists:pos_carts,id'
-        ]);
+        $this->validateCartRequest($request);
 
-        $cart = PosCart::with('product')
-            ->where('user_id', auth()->id())
-            ->findOrFail($request->id);
-        if ($cart->product->quantity <= 0) {
-            return response()->json(['message' => 'Insufficient stock available'], 400);
-        }
-        if ($cart->quantity == $cart->product->quantity) {
-            return response()->json(['message' => 'Cannot add more, stock limit reached'], 400);
-        }
-        $cart->quantity = $cart->quantity + 1;
-        $cart->save();
-        return response()->json(['message' => 'Cart Updated successfully'], 200);
+        return DB::transaction(function () use ($request) {
+            $userId = auth()->id();
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $cartSnapshot = PosCart::where('user_id', $userId)->whereKey($request->id)->firstOrFail();
+            $product = Product::whereKey($cartSnapshot->product_id)->lockForUpdate()->firstOrFail();
+            $cart = PosCart::where('user_id', $userId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if ($product->quantity <= 0) {
+                return response()->json(['message' => __('Insufficient stock available')], 400);
+            }
+            if ($cart->quantity >= $product->quantity) {
+                return response()->json(['message' => __('Cannot add more, stock limit reached')], 400);
+            }
+            $cart->increment('quantity');
+            return response()->json(['message' => __('Cart Updated successfully')], 200);
+        });
     }
     public function decrement(Request $request)
     {
         $this->authorizePos();
-        $request->validate([
-            'id' => 'required|integer|exists:pos_carts,id'
-        ]);
-        $cart = PosCart::where('user_id', auth()->id())->findOrFail($request->id);
-        if ($cart->quantity <= 1) {
-            return response()->json(['message' => 'Quantity cannot be less than 1.'], 400);
-        }
-        $cart->quantity = $cart->quantity - 1;
-        $cart->save();
-        return response()->json(['message' => 'Cart Updated successfully'], 200);
+        $this->validateCartRequest($request);
+        return DB::transaction(function () use ($request) {
+            $userId = auth()->id();
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $cart = PosCart::where('user_id', $userId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            if ($cart->quantity <= 1) {
+                return response()->json(['message' => __('Quantity cannot be less than 1.')], 400);
+            }
+            $cart->decrement('quantity');
+            return response()->json(['message' => __('Cart Updated successfully')], 200);
+        });
     }
     public function delete(Request $request)
     {
         $this->authorizePos();
-        $request->validate([
-            'id' => 'required|integer|exists:pos_carts,id'
-        ]);
+        $this->validateCartRequest($request);
 
-        $cart = PosCart::where('user_id', auth()->id())->findOrFail($request->id);
-        $cart->delete();
-
-        return response()->json(['message' => 'Item successfully deleted'], 200);
+        return DB::transaction(function () use ($request) {
+            $userId = auth()->id();
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            $cart = PosCart::where('user_id', $userId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            $cart->delete();
+            return response()->json(['message' => __('Item successfully deleted')], 200);
+        });
     }
     public function empty()
     {
         $this->authorizePos();
-        $deletedCount = PosCart::where('user_id', auth()->id())->delete();
+        $deletedCount = DB::transaction(function () {
+            $userId = auth()->id();
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            return PosCart::where('user_id', $userId)->delete();
+        });
 
         if ($deletedCount > 0) {
-            return response()->json(['message' => 'Cart successfully cleared'], 200);
+            return response()->json(['message' => __('Cart successfully cleared')], 200);
         }
 
-        return response()->json(['message' => 'Cart is already empty'], 204);
+        return response()->json(['message' => __('Cart is already empty')], 204);
     }
 
     private function authorizePos(): void
     {
         abort_if(!auth()->user()->can('sale_create'), 403);
+    }
+
+    private function validateCartRequest(Request $request): void
+    {
+        $request->validate([
+            'id' => [
+                'required',
+                'integer',
+                Rule::exists('pos_carts', 'id')->where('user_id', auth()->id()),
+            ],
+        ]);
     }
 }

@@ -55,6 +55,282 @@ body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-head
 
 /* ========= theme end ========== */
 
+:root {
+    color-scheme: light;
+    --qpos-page: #f3f5f9;
+    --qpos-surface: #ffffff;
+    --qpos-text: #182230;
+    --qpos-muted: #667085;
+    --qpos-border: #e3e8ef;
+    --qpos-sidebar: #f7f8fc;
+    --qpos-brand: #5268d8;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --qpos-page: #111827;
+    --qpos-surface: #1c2533;
+    --qpos-text: #e5eaf2;
+    --qpos-muted: #a5b0c0;
+    --qpos-border: #354153;
+    --qpos-sidebar: #17202d;
+    --qpos-brand: #9baaff;
+}
+
+body {
+    color: var(--qpos-text);
+    background-color: var(--qpos-page);
+}
+
+body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .content-wrapper,
+body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-footer,
+body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-header {
+    color: var(--qpos-text);
+    background-color: var(--qpos-page) !important;
+}
+
+.content-wrapper,
+.main-footer,
+.main-header,
+.card,
+.modal-content,
+.dropdown-menu,
+.form-control,
+.custom-select,
+.select2-container--default .select2-selection--single,
+.table,
+.table td,
+.table th {
+    color: var(--qpos-text);
+    background-color: var(--qpos-surface);
+    border-color: var(--qpos-border);
+}
+
+.sidebar-light-lightblue,
+.main-sidebar.sidebar-light-lightblue {
+    color: var(--qpos-text);
+    background-color: var(--qpos-sidebar) !important;
+}
+
+.sidebar-light-lightblue .nav-sidebar > .nav-item > .nav-link {
+    color: var(--qpos-muted);
+}
+
+.sidebar-light-lightblue .nav-sidebar > .nav-item > .nav-link.active {
+    color: #fff;
+    background-color: var(--qpos-brand) !important;
+}
+
+.qpos-theme-toggle {
+    border: 0;
+    background: transparent;
+    color: var(--qpos-text);
+    cursor: pointer;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .content-wrapper,
+:root[data-theme="dark"] .main-footer,
+:root[data-theme="dark"] .main-header,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .dropdown-menu,
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .custom-select,
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .table td,
+:root[data-theme="dark"] .table th,
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-light,
+:root[data-theme="dark"] .input-group-text,
+:root[data-theme="dark"] .modal-header,
+:root[data-theme="dark"] .modal-footer,
+:root[data-theme="dark"] .list-group-item {
+    color: var(--qpos-text);
+    background-color: var(--qpos-surface);
+    border-color: var(--qpos-border);
+}
+
+:root[data-theme="dark"] .text-muted,
+:root[data-theme="dark"] .form-control::placeholder {
+    color: var(--qpos-muted) !important;
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea {
+    color-scheme: dark;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+    font-family: Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.content-wrapper {
+    min-height: calc(100vh - 3.5rem);
+}
+
+.content-header {
+    padding: 1.25rem 1.5rem 0.75rem;
+}
+
+.content-header h1 {
+    color: var(--qpos-text);
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.content {
+    padding: 0 1rem 1.5rem;
+}
+
+.card,
+.modal-content {
+    overflow: hidden;
+    border: 1px solid var(--qpos-border);
+    border-radius: 0.8rem;
+    box-shadow: 0 2px 8px rgb(20 32 55 / 5%);
+}
+
+.card-header {
+    color: var(--qpos-text);
+    background-color: var(--qpos-surface);
+    border-bottom-color: var(--qpos-border);
+}
+
+.btn {
+    min-height: 2.35rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+}
+
+.form-control,
+.custom-select,
+.select2-container--default .select2-selection--single {
+    min-height: 2.5rem;
+    border: 1px solid var(--qpos-border);
+    border-radius: 0.5rem;
+}
+
+.form-control:focus,
+.custom-select:focus {
+    border-color: var(--qpos-brand);
+    box-shadow: 0 0 0 0.2rem rgb(82 104 216 / 15%);
+}
+
+:focus-visible {
+    outline: 3px solid rgb(82 104 216 / 55%);
+    outline-offset: 2px;
+}
+
+.table thead th {
+    color: var(--qpos-muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+.main-sidebar .brand-link {
+    min-height: 3.6rem;
+    border-bottom-color: var(--qpos-border);
+}
+
+.sidebar-light-lightblue .nav-sidebar > .nav-item > .nav-link {
+    margin: 0.12rem 0.55rem;
+    border-radius: 0.55rem;
+}
+
+.qpos-theme-toggle:hover {
+    color: var(--qpos-brand);
+}
+
+:root[data-theme="dark"] .border,
+:root[data-theme="dark"] .border-top,
+:root[data-theme="dark"] .border-bottom {
+    border-color: var(--qpos-border) !important;
+}
+
+:root[data-theme="dark"] .custom-file-label,
+:root[data-theme="dark"] .select2-container--default .select2-selection--single,
+:root[data-theme="dark"] .select2-container--default .select2-selection--multiple {
+    color: var(--qpos-text);
+    background-color: var(--qpos-surface);
+    border-color: var(--qpos-border);
+}
+
+:root[data-theme="dark"] a:not(.btn):not(.nav-link) {
+    color: #a9b8ff;
+}
+
+:root[data-theme="dark"] a:not(.btn):not(.nav-link):hover {
+    color: #c7d1ff;
+}
+
+:root[data-theme="dark"] .swal2-popup {
+    color: var(--qpos-text);
+    background: var(--qpos-surface);
+}
+
+:root[data-theme="dark"] .swal2-html-container,
+:root[data-theme="dark"] .swal2-title {
+    color: var(--qpos-text);
+}
+
+:root[data-theme="dark"] .order-product .item,
+:root[data-theme="dark"] .products-card-container,
+:root[data-theme="dark"] .list-group-item,
+:root[data-theme="dark"] .input-group-text,
+:root[data-theme="dark"] .modal-header,
+:root[data-theme="dark"] .modal-footer {
+    color: var(--qpos-text);
+    background-color: var(--qpos-surface);
+    border-color: var(--qpos-border);
+}
+
+:root[data-theme="dark"] .daterangepicker,
+:root[data-theme="dark"] .daterangepicker .calendar-table,
+:root[data-theme="dark"] .daterangepicker select.hourselect,
+:root[data-theme="dark"] .daterangepicker select.minuteselect,
+:root[data-theme="dark"] .daterangepicker select.ampmselect {
+    color: var(--qpos-text);
+    background: var(--qpos-surface);
+    border-color: var(--qpos-border);
+}
+
+:root[data-theme="dark"] .daterangepicker td.available:hover,
+:root[data-theme="dark"] .daterangepicker th.available:hover,
+:root[data-theme="dark"] .daterangepicker .ranges li:hover {
+    color: var(--qpos-text);
+    background: color-mix(in srgb, var(--qpos-brand) 18%, var(--qpos-surface));
+}
+
+:root[data-theme="dark"] .daterangepicker .ranges li.active,
+:root[data-theme="dark"] .daterangepicker td.active,
+:root[data-theme="dark"] .daterangepicker td.active:hover {
+    color: #fff;
+    background: var(--qpos-brand);
+}
+
+:root[data-theme="dark"] .daterangepicker .drp-buttons {
+    border-top-color: var(--qpos-border);
+}
+
+@media (max-width: 767.98px) {
+    .content-header {
+        padding: 1rem 0.75rem 0.5rem;
+    }
+
+    .content {
+        padding: 0 0.5rem 1rem;
+    }
+}
+
 .site-logo-placeholder {
     width: auto;
     max-width: 260px;
@@ -97,6 +373,68 @@ body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-head
     .product-img {
         max-width: 70px;
         max-height: 70px;
+    }
+}
+
+.qpos-purchase .card {
+    margin-bottom: 1.25rem;
+}
+
+.qpos-purchase .card-body {
+    padding: clamp(1rem, 2vw, 1.5rem);
+}
+
+.qpos-purchase .table {
+    margin-bottom: 0;
+}
+
+.qpos-purchase .table td,
+.qpos-purchase .table th {
+    vertical-align: middle;
+}
+
+.qpos-purchase .list-group-item {
+    color: var(--qpos-text);
+    background: var(--qpos-surface);
+    border-color: var(--qpos-border);
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.qpos-purchase .list-group-item:hover,
+.qpos-purchase .list-group-item:focus-visible {
+    color: var(--qpos-text);
+    background: color-mix(in srgb, var(--qpos-brand) 9%, var(--qpos-surface));
+}
+
+.qpos-purchase .input-group-text {
+    color: var(--qpos-muted);
+    background: var(--qpos-surface);
+    border-color: var(--qpos-border);
+}
+
+@media (max-width: 767.98px) {
+    .qpos-purchase .input-group {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0.5rem;
+    }
+
+    .qpos-purchase .input-group-prepend {
+        grid-row: 1;
+    }
+
+    .qpos-purchase .input-group > .form-control {
+        grid-row: 1;
+        width: 100%;
+    }
+
+    .qpos-purchase .input-group > .btn {
+        grid-column: 1 / -1;
+        margin: 0 !important;
+    }
+
+    .qpos-purchase table {
+        min-width: 38rem;
     }
 }
 /* for fixing select2 input field desgine issue */
@@ -172,4 +510,102 @@ input:checked+.slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+.qpos-chart-container {
+    position: relative;
+    min-height: 18rem;
+    height: clamp(18rem, 34vw, 24rem);
+    width: 100%;
+}
+
+.qpos-dashboard .info-box,
+.qpos-dashboard .small-box,
+.qpos-dashboard .card {
+    color: var(--qpos-text);
+    background: var(--qpos-surface);
+    border: 1px solid var(--qpos-border);
+    border-radius: 0.9rem;
+    box-shadow: 0 0.35rem 1.1rem rgb(16 24 40 / 5%);
+}
+
+.qpos-dashboard .info-box {
+    min-height: 6rem;
+    padding: 0.85rem;
+}
+
+.qpos-dashboard .info-box-icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    color: var(--qpos-brand);
+    background: color-mix(in srgb, var(--qpos-brand) 12%, var(--qpos-surface));
+    border-radius: 0.75rem;
+}
+
+.qpos-dashboard .info-box-text,
+.qpos-dashboard .small-box p {
+    color: var(--qpos-muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.015em;
+}
+
+.qpos-dashboard .info-box-number {
+    color: var(--qpos-text);
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.qpos-dashboard .small-box {
+    min-height: 9.5rem;
+    overflow: hidden;
+}
+
+.qpos-dashboard .small-box.bg-info,
+.qpos-dashboard .small-box.bg-success,
+.qpos-dashboard .small-box.bg-warning,
+.qpos-dashboard .small-box.bg-danger {
+    color: var(--qpos-text) !important;
+    background: var(--qpos-surface) !important;
+}
+
+.qpos-dashboard .small-box .inner {
+    padding: 1.1rem 1.15rem 0.75rem;
+}
+
+.qpos-dashboard .small-box h3 {
+    color: var(--qpos-text);
+    font-size: clamp(1.65rem, 2.4vw, 2.1rem);
+    font-variant-numeric: tabular-nums;
+}
+
+.qpos-dashboard .small-box .icon {
+    color: var(--qpos-brand);
+    opacity: 0.16;
+}
+
+.qpos-dashboard .small-box-footer {
+    color: var(--qpos-brand) !important;
+    background: color-mix(in srgb, var(--qpos-brand) 7%, var(--qpos-surface));
+    text-align: left;
+    padding: 0.55rem 1.15rem;
+}
+
+.qpos-dashboard .card-header {
+    color: var(--qpos-text);
+    background: transparent;
+    border-bottom-color: var(--qpos-border);
+}
+
+.qpos-dashboard .form-control {
+    color: var(--qpos-text);
+    background-color: var(--qpos-surface);
+    border-color: var(--qpos-border);
+    border-radius: 0.55rem;
+}
+
+@media (max-width: 575.98px) {
+    .qpos-chart-container {
+        height: 18rem;
+    }
 }

@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Update Brand')
+@section('title', __('Update Brand'))
 
 @section('content')
 <div class="card">
@@ -13,15 +13,15 @@
         <div class="row">
           <div class="mb-3 col-md-6">
             <label for="title" class="form-label">
-              Name
+              {{ __('Name') }}
               <span class="text-danger">*</span>
             </label>
-            <input type="text" class="form-control" placeholder="Enter title" name="name"
+            <input type="text" class="form-control" placeholder="{{ __('Enter title') }}" name="name"
               value="{{ old('name', $brand->name) }}" required>
           </div>
           <div class="mb-3 col-md-6">
             <label for="thumbnailInput" class="form-label">
-              Image
+              {{ __('Image') }}
             </label>
             <div class="image-upload-container" id="imageUploadContainer">
               <input type="file" class="form-control" name="brand_image" id="thumbnailInput" accept="image/*" style="display: none;">
@@ -30,7 +30,7 @@
                   class="img-thumbnail" id="thumbnailPreview" onerror="this.onerror=null; this.src='{{ asset('assets/images/no-image.png') }}'">
                 <div class="upload-text d-none">
                   <i class="fas fa-plus-circle"></i>
-                  <span>Upload Image</span>
+                  <span>{{ __('Upload Image') }}</span>
                 </div>
               </div>
             </div>
@@ -38,9 +38,9 @@
 
           <div class="mb-3 col-md-12">
             <label for="description" class="form-label">
-              Description
+              {{ __('Description') }}
             </label>
-            <textarea class="form-control" placeholder="Enter description" name="description">{{ old('description',$brand->description) }}</textarea>
+            <textarea class="form-control" placeholder="{{ __('Enter description') }}" name="description">{{ old('description',$brand->description) }}</textarea>
           </div>
           <div class="mb-3 col-md-12">
             <div class="form-switch px-4">
@@ -48,14 +48,14 @@
               <input class="form-check-input" type="checkbox" name="status" id="active"
                 value="1" @if($brand->status==1) checked @endif>
               <label class="form-check-label" for="active">
-                Active
+                {{ __('Active') }}
               </label>
             </div>
           </div>
         </div>
         <div class="row">
           <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">Update</button>
+            <button type="submit" class="btn bg-gradient-primary">{{ __('Update') }}</button>
           </div>
         </div>
       </div>

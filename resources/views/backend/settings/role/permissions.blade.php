@@ -1,13 +1,13 @@
 @extends('backend.master')
 
-@section('title', $role->name . ' Role Permission')
+@section('title', $role->name . ' ' . __('Role Permission'))
 
 @section('content')
 @can('role_view')
 <div class="mt-n5 mb-3 d-flex justify-content-end">
     <a href="{{ route('backend.admin.roles') }}" class="btn bg-gradient-primary">
         <i class="fas fa-ruler-vertical"></i>
-        Roles
+        {{ __('Roles') }}
     </a>
 </div>
 @endcan
@@ -52,7 +52,7 @@
                     </tbody>
                 </table>
                 <div class="text-center mb-3">
-                    <button type="submit" class="btn bg-gradient-primary w-25"> Submit </button>
+                    <button type="submit" class="btn bg-gradient-primary w-25">{{ __('Submit') }}</button>
                 </div>
             </form>
         </div>

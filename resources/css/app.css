@@ -1,0 +1,14 @@
+/* Tailwind v4 is added without Preflight while AdminLTE pages are migrated. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../views/**/*.blade.php";
+@source "../js/**/*.jsx";
+
+@theme {
+    --color-qpos-brand: #5268d8;
+    --color-qpos-ink: #182230;
+    --color-qpos-muted: #667085;
+    --color-qpos-surface: #ffffff;
+    --color-qpos-page: #f3f5f9;
+}

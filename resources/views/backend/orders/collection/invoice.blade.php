@@ -1,5 +1,5 @@
 @extends('backend.master')
-@section('title', 'Collection_Invoice_'.$transaction->id)
+@section('title', __('Collection invoice #:id', ['id' => $transaction->id]))
 @section('content')
 <div class="card">
   <div class="card-body">
@@ -14,10 +14,10 @@
           </h2>
         </div>
         <div class="col-4">
-          <h4 class="page-header">Collection Invoice</h4>
+          <h4 class="page-header">{{ __('Collection Invoice') }}</h4>
         </div>
         <div class="col-4">
-          <small class="float-right text-small">Date: {{date('d/m/Y')}}</small>
+          <small class="float-right text-small">{{ __('Date') }}: {{date('d/m/Y')}}</small>
         </div>
         <!-- /.col -->
       </div>
@@ -26,30 +26,30 @@
         <!-- /.col -->
         <div class="col-sm-5 invoice-col">
           @if(readConfig('is_show_customer_invoice'))
-          To
+          {{ __('To') }}
           <address>
-            <strong>Name: {{$order->customer->name??"N/A"}}</strong><br>
-            Address: {{$order->customer->address??"N/A"}}<br>
-            Phone: {{$order->customer->phone??"N/A"}}<br>
+            <strong>{{ __('Name') }}: {{$order->customer->name??"N/A"}}</strong><br>
+            {{ __('Address') }}: {{$order->customer->address??"N/A"}}<br>
+            {{ __('Phone') }}: {{$order->customer->phone??"N/A"}}<br>
           </address>
           @endif
         </div>
         <!-- /.col -->
         <div class="col-sm-4 invoice-col">
-          From
+          {{ __('From') }}
           <address>
-            @if(readConfig('is_show_site_invoice'))<strong>Name:{{ readConfig('site_name') }}</strong><br> @endif
-            @if(readConfig('is_show_address_invoice'))Address: {{ readConfig('contact_address') }}<br>@endif
-            @if(readConfig('is_show_phone_invoice'))Phone: {{ readConfig('contact_phone') }}<br>@endif
-            @if(readConfig('is_show_email_invoice'))Email: {{ readConfig('contact_email') }}<br>@endif
+            @if(readConfig('is_show_site_invoice'))<strong>{{ __('Name') }}: {{ readConfig('site_name') }}</strong><br> @endif
+            @if(readConfig('is_show_address_invoice')){{ __('Address') }}: {{ readConfig('contact_address') }}<br>@endif
+            @if(readConfig('is_show_phone_invoice')){{ __('Phone') }}: {{ readConfig('contact_phone') }}<br>@endif
+            @if(readConfig('is_show_email_invoice')){{ __('Email') }}: {{ readConfig('contact_email') }}<br>@endif
           </address>
         </div>
         <div class="col-sm-3 invoice-col">
-          Info <br>
-          Invoice ID #{{$transaction->id}}<br>
-          Sale ID #{{$order->id}}<br>
-          Sale Date: {{date('d/m/Y', strtotime($order->created_at))}}<br>
-          Collection Date: {{date('d/m/Y', strtotime($transaction->created_at))}}<br>
+          {{ __('Information') }} <br>
+          {{ __('Invoice ID') }} #{{$transaction->id}}<br>
+          {{ __('Sale ID') }} #{{$order->id}}<br>
+          {{ __('Sale Date') }}: {{date('d/m/Y', strtotime($order->created_at))}}<br>
+          {{ __('Collection Date') }}: {{date('d/m/Y', strtotime($transaction->created_at))}}<br>
           <!-- <br>
           <b>Payment Due:</b> 2/22/2014<br>
           <b>Account:</b> 968-34567 -->
@@ -64,11 +64,11 @@
           <table class="table table-striped">
             <thead>
               <tr>
-                <th>SN</th>
-                <th>Product</th>
-                <th>Quantity</th>
-                <th>Price {{currency()->symbol??''}}</th>
-                <th>Subtotal {{currency()->symbol??''}}</th>
+                <th>{{ __('No.') }}</th>
+                <th>{{ __('Product') }}</th>
+                <th>{{ __('Quantity') }}</th>
+                <th>{{ __('Price') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Subtotal') }} {{currency()->symbol??''}}</th>
               </tr>
             </thead>
             <tbody>
@@ -109,27 +109,27 @@
           <div class="table-responsive">
             <table class="table">
               <tr>
-                <th style="width:50%">Subtotal:</th>
+                <th style="width:50%">{{ __('Subtotal') }}:</th>
                 <td class="text-right">{{currency()->symbol.' '.number_format($order->sub_total,2,'.',',')}}</td>
               </tr>
               <tr>
-                <th>Discount:</th>
+                <th>{{ __('Discount') }}:</th>
                 <td class="text-right">{{currency()->symbol.' '.number_format($order->discount,2,'.',',')}}</td>
               </tr>
               <tr>
-                <th>Total:</th>
+                <th>{{ __('Total') }}:</th>
                 <td class="text-right">{{currency()->symbol.' '.number_format($order->total,2,'.',',')}}</td>
               </tr>
               <tr>
-                <th>Previously Paid:</th>
+                <th>{{ __('Previously Paid') }}:</th>
                 <td class="text-right">{{currency()->symbol.' '.number_format($order->paid - $collection_amount,2,'.',',')}}</td>
               </tr>
               <tr>
-                <th>Collection Amount:</th>
+                <th>{{ __('Collection Amount') }}:</th>
                 <td class="text-right">{{currency()->symbol.' '.number_format($collection_amount,2,'.',',')}}</td>
               </tr>
               <tr>
-                <th>Due:</th>
+                <th>{{ __('Due') }}:</th>
                 <td class="text-right">{{currency()->symbol.' '.number_format($order->due,2,'.',',')}}</td>
               </tr>
             </table>
@@ -139,7 +139,7 @@
       </div>
       <div class="row no-print">
         <div class="col-12">
-          <button type="button" onclick="window.print()" class="btn btn-success float-right"><i class="fas fa-print"></i> Print</a>
+          <button type="button" onclick="window.print()" class="btn btn-success float-right"><i class="fas fa-print"></i> {{ __('Print') }}
           </button>
         </div>
       </div>

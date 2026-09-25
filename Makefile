@@ -4,7 +4,8 @@ setup:
 	@make set-permissions
 	@make setup-env
 	@make generate-key
-	@make migrate-fresh-seed
+	@make migrate-seed
+	@make qpos-admin-create
 	@make npm-install-build
 	@make npm-run-dev
 
@@ -22,13 +23,13 @@ composer-update:
 
 set-permissions:
 	docker exec qpos-app bash -c "chmod -R 777 /var/www/storage"
-	docker exec qpos-app bash -c "chmod -R 777 /var/www/bootstrap"
+	docker exec qpos-app bash -c "chmod -R 777 /var/www/bootstrap/cache"
 
 setup-env:
-	docker exec qpos-app bash -c "cp .env.docker .env"
+	docker exec qpos-app sh -c "test -f .env || cp .env.docker .env"
 
 npm-install-build:
-	docker exec qpos-node bash -c "npm install"
+	docker exec qpos-node bash -c "npm ci"
 	docker exec qpos-node bash -c "npm run build:docker"
 
 npm-run-dev:
@@ -38,7 +39,14 @@ npm-run-build:
 	docker exec qpos-node bash -c "npm run build:docker"
 
 generate-key:
-	docker exec qpos-app bash -c "php artisan key:generate"
+	docker exec qpos-app sh -c "grep -qE '^APP_KEY=base64:.+' .env || php artisan key:generate"
+
+migrate-seed:
+	docker exec qpos-app bash -c "php artisan migrate --seed"
+
+qpos-admin-create:
+	docker exec -it qpos-app php artisan qpos:admin:create
 
 migrate-fresh-seed:
+	@echo "WARNING: This deletes all database tables and data. Use only for a disposable development database."
 	docker exec qpos-app bash -c "php artisan migrate:fresh --seed"

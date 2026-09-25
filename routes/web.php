@@ -8,8 +8,8 @@ use App\Http\Controllers\Backend\SupplierController;
 use App\Http\Controllers\CustomerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\Backend\Product\CategoryController;
-use App\Http\Controllers\TestController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\RolePermission\PermissionController;
@@ -20,7 +20,6 @@ use App\Http\Controllers\Backend\RolePermission\RoleController;
 use App\Http\Controllers\Backend\Product\UnitController;
 use App\Http\Controllers\Backend\UserManagementController;
 use App\Http\Controllers\Backend\WebsiteSettingController;
-use App\Models\Supplier;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +38,10 @@ use App\Models\Supplier;
 Route::get('/', function () {
     return to_route('login');
 })->name('frontend.home');
+
+Route::post('/language', [LanguageController::class, 'update'])
+    ->middleware('throttle:30,1')
+    ->name('language.update');
 
 //authentication
 Route::match(['get', 'post'], 'login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
@@ -59,7 +62,6 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('products', ProductController::class);
     Route::resource('brands', BrandController::class);
     Route::resource('orders', OrderController::class);
     Route::resource('purchase', PurchaseController::class);
@@ -147,6 +149,3 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin'])->group(funct
 });
 
 // ====================== /BACKEND ======================
-
-
-Route::get('test', [TestController::class, 'test'])->name('test');

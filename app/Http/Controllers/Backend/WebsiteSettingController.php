@@ -36,7 +36,7 @@ class WebsiteSettingController extends Controller
         }
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'website-info'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
 
     public function websiteContactsUpdate(Request $request)
@@ -47,7 +47,7 @@ class WebsiteSettingController extends Controller
         }
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'contacts'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
 
     public function websiteSocialLinkUpdate(Request $request)
@@ -58,7 +58,7 @@ class WebsiteSettingController extends Controller
         }
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'social-links'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
 
     public function websiteStyleSettingsUpdate(Request $request)
@@ -89,7 +89,7 @@ class WebsiteSettingController extends Controller
         }
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'style-settings'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
 
     public function websiteCustomCssUpdate(Request $request)
@@ -98,7 +98,7 @@ class WebsiteSettingController extends Controller
         writeConfig('custom_css', $request->custom_css);
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'custom-css'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
 
     public function websiteNotificationSettingsUpdate(Request $request)
@@ -109,7 +109,7 @@ class WebsiteSettingController extends Controller
         }
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'notification-settings'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
     
 
@@ -119,7 +119,7 @@ class WebsiteSettingController extends Controller
         writeConfig('is_live', $request->is_live);
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'website-status'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
     public function websiteInvoiceUpdate(Request $request)
     {
@@ -129,6 +129,6 @@ class WebsiteSettingController extends Controller
         }
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'invoice-settings'])
-            ->with('success', 'Updated successfully');
+            ->with('success', __('Updated successfully'));
     }
 }

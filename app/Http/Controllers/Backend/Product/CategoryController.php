@@ -81,7 +81,7 @@ class CategoryController extends Controller
             $category->save();
         }
 
-        return redirect()->route('backend.admin.categories.index')->with('success', 'Category created successfully!');
+        return redirect()->route('backend.admin.categories.index')->with('success', __('Category created successfully!'));
     }
 
     /**
@@ -125,7 +125,7 @@ class CategoryController extends Controller
             $this->fileHandler->secureUnlink($oldImage);
         }
 
-        return redirect()->route('backend.admin.categories.index')->with('success', 'Category updated successfully!');
+        return redirect()->route('backend.admin.categories.index')->with('success', __('Category updated successfully!'));
     }
 
     /**
@@ -139,6 +139,6 @@ class CategoryController extends Controller
             $this->fileHandler->secureUnlink($category->image);
         }
         $category->delete();
-        return redirect()->back()->with('success', 'Category Deleted Successfully');
+        return redirect()->back()->with('success', __('Category Deleted Successfully'));
     }
 }

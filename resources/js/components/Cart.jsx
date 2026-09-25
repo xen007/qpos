@@ -1,10 +1,13 @@
 import axios from "axios";
 import React, { useState, useEffect } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import Swal from "sweetalert2";
 import SuccessSound from "../sounds/beep-07a.mp3";
 import WarningSound from "../sounds/beep-02.mp3";
+import getErrorMessage from "../utils/getErrorMessage";
 import playSound from "../utils/playSound";
+import translate from "../utils/translate";
+import { Minus, Plus, Trash2 } from "lucide-react";
 
 export default function Cart({ carts, setCartUpdated, cartUpdated }) {
     function increment(id) {
@@ -19,7 +22,7 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
             })
             .catch((err) => {
                 playSound(WarningSound);
-                toast.error(err.response.data.message);
+                toast.error(getErrorMessage(err));
             });
     }
     function decrement(id) {
@@ -34,15 +37,15 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
             })
             .catch((err) => {
                 playSound(WarningSound);
-                toast.error(err.response.data.message);
+                toast.error(getErrorMessage(err));
             });
     }
     function destroy(id) {
         Swal.fire({
-            title: "Are you sure you want to delete this item?",
+            title: translate("Are you sure you want to delete this item?"),
             showDenyButton: true,
-            confirmButtonText: "Yes",
-            denyButtonText: "No",
+            confirmButtonText: translate("Yes"),
+            denyButtonText: translate("No"),
             customClass: {
                 actions: "my-actions",
                 cancelButton: "order-1 right-gap",
@@ -56,13 +59,12 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                         id: id,
                     })
                     .then((res) => {
-                        console.log(res);
                         setCartUpdated(!cartUpdated);
                         playSound(SuccessSound);
                         toast.success(res?.data?.message);
                     })
                     .catch((err) => {
-                        toast.error(err.response.data.message);
+                        toast.error(getErrorMessage(err));
                     });
             } else if (result.isDenied) {
                 return;
@@ -78,11 +80,11 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                             <table className="table table-striped">
                                 <thead>
                                     <tr className="text-center">
-                                        <th>Name</th>
-                                        <th>Quantity</th>
+                                        <th>{translate("Name")}</th>
+                                        <th>{translate("Quantity")}</th>
                                         <th></th>
-                                        <th>Price</th>
-                                        <th>Total</th>
+                                        <th>{translate("Price")}</th>
+                                        <th>{translate("Total")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -92,11 +94,14 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                                             <td className="d-flex align-items-center">
                                                 <button
                                                     className="btn btn-warning btn-sm"
+                                                    aria-label={translate(
+                                                        "Decrease quantity"
+                                                    )}
                                                     onClick={() =>
                                                         decrement(item.id)
                                                     }
                                                 >
-                                                    <i className="fas fa-minus"></i>
+                                                    <Minus size={14} aria-hidden="true" />
                                                 </button>
                                                 <input
                                                     type="number"
@@ -106,21 +111,27 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                                                 />
                                                 <button
                                                     className="btn btn-success btn-sm"
+                                                    aria-label={translate(
+                                                        "Increase quantity"
+                                                    )}
                                                     onClick={() =>
                                                         increment(item.id)
                                                     }
                                                 >
-                                                    <i className="fas fa-plus "></i>
+                                                    <Plus size={14} aria-hidden="true" />
                                                 </button>
                                             </td>
                                             <td>
                                                 <button
                                                     className="btn btn-danger btn-sm mr-3"
+                                                    aria-label={translate(
+                                                        "Remove item"
+                                                    )}
                                                     onClick={() =>
                                                         destroy(item.id)
                                                     }
                                                 >
-                                                    <i className="fas fa-trash "></i>
+                                                    <Trash2 size={14} aria-hidden="true" />
                                                 </button>
                                             </td>
                                             <td className="text-right">
@@ -149,7 +160,6 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                     </div>
                 </div>
             </div>
-            <Toaster position="top-right" reverseOrder={false} />
         </>
     );
 }

@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Inventory Report')
+@section('title', __('Inventory Report'))
 
 @section('content')
 <div class="card">
@@ -12,10 +12,10 @@
             <thead>
               <tr>
                 <th data-orderable="false">#</th>
-                <th>Name</th>
-                <th>SKU</th>
-                <th>Price</th>
-                <th>Stock</th>
+<th>{{ __('Name') }}</th>
+<th>{{ __('SKU') }}</th>
+<th>{{ __('Price') }}</th>
+<th>{{ __('Stock') }}</th>
               </tr>
             </thead>
           </table>

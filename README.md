@@ -253,6 +253,17 @@ To set up the database tables and populate them with initial data, run:
 php artisan migrate --seed
 ```
 
+Create the first administrator interactively. The password is entered privately
+in the terminal and is never stored in this repository:
+
+```bash
+php artisan qpos:admin:create
+```
+
+Demo products, customers, suppliers, and purchases are not seeded by default.
+For a non-production development database, create the administrator first and
+then run `php artisan db:seed --class=DemoDataSeeder` if sample data is needed.
+
 #### 7. Start the Development Server
 
 To run the application locally, execute:
@@ -286,9 +297,7 @@ Access the application at [http://localhost](http://localhost).
 
 ## 🛠️ Additional Information
 
-- **Seeding**: The database seeder is configured to populate initial data. Run `php artisan migrate --seed` to use it. After running the seeder, you can log in as an admin using the following credentials:
-    - **Email**: demo@qtecsolution.net
-    - **Password**: 87654321
+- **Administrator setup**: Run `php artisan qpos:admin:create` after `php artisan migrate --seed` to create the first admin account with a private password prompt. The seeders do not create default admin, cashier, or sales accounts.
 - **Environment Variables**: Ensure all necessary environment variables are set in the `.env` file.
 - **Database Configuration**: The application is configured for MySQL by default. Update the `.env` file as needed for other database connections.
 

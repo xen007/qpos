@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        New Password | {{ readConfig('site_name') }}
+        {{ __('New Password') }} | {{ readConfig('site_name') }}
     </title>
     <!-- FAVICON ICON -->
     <link rel="shortcut icon" href="{{ assetImage(readconfig('site_logo')) }}" type="image/svg+xml">
@@ -36,17 +36,17 @@
                     <a href="{{ route('frontend.home') }}" class="logo">
                         <img src="{{ assetImage(readconfig('site_logo')) }}" width="200px" alt="brand-logo">
                     </a>
-                    <h3 class="form-title">Reset Password</h3>
-                    <p class="form-des">Please enter your new password.</p>
+                    <h3 class="form-title">{{ __('Reset Password') }}</h3>
+                    <p class="form-des">{{ __('Please enter your new password.') }}</p>
                 </div>
                 <div class="authentication-form-content">
                     <div class="row g-4">
                         <div class="col-xl-8">
                             <div class="form-group">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" placeholder="Enter password"
+                                <label for="password" class="form-label">{{ __('Password') }}</label>
+                                <input type="password" class="form-control" id="password" placeholder="{{ __('Enter password') }}"
                                     autocomplete="off" name="password" required>
-                                <div class="invalid-feedback" id="passwordValidationText">Enter password</div>
+                                <div class="invalid-feedback" id="passwordValidationText">{{ __('Enter password') }}</div>
                                 <div class="show-hide toggle-password" id="toggleIcon">
 
                                     <span class="eye-icon">
@@ -87,9 +87,9 @@
                         </div>
                         <div class="col-xl-8">
                             <div class="form-group">
-                                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                                <label for="confirmPassword" class="form-label">{{ __('Confirm password') }}</label>
                                 <input type="password" class="form-control" id="confirmPassword"
-                                    placeholder="Confirm password" autocomplete="off" name="password_confirmation"
+                                    placeholder="{{ __('Confirm password') }}" autocomplete="off" name="password_confirmation"
                                     required>
                                 <div class="invalid-feedback" id="confirmPasswordValidationText"></div>
                                 <div class="show-hide toggle-password" id="toggleIcon">
@@ -133,13 +133,13 @@
                         <div class="col-xl-8">
                             <div class="form-group">
                                 <button type="submit" class="create-account-btn w-100" onclick="validateForm()">
-                                    Reset Password
+                                    {{ __('Reset Password') }}
                                 </button>
                             </div>
                         </div>
                         <div class="col-xl-8">
                             <div class="authentication-form-footer">
-                                <p>Back to <a href="{{ route('login') }}">Log in</a></p>
+                                <p>{{ __('Back to') }} <a href="{{ route('login') }}">{{ __('Log in') }}</a></p>
                             </div>
                         </div>
                     </div>

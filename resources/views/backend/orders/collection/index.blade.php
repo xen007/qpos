@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Transactions Sale #'.$order->id)
+@section('title', __('Transactions for sale #:id', ['id' => $order->id]))
 
 @section('content')
 <div class="card">
@@ -12,10 +12,10 @@
             <thead>
               <tr>
                 <th data-orderable="false">#</th>
-                <th>TransactionId</th>
-                <th>Amount {{currency()->symbol??''}}</th>
-                <th>Paid By</th>
-                <th>Created</th>
+                <th>{{ __('Transaction ID') }}</th>
+                <th>{{ __('Amount') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Paid By') }}</th>
+                <th>{{ __('Created') }}</th>
                 <th></th>
               </tr>
             </thead>
@@ -26,14 +26,14 @@
                 <td>#{{$transaction->id}}</td>
                 <td>{{number_format($transaction->amount,2,'.',',')}}</td>
                 <td>{{$transaction->paid_by}}</td>
-                <td>{{ $transaction->created_at->format('M-d Y, h:i A') }}</td>
+                <td>{{ $transaction->created_at->translatedFormat('M-d Y, h:i A') }}</td>
                 <td>
-                  <a class="btn btn-success btn-sm" href="{{route('backend.admin.collectionInvoice',$transaction->id)}}">Invoice</a>
+                  <a class="btn btn-success btn-sm" href="{{route('backend.admin.collectionInvoice',$transaction->id)}}">{{ __('Invoice') }}</a>
                 </td>
               </tr>
               @empty
               <tr>
-                <td colspan="5" class="text-center">No transaction found.</td>
+                <td colspan="5" class="text-center">{{ __('No transaction found.') }}</td>
               </tr>
               @endforelse
             </tbody>

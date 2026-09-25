@@ -1,11 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        (() => {
+            const savedTheme = localStorage.getItem('qpos-theme');
+            const systemPrefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+            document.documentElement.dataset.theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+        })();
+    </script>
     <title>
-        @yield('title', 'Dashboard') | {{ readConfig('site_name') }}
+        @yield('title', __('Dashboard')) | {{ readConfig('site_name') }}
     </title>
 
     <!-- FAVICON ICON -->
@@ -17,13 +24,8 @@
     <link href="{{ assetImage(readconfig('favicon_icon_apple')) }}" rel="apple-touch-icon" sizes="114x114">
     <link href="{{ assetImage(readconfig('favicon_icon_apple')) }}" rel="apple-touch-icon" sizes="144x144">
 
-    <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
-    <!-- Ionicons -->
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
     <!-- Tempusdominus Bootstrap 4 -->
     <link rel="stylesheet"
         href="{{ asset('plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
@@ -36,7 +38,6 @@
     <!-- overlayScrollbars -->
     <link rel="stylesheet" href="{{ asset('plugins/overlayScrollbars/css/OverlayScrollbars.min.css') }}">
     <!-- Daterange picker -->
-    <link rel="stylesheet" href="{{ asset('plugins/daterangepicker/daterangepicker.css') }}">
     <!-- summernote -->
     <link rel="stylesheet" href="{{ asset('plugins/summernote/summernote-bs4.min.css') }}">
     <!-- Select2 -->
@@ -49,6 +50,17 @@
     <link rel="stylesheet" href="{{ asset('assets/css/datatable/buttons.dataTables.min.css') }}">
     {{-- custom style --}}
     <link rel="stylesheet" href="{{ asset('css/custom-style.css') }}">
+
+    @php
+        $localeCatalogPath = lang_path(app()->getLocale() . '.json');
+        $localeCatalog = is_file($localeCatalogPath)
+            ? json_decode(file_get_contents($localeCatalogPath), true)
+            : [];
+    @endphp
+    <script>
+        window.qposLocale = @json(app()->getLocale());
+        window.qposTranslations = @json($localeCatalog ?? []);
+    </script>
 
     <style>
         .image-upload-container {
@@ -105,8 +117,10 @@
         }
     </style>
     @stack('style')
-    @viteReactRefresh
-    @vite('resources/js/app.jsx')
+    @if (request()->routeIs('backend.admin.cart.index', 'backend.admin.purchase.create'))
+        @viteReactRefresh
+        @vite('resources/js/app.jsx')
+    @endif
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -189,7 +203,6 @@
     <!-- Bootstrap 4 -->
     <script src="{{ asset('plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <!-- ChartJS -->
-    <script src="{{ asset('plugins/chart.js/Chart.min.js') }}"></script>
     <!-- Sparkline -->
     <script src="{{ asset('plugins/sparklines/sparkline.js') }}"></script>
     <!-- JQVMap -->
@@ -197,9 +210,6 @@
     <script src="{{ asset('plugins/jqvmap/maps/jquery.vmap.usa.js') }}"></script>
     <!-- jQuery Knob Chart -->
     <script src="{{ asset('plugins/jquery-knob/jquery.knob.min.js') }}"></script>
-    <!-- daterangepicker -->
-    <script src="{{ asset('plugins/moment/moment.min.js') }}"></script>
-    <script src="{{ asset('plugins/daterangepicker/daterangepicker.js') }}"></script>
     <!-- Tempusdominus Bootstrap 4 -->
     <script src="{{ asset('plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
     <!-- Summernote -->
@@ -219,6 +229,31 @@
     <script src="{{ asset('assets/js/datatable/datatable.js') }}"></script>
     <script src="{{ asset('assets/js/datatable/jquery.dataTables.min.js') }}"></script>
     <script src="{{ asset('assets/js/datatable/dataTables.buttons.min.js') }}"></script>
+
+    <script>
+        if (window.jQuery?.fn?.dataTable) {
+            const t = window.qposTranslations || {};
+            $.extend(true, $.fn.dataTable.defaults, {
+                language: {
+                    emptyTable: t['No data available in table'] || 'No data available in table',
+                    zeroRecords: t['No matching records found'] || 'No matching records found',
+                    info: t['Showing _START_ to _END_ of _TOTAL_ entries'] || 'Showing _START_ to _END_ of _TOTAL_ entries',
+                    infoEmpty: t['Showing 0 to 0 of 0 entries'] || 'Showing 0 to 0 of 0 entries',
+                    infoFiltered: t['(filtered from _MAX_ total entries)'] || '(filtered from _MAX_ total entries)',
+                    lengthMenu: t['Show _MENU_ entries'] || 'Show _MENU_ entries',
+                    loadingRecords: t['Loading...'] || 'Loading...',
+                    processing: t['Processing...'] || 'Processing...',
+                    search: t['Search:'] || 'Search:',
+                    paginate: {
+                        first: t.First || 'First',
+                        last: t.Last || 'Last',
+                        next: t.Next || 'Next',
+                        previous: t.Previous || 'Previous'
+                    }
+                }
+            });
+        }
+    </script>
 
     @stack('script')
 </body>

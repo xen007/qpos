@@ -32,17 +32,17 @@ class PermissionController extends Controller
                 Permission::create([
                     'name' => $name
                 ]);
-                return back()->with('success', 'Permission added');
+                return back()->with('success', __('Permission added'));
             } else {
                 // Resource Permission create
                 Permission::create(['name' => 'view-' . $name]);
                 Permission::create(['name' => 'add-' . $name]);
                 Permission::create(['name' => 'edit-' . $name]);
                 Permission::create(['name' => 'delete-' . $name]);
-                return back()->with('success', 'Resource permission added');
+                return back()->with('success', __('Resource permission added'));
             }
         } catch (\Exception $e) {
-            return back()->with('error', 'Something went wrong');
+            return back()->with('error', __('Something went wrong. Please try again.'));
         }
     }
 
@@ -58,9 +58,9 @@ class PermissionController extends Controller
             $data->update([
                 'name' => $request->name
             ]);
-            return back()->with('success', 'Permission has been updated');
+            return back()->with('success', __('Permission has been updated'));
         } else {
-            return back()->with('error', 'Permission with id ' . $id . ' note found');
+            return back()->with('error', __('The selected permission could not be found.'));
         }
     }
 
@@ -71,6 +71,6 @@ class PermissionController extends Controller
         $data = Permission::findOrFail($id);
         $data->delete();
 
-        return back()->with('success', 'Permission is deleted');
+        return back()->with('success', __('Permission deleted successfully'));
     }
 }

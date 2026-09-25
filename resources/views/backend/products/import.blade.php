@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Import Product')
+@section('title', __('Product Import'))
 
 @section('content')
 <div class="card">
@@ -12,14 +12,14 @@
         <div class="row">
           <div class="mb-3 col-md-6">
             <div class="form-group">
-              <label for="exampleInputFile">File input</label>
+              <label for="exampleInputFile">{{ __('File input') }}</label>
               <div class="input-group">
                 <div class="custom-file">
                   <input type="file" class="custom-file-input" name="file" id="exampleInputFile" required>
-                  <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                  <label class="custom-file-label" for="exampleInputFile">{{ __('Choose file') }}</label>
                 </div>
                 <div class="input-group-append">
-                  <a class="input-group-text" href="{{ route('backend.admin.products.import',['download-demo' => true]) }}"><i class="fas fa-download"></i> Demo</a>
+                  <a class="input-group-text" href="{{ route('backend.admin.products.import',['download-demo' => true]) }}"><i class="fas fa-download"></i> {{ __('Download sample') }}</a>
                 </div>
               </div>
             </div>
@@ -27,7 +27,7 @@
         </div>
         <div class="row">
           <div class="mb-3 col-md-6">
-            <button type="submit" class="btn btn-block bg-gradient-primary">Save</button>
+            <button type="submit" class="btn btn-block bg-gradient-primary">{{ __('Import') }}</button>
             <!-- /.card-body -->
           </div>
         </div>

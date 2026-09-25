@@ -8,6 +8,7 @@ use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
+use Illuminate\Support\Facades\DB;
 
 class RoleController extends Controller
 {
@@ -25,13 +26,13 @@ class RoleController extends Controller
     {
         abort_if(!auth()->user()->can('role_create'), 403);
         $request->validate([
-            'name' => 'required|unique:roles'
+            'name' => 'required|string|max:255|unique:roles,name'
         ]);
 
         if (Role::create($request->only('name'))) {
-            return back()->with('success', 'Role created successfully');
+            return back()->with('success', __('Role created successfully'));
         } else {
-            return back()->with('error', 'Something went wrong');
+            return back()->with('error', __('Something went wrong. Please try again.'));
         }
     }
 
@@ -39,17 +40,22 @@ class RoleController extends Controller
     public function update(Request $request, $id)
     {
         abort_if(!auth()->user()->can('role_update'), 403);
+        $role = Role::findOrFail($id);
         $request->validate([
-            'name' => "required|unique:roles,name," . $id
+            'name' => "required|string|max:255|unique:roles,name," . $id
         ]);
 
-        if ($role = Role::findOrFail($id)) {
+        if ($role->name === 'Admin' && $request->name !== 'Admin') {
+            return back()->with('error', __('The administrator role name cannot be changed.'));
+        }
+
+        if ($role) {
             $role->update([
                 'name' => $request->name
             ]);
-            return back()->with('success', 'Role has been updated');
+            return back()->with('success', __('Role has been updated'));
         } else {
-            return back()->with('error', 'Role with id ' . $id . ' note found');
+            return back()->with('error', __('The selected role could not be found.'));
         }
     }
 
@@ -67,14 +73,27 @@ class RoleController extends Controller
     public function destroy($id)
     {
          abort_if(!auth()->user()->can('role_delete'), 403);
-        if ($id != 1) {
-            $data = Role::findOrFail($id);
-            $data->delete();
+        $result = DB::transaction(function () use ($id) {
+            $role = Role::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($role->name === 'Admin') {
+                return 'admin';
+            }
 
-            return back()->with('success', 'Role is deleted');
-        } else {
-            return back()->with('error', 'Something went wrong');
+            if (DB::table('model_has_roles')->where('role_id', $role->id)->exists()) {
+                return 'assigned';
+            }
+
+            $role->delete();
+            return 'deleted';
+        });
+
+        if ($result === 'admin') {
+            return back()->with('error', __('The administrator role cannot be deleted.'));
         }
+        if ($result === 'assigned') {
+            return back()->with('error', __('Roles assigned to users cannot be deleted.'));
+        }
+        return back()->with('success', __('Role deleted successfully'));
     }
 
     // update permissions of a role
@@ -87,14 +106,18 @@ class RoleController extends Controller
             // admin role has everything
             if ($role->name === 'Admin') {
                 $role->syncPermissions(Permission::all());
-                return to_route('backend.admin.roles')->with('warning', 'Admin role has all permissions');
+                return to_route('backend.admin.roles')->with('warning', __('The administrator role always has all permissions.'));
             }
             
-            $permissions = $request->get('permissions', []);
+            $validated = $request->validate([
+                'permissions' => ['sometimes', 'array'],
+                'permissions.*' => ['integer', 'exists:permissions,id'],
+            ]);
+            $permissions = $validated['permissions'] ?? [];
             $role->syncPermissions($permissions);
-            return back()->with('success', $role->name . ' permissions has been updated');
+            return back()->with('success', __('Permissions updated for :role.', ['role' => $role->name]));
         } else {
-            return back()->with('error', 'Role with id ' . $id . ' note found');
+            return back()->with('error', __('The selected role could not be found.'));
         }
     }
 

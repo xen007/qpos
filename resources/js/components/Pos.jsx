@@ -2,27 +2,19 @@ import React, {useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Cart from "./Cart";
-import toast, { Toaster } from "react-hot-toast";
+import { toast, Toaster } from "sonner";
 import CustomerSelect from "./CutomerSelect";
 
 import SuccessSound from "../sounds/beep-07a.mp3";
 import WarningSound from "../sounds/beep-02.mp3";
+import getErrorMessage from "../utils/getErrorMessage";
 import playSound from "../utils/playSound";
-
-// Build a human-readable message from an axios error. Laravel validation
-// errors (HTTP 422) live in `response.data.errors` keyed by field, so we
-// surface those first, then fall back to a generic message/network error.
-function getErrorMessage(err, fallback = "Something went wrong. Please try again.") {
-    const data = err?.response?.data;
-    if (data?.errors && typeof data.errors === "object") {
-        const messages = Object.values(data.errors).flat().filter(Boolean);
-        if (messages.length) return messages.join("\n");
-    }
-    if (data?.message) return data.message;
-    return err?.message || fallback;
-}
+import translate from "../utils/translate";
+import useDocumentTheme from "../utils/useDocumentTheme";
+import { Barcode } from "lucide-react";
 
 export default function Pos() {
+    const theme = useDocumentTheme();
     const [products, setProducts] = useState([]);
     const [carts, setCarts] = useState([]);
     const [orderDiscount, setOrderDiscount] = useState(0);
@@ -168,10 +160,10 @@ export default function Pos() {
             return;
         }
         Swal.fire({
-            title: "Are you sure you want to delete Cart?",
+            title: translate("Are you sure you want to delete Cart?"),
             showDenyButton: true,
-            confirmButtonText: "Yes",
-            denyButtonText: "No",
+            confirmButtonText: translate("Yes"),
+            denyButtonText: translate("No"),
             customClass: {
                 actions: "my-actions",
                 cancelButton: "order-1 right-gap",
@@ -201,18 +193,18 @@ export default function Pos() {
             return;
         }
         if (!customerId) {
-            toast.error("Please select customer");
+            toast.error(translate("Please select customer"));
             return;
         }
         const balanceLine =
             parseFloat(change) > 0
-                ? `Change to return: ${change}`
-                : `Due: ${due}`;
+                ? `${translate("Change to return")}: ${change}`
+                : `${translate("Due")}: ${due}`;
         Swal.fire({
-            title: `Are you sure you want to complete this order? <br>${balanceLine}`,
+            title: `${translate("Are you sure you want to complete this order?")} <br>${balanceLine}`,
             showDenyButton: true,
-            confirmButtonText: "Yes",
-            denyButtonText: "No",
+            confirmButtonText: translate("Yes"),
+            denyButtonText: translate("No"),
             customClass: {
                 actions: "my-actions",
                 cancelButton: "order-1 right-gap",
@@ -275,7 +267,7 @@ export default function Pos() {
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Enter barcode"
+                                        placeholder={translate("Enter barcode")}
                                         value={searchQuery}
                                         onChange={(e) =>
                                             setSearchQuery(e.target.value)
@@ -292,18 +284,24 @@ export default function Pos() {
                             <div className="card">
                                 <div className="card-body">
                                     <div className="row text-bold mb-1">
-                                        <div className="col">Sub Total:</div>
+                                        <div className="col">
+                                            {translate("Sub Total:")}
+                                        </div>
                                         <div className="col text-right mr-2">
                                             {total}
                                         </div>
                                     </div>
                                     <div className="row text-bold mb-1">
-                                        <div className="col">Discount:</div>
+                                        <div className="col">
+                                            {translate("Discount:")}
+                                        </div>
                                         <div className="col text-right mr-2">
                                             <input
                                                 type="number"
                                                 className="form-control form-control-sm"
-                                                placeholder="Enter discount"
+                                                placeholder={translate(
+                                                    "Enter discount"
+                                                )}
                                                 min={0}
                                                 disabled={total <= 0}
                                                 value={orderDiscount}
@@ -324,7 +322,9 @@ export default function Pos() {
                                     </div>
                                     <div className="row text-bold mb-1">
                                         <div className="col">
-                                            Apply Fractional Discount:
+                                            {translate(
+                                                "Apply Fractional Discount:"
+                                            )}
                                         </div>
                                         <div className="col text-right mr-2">
                                             <input
@@ -348,18 +348,24 @@ export default function Pos() {
                                         </div>
                                     </div>
                                     <div className="row text-bold mb-1">
-                                        <div className="col">Total:</div>
+                                        <div className="col">
+                                            {translate("Total:")}
+                                        </div>
                                         <div className="col text-right mr-2">
                                             {updateTotal}
                                         </div>
                                     </div>
                                     <div className="row text-bold mb-1">
-                                        <div className="col">Paid:</div>
+                                        <div className="col">
+                                            {translate("Paid:")}
+                                        </div>
                                         <div className="col text-right mr-2">
                                             <input
                                                 type="number"
                                                 className="form-control form-control-sm"
-                                                placeholder="Enter paid"
+                                                placeholder={translate(
+                                                    "Enter paid"
+                                                )}
                                                 min={0}
                                                 disabled={total <= 0}
                                                 value={paid}
@@ -378,14 +384,18 @@ export default function Pos() {
                                         </div>
                                     </div>
                                     <div className="row text-bold">
-                                        <div className="col">Due:</div>
+                                        <div className="col">
+                                            {translate("Due")}
+                                        </div>
                                         <div className="col text-right mr-2">
                                             {due}
                                         </div>
                                     </div>
                                     {parseFloat(change) > 0 && (
                                         <div className="row text-bold text-success mt-1">
-                                            <div className="col">Change:</div>
+                                            <div className="col">
+                                                {translate("Change:")}
+                                            </div>
                                             <div className="col text-right mr-2">
                                                 {change}
                                             </div>
@@ -400,7 +410,7 @@ export default function Pos() {
                                         type="button"
                                         className="btn bg-gradient-danger btn-block text-white text-bold"
                                     >
-                                        Clear Cart
+                                        {translate("Clear Cart")}
                                     </button>
                                 </div>
                                 <div className="col">
@@ -411,7 +421,7 @@ export default function Pos() {
                                         type="button"
                                         className="btn bg-gradient-primary btn-block text-white text-bold"
                                     >
-                                        Checkout
+                                        {translate("Checkout")}
                                     </button>
                                 </div>
                             </div>
@@ -419,15 +429,15 @@ export default function Pos() {
                         <div className="col-md-6 col-lg-7">
                             <div className="row">
                                 <div className="input-group mb-2 col-md-6">
-                                    <div class="input-group-prepend">
-                                        <span class="input-group-text">
-                                            <i class="fas fa-barcode"></i>
+                                    <div className="input-group-prepend">
+                                        <span className="input-group-text">
+                                            <Barcode size={18} aria-hidden="true" />
                                         </span>
                                     </div>
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Enter Product Barcode"
+                                        placeholder={translate("Enter Product Barcode")}
                                         value={searchBarcode}
                                         autoFocus
                                         onChange={(e) =>
@@ -439,7 +449,7 @@ export default function Pos() {
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Enter Product Name"
+                                        placeholder={translate("Enter Product Name")}
                                         value={searchQuery}
                                         onChange={(e) =>
                                             setSearchQuery(e.target.value)
@@ -476,7 +486,7 @@ export default function Pos() {
                                                         {product.quantity})
                                                     </p>
                                                     <p>
-                                                        Price:{" "}
+                {translate("Price:")}{" "}
                                                         {
                                                             product?.discounted_price
                                                         }
@@ -488,14 +498,14 @@ export default function Pos() {
                             </div>
                             {loading && (
                                 <div className="loading-more">
-                                    Loading more...
+                                {translate("Loading more...")}
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
-            <Toaster position="top-right" reverseOrder={false} />
+            <Toaster position="top-right" richColors closeButton theme={theme} />
         </>
     );
 }

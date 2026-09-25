@@ -1,5 +1,5 @@
 @extends('backend.master')
-@section('title', 'Receipt_'.$order->id)
+@section('title', __('Receipt #:id', ['id' => $order->id]))
 @section('content')
 
 <div class="card">
@@ -16,22 +16,22 @@
       @if(readConfig('is_show_phone_invoice')){{ readConfig('contact_phone') }}<br>@endif
       @if(readConfig('is_show_email_invoice')){{ readConfig('contact_email') }}<br>@endif
     </div>
-    {{ 'User: '.auth()->user()->name}}<br>
-    {{ 'Order: #'.$order->id}}<br>
+    {{ __('User') }}: {{ auth()->user()->name }}<br>
+    {{ __('Order') }}: #{{ $order->id }}<br>
     <hr>
     <div class="row justify-content-between mx-auto">
       <div class="text-left">
         @if(readConfig('is_show_customer_invoice'))
         <address>
-          Name: {{ $order->customer->name ?? 'N/A' }}<br>
-          Address: {{ $order->customer->address ?? 'N/A' }}<br>
-          Phone: {{ $order->customer->phone ?? 'N/A' }}
+          {{ __('Name') }}: {{ $order->customer->name ?? 'N/A' }}<br>
+          {{ __('Address') }}: {{ $order->customer->address ?? 'N/A' }}<br>
+          {{ __('Phone') }}: {{ $order->customer->phone ?? 'N/A' }}
         </address>
         @endif
       </div>
       <div class="text-right">
         <address class="text-right">
-          <p>{{ date('d-M-Y') }}</p>
+          <p>{{ \Illuminate\Support\Carbon::now()->translatedFormat('d-M-Y') }}</p>
           <p>{{ date('h:i:s A') }}</p>
         </address>
       </div>
@@ -40,11 +40,11 @@
     <table style="width: 100%;">
       <thead>
         <tr>
-          <th style="text-align: left;">Product</th>
+          <th style="text-align: left;">{{ __('Product') }}</th>
           <th style="text-align: right;"></th>
           <!-- <th style="text-align: right;">Qty</th> -->
           <!-- <th style="text-align: right;">Price {{ currency()->symbol}}</th> -->
-          <th style="text-align: right;">Total {{ currency()->symbol}}</th>
+          <th style="text-align: right;">{{ __('Total') }} {{ currency()->symbol}}</th>
         </tr>
       </thead>
       <tbody>
@@ -62,29 +62,29 @@
     <div class="summary">
       <table style="width: 100%;">
         <tr>
-          <td>Subtotal:</td>
+          <td>{{ __('Subtotal') }}:</td>
           <td class="text-right">{{number_format($order->sub_total, 2) }}</td>
         </tr>
         <tr>
-          <td>Discount:</td>
+          <td>{{ __('Discount') }}:</td>
           <td class="text-right">{{number_format($order->discount, 2) }}</td>
         </tr>
         <tr>
-          <td><strong>Total:</strong></td>
+          <td><strong>{{ __('Total') }}:</strong></td>
           <td class="text-right"><strong>{{number_format($order->total, 2) }}</strong></td>
         </tr>
         <tr>
-          <td>Paid:</td>
+          <td>{{ __('Paid') }}:</td>
           <td class="text-right">{{number_format($order->paid + $order->change_amount, 2) }}</td>
         </tr>
         @if($order->change_amount > 0)
         <tr>
-          <td>Change:</td>
+          <td>{{ __('Change') }}:</td>
           <td class="text-right">{{number_format($order->change_amount, 2) }}</td>
         </tr>
         @endif
         <tr>
-          <td>Due:</td>
+          <td>{{ __('Due') }}:</td>
           <td class="text-right">{{number_format($order->due, 2) }}</td>
         </tr>
       </table>
@@ -97,7 +97,7 @@
 
   <!-- Print Button -->
   <div class="text-center mt-3 no-print pb-3">
-    <button type="button" onclick="window.print()" class="btn bg-gradient-primary text-white"><i class="fas fa-print"></i> Print</button>
+    <button type="button" onclick="window.print()" class="btn bg-gradient-primary text-white"><i class="fas fa-print"></i> {{ __('Print') }}</button>
   </div>
 </div>
 @endsection

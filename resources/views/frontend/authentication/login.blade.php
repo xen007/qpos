@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        Login | {{ readConfig('site_name') }}
+        {{ __('Login') }} | {{ readConfig('site_name') }}
     </title>
     <!-- FAVICON ICON -->
     <link rel="shortcut icon" href="{{ assetImage(readconfig('site_logo')) }}" type="image/svg+xml">
@@ -19,6 +19,9 @@
 </head>
 
 <body>
+    <div class="d-flex justify-content-end p-2">
+        <x-language-switcher />
+    </div>
     <x-simple-alert />
 
     <!-- AUTHENTICATION-START (LOGIN) -->
@@ -36,30 +39,30 @@
                     <a href="{{ route('frontend.home') }}" class="logo">
                         <img src="{{ assetImage(readconfig('site_logo')) }}" width="200px" alt="brand-logo">
                     </a>
-                    <h3 class="form-title">Sign in</h3>
-                    <p class="form-des">Welcome back! Sign in to access your account.</p>
+                    <h3 class="form-title">{{ __('Sign in') }}</h3>
+                    <p class="form-des">{{ __('Welcome back! Sign in to access your account.') }}</p>
                 </div>
                 <div class="authentication-form-content">
                     <div class="row g-4">
 
                         <div class="col-sm-6 col-lg-12 col-xl-6">
                             <div class="form-group">
-                                <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" placeholder="Enter email"
+                                <label for="email" class="form-label">{{ __('Email') }}</label>
+                                <input type="email" class="form-control" id="email" placeholder="{{ __('Enter email') }}"
                                     autocomplete="off" name="email" required>
                                 <div class="invalid-feedback">
-                                    Please enter a valid email address.
+                                    {{ __('Please enter a valid email address.') }}
                                 </div>
                             </div>
                         </div>
 
                         <div class="col-sm-6 col-lg-12 col-xl-6">
                             <div class="form-group">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" placeholder="Enter password"
+                                <label for="password" class="form-label">{{ __('Password') }}</label>
+                                <input type="password" class="form-control" id="password" placeholder="{{ __('Enter password') }}"
                                     autocomplete="off" name="password" required>
                                 <div class="invalid-feedback">
-                                    Please enter a password.
+                                    {{ __('Please enter a password.') }}
                                 </div>
                                 <div class="show-hide toggle-password" id="toggleIcon">
                                     <span class="eye-icon">
@@ -104,9 +107,9 @@
                                     <div class="customcheck ">
                                         <input type="checkbox" id="rememberMe" class="customcheck-box"
                                             name="remember_me" hidden>
-                                        <label for="rememberMe" class="customcheck-label">Remember me</label>
+                                        <label for="rememberMe" class="customcheck-label">{{ __('Remember me') }}</label>
                                     </div>
-                                    <a href="{{ route('forget.password') }}" class="forget">Forgot password</a>
+                                    <a href="{{ route('forget.password') }}" class="forget">{{ __('Forgot password') }}</a>
                                 </div>
                             </div>
                             {{-- <div class="single-row">
@@ -124,11 +127,7 @@
 
                         <div class="col-sm-6 col-lg-12 col-xl-6">
                             <div class="form-group">
-                                <button type="submit" class="create-account-btn w-100">Sign In</button>
-                            </div>
-                            <div class="form-group"> <br>
-                            <p><b>User:</b> demo@qtecsolution.net</p>
-                            <p><b>Password:</b> 87654321</p>
+                                <button type="submit" class="create-account-btn w-100">{{ __('Sign In') }}</button>
                             </div>
                         </div>
 

@@ -2,8 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -21,7 +19,7 @@ class RolePermissionSeeder extends Seeder
             'sales_associate',
         ];
         for ($i = 0; $i < count($roles); $i++) {
-            $result = Role::firstOrCreate(['name' => $roles[$i]]);
+            Role::firstOrCreate(['name' => $roles[$i]]);
         }
         //creates permission
         $permissions = [
@@ -111,25 +109,8 @@ class RolePermissionSeeder extends Seeder
             $permission->assignRole($admin);
         }
 
-        // Create users and assign roles
-        $cashierUser = User::create([
-            'name' => 'Mr Cashier',
-            'email' => 'cashier@gmail.com',
-            'password' => bcrypt(12345678),
-            'username' => uniqid(),
-        ]);
-        $salesUser = User::create([
-            'name' => 'Mr Sales',
-            'email' => 'sales@gmail.com',
-            'password' => bcrypt(12345678),
-            'username' => uniqid(),
-        ]);
-        // Assign roles to users
         $cashierRole = Role::where('name', 'cashier')->first();
         $salesRole = Role::where('name', 'sales_associate')->first();
-
-        $cashierUser->assignRole($cashierRole);
-        $salesUser->assignRole($salesRole);
 
         // Optionally, assign permissions to the cashier and sales_associate roles
         // You can customize these permissions as needed

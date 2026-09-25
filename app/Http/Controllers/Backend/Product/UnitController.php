@@ -61,7 +61,7 @@ class UnitController extends Controller
         abort_if(!auth()->user()->can('unit_create'), 403);
         $unit = Unit::create($request->only(['title','short_name']));
 
-        return redirect()->route('backend.admin.units.index')->with('success', 'Unit created successfully!');
+        return redirect()->route('backend.admin.units.index')->with('success', __('Unit created successfully!'));
     }
 
     /**
@@ -92,7 +92,7 @@ class UnitController extends Controller
         abort_if(!auth()->user()->can('unit_update'), 403);
         $unitToUpdate = Unit::findOrFail($id);
         $unitToUpdate->update($request->only(['title', 'short_name']));
-        return redirect()->route('backend.admin.units.index')->with('success', 'Unit updated successfully!');
+        return redirect()->route('backend.admin.units.index')->with('success', __('Unit updated successfully!'));
     }
 
 
@@ -104,6 +104,6 @@ class UnitController extends Controller
         abort_if(!auth()->user()->can('unit_delete'), 403);
         $unit = Unit::findOrFail($id);
         $unit->delete();
-        return redirect()->back()->with('success', 'Unit Deleted Successfully');
+        return redirect()->back()->with('success', __('Unit Deleted Successfully'));
     }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Select from "react-select";
+import translate from "../../utils/translate";
 
 const Suppliers = ({ setSupplierId,oldSupplier }) => {
     const [suppliers, setSuppliers] = useState([]);
@@ -18,6 +19,11 @@ const Suppliers = ({ setSupplierId,oldSupplier }) => {
                 label: supplier.name,
             }));
             setSuppliers(supplierOptions);
+            if (!oldSupplier) {
+                setSelectedSupplier(
+                    supplierOptions.find((supplier) => supplier.label === "Own Supplier") || null
+                );
+            }
         });
     }, []);
 
@@ -83,7 +89,8 @@ const Suppliers = ({ setSupplierId,oldSupplier }) => {
                 options={suppliers}
                 onChange={handleChange}
                 value={selectedSupplier}
-                placeholder="Select supplier"
+                placeholder={translate("Select supplier")}
+                noOptionsMessage={() => translate("No options")}
                 required
             />
             

@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Collection')
+@section('title', __('Collection'))
 
 @section('content')
 <div class="card">
@@ -11,38 +11,38 @@
         <div class="row">
           <div class="mb-3 col-md-3">
             <label for="title" class="form-label">
-              Name
+              {{ __('Customer') }}
             </label>
             <p>{{$order->customer->name}}</p>
           </div>
           <div class="mb-3 col-md-3">
             <label for="title" class="form-label">
-              Order
+              {{ __('Order') }}
             </label>
             <p># {{$order->id}}</p>
           </div>
           <div class="mb-3 col-md-3">
             <label for="title" class="form-label">
-              Total
+              {{ __('Total') }}
             </label>
             <p>{{$order->total}}</p>
           </div>
           <div class="mb-3 col-md-3">
             <label for="title" class="form-label">
-              Due
+              {{ __('Due') }}
             </label>
             <p>{{$order->due}}</p>
           </div>
           <div class="mb-3 col-md-6">
             <label for="title" class="form-label">
-              Collection Amount <span class="text-danger">*</span>
+              {{ __('Collection Amount') }} <span class="text-danger">*</span>
             </label>
-            <input type="number" class="form-control" placeholder="Enter amount" value="{{$order->due}}" name="amount" required min="1" max="{{$order->due}}">
+          <input type="number" class="form-control" placeholder="{{ __('Enter amount') }}" value="{{$order->due}}" name="amount" required min="1" max="{{$order->due}}">
           </div>
         </div>
         <div class="row">
           <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">Submit</button>
+            <button type="submit" class="btn bg-gradient-primary">{{ __('Submit') }}</button>
           </div>
         </div>
       </div>

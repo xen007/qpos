@@ -51,6 +51,11 @@ class UnitSeeder extends Seeder
                 'updated_at' => now(),
             ],
         ];
-        Unit::insert($units);
+        foreach ($units as $unit) {
+            Unit::firstOrCreate(
+                ['short_name' => $unit['short_name']],
+                ['title' => $unit['title']],
+            );
+        }
     }
 }

@@ -84,7 +84,7 @@ class BrandController extends Controller
             $brand->save();
         }
 
-        return redirect()->route('backend.admin.brands.index')->with('success', 'Brand created successfully!');
+        return redirect()->route('backend.admin.brands.index')->with('success', __('Brand created successfully!'));
     }
 
     /**
@@ -128,7 +128,7 @@ class BrandController extends Controller
             $this->fileHandler->secureUnlink($oldImage);
         }
 
-        return redirect()->route('backend.admin.brands.index')->with('success', 'Brand updated successfully!');
+        return redirect()->route('backend.admin.brands.index')->with('success', __('Brand updated successfully!'));
     }
 
     /**
@@ -142,6 +142,6 @@ class BrandController extends Controller
             $this->fileHandler->secureUnlink($brand->image);
         }
         $brand->delete();
-        return redirect()->back()->with('success', 'Brand Deleted Successfully');
+        return redirect()->back()->with('success', __('Brand Deleted Successfully'));
     }
 }

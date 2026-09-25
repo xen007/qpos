@@ -2,76 +2,129 @@
 
 namespace App\Imports;
 
-use App\Models\Product;
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\Unit;
+use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Models\Unit;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Concerns\WithValidation;
 
-class ProductsImport implements ToModel, WithHeadingRow
+class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
 {
+    public function __construct(
+        private readonly int $supplierId,
+        private readonly int $userId,
+    ) {
+    }
+
     public function model(array $row)
     {
-        // Find or create brand, category, and unit
-        $brand = Brand::firstOrCreate(['name' => $row['brand']]);
-        $category = Category::firstOrCreate(['name' => $row['category']]);
+        $validator = Validator::make($row, [
+            'price' => ['required', 'numeric', 'min:0'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'discount_type' => ['required', 'in:fixed,percentage'],
+            'purchase_price' => ['required', 'numeric', 'min:0'],
+            'quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
+        ]);
+
+        $validator->after(function ($validator) use ($row) {
+            $price = (float) ($row['price'] ?? 0);
+            $discount = (float) ($row['discount'] ?? 0);
+            $discountType = $row['discount_type'] ?? null;
+
+            if ($discountType === 'percentage' && $discount > 100) {
+                $validator->errors()->add('discount', __('A percentage discount cannot exceed 100.'));
+            }
+            if ($discountType === 'fixed' && $discount > $price) {
+                $validator->errors()->add('discount', __('A fixed discount cannot exceed the product price.'));
+            }
+
+            $purchaseTotal = round((float) ($row['purchase_price'] ?? 0) * (int) ($row['quantity'] ?? 0), 2);
+            if ($purchaseTotal > 99999999.99) {
+                $validator->errors()->add('quantity', __('The purchase total exceeds the supported limit.'));
+            }
+        });
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
+
+        $brand = Brand::firstOrCreate(['name' => trim($row['brand'])]);
+        $category = Category::firstOrCreate(['name' => trim($row['category'])]);
+        $unitName = trim($row['unit']);
         $unit = Unit::firstOrCreate(
-            ['title' => $row['unit']],
-            ['short_name' => $row['unit']]
+            ['title' => $unitName],
+            ['short_name' => $unitName]
         );
 
-
-        $sku = $row['sku'];
-        $originalSku = $sku;
+        $originalSku = trim($row['sku']);
+        $sku = $originalSku;
         $counter = 1;
-        // Check for SKU uniqueness
         while (Product::where('sku', $sku)->exists()) {
-            // Append a counter to the original SKU to make it unique
-            $sku = $originalSku . '-' . $counter;
-            $counter++;
+            $sku = $originalSku . '-' . $counter++;
         }
-        // Create the product
+
         $product = Product::create([
-            'name' => $row['name'],
+            'name' => trim($row['name']),
             'sku' => $sku,
-            'description' => $row['description'],
+            'description' => $row['description'] ?? null,
             'category_id' => $category->id,
             'brand_id' => $brand->id,
             'unit_id' => $unit->id,
-            'price' => $row['price'],
-            'discount' => $row['discount'],
+            'price' => round((float) $row['price'], 2),
+            'discount' => round((float) ($row['discount'] ?? 0), 2),
             'discount_type' => $row['discount_type'],
-            'purchase_price' => $row['purchase_price'],
-            'quantity' => $row['quantity'],
-            'expire_date' => $row['expire_date'],
-            'status' => $row['status']
+            'purchase_price' => round((float) $row['purchase_price'], 2),
+            'quantity' => (int) $row['quantity'],
+            'expire_date' => $row['expire_date'] ?? null,
+            'status' => (bool) $row['status'],
         ]);
 
-        // Create purchase record
+        $lineTotal = round((float) $row['purchase_price'] * (int) $row['quantity'], 2);
         $purchase = Purchase::create([
-            'supplier_id' => 1,
-            'user_id' => Auth::id(),
-            'sub_total' => $row['purchase_price'] * $row['quantity'],
+            'supplier_id' => $this->supplierId,
+            'user_id' => $this->userId,
+            'sub_total' => $lineTotal,
             'tax' => 0,
-            'discount' =>0,
-            'discount_type' => 0,
+            'discount_value' => 0,
+            'discount_type' => 'fixed',
             'shipping' => 0,
-            'grand_total' => $row['purchase_price'] * $row['quantity'],
+            'grand_total' => $lineTotal,
             'status' => 1,
-            'date' => now()
+            'date' => now(),
         ]);
 
-        // Create purchase item record
         PurchaseItem::create([
             'purchase_id' => $purchase->id,
             'product_id' => $product->id,
-            'purchase_price' => $row['purchase_price'],
-            'price' => $row['price'],
-            'quantity' => $row['quantity'],
+            'purchase_price' => round((float) $row['purchase_price'], 2),
+            'price' => round((float) $row['price'], 2),
+            'quantity' => (int) $row['quantity'],
         ]);
+    }
+
+    public function rules(): array
+    {
+        return [
+            '*.name' => ['required', 'string', 'max:255'],
+            '*.sku' => ['required', 'string', 'max:255'],
+            '*.description' => ['nullable', 'string', 'max:5000'],
+            '*.brand' => ['required', 'string', 'max:255'],
+            '*.category' => ['required', 'string', 'max:255'],
+            '*.unit' => ['required', 'string', 'max:255'],
+            '*.price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            '*.discount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            '*.discount_type' => ['required', 'in:fixed,percentage'],
+            '*.purchase_price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
+            '*.quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
+            '*.expire_date' => ['nullable', 'date'],
+            '*.status' => ['required', 'boolean'],
+        ];
     }
 }

@@ -48,7 +48,7 @@ class GoogleController extends Controller
 
             if (auth()->user()->is_suspended == 1) {
                 Auth::logout();
-                return redirect()->route('login')->with('error', 'Your account is temporarily suspended');
+                return redirect()->route('login')->with('error', __('Your account is temporarily suspended'));
             }
 
             $authController = new AuthController();
@@ -63,7 +63,7 @@ class GoogleController extends Controller
             return redirect('/');
         } catch (Exception $e) {
             // return $e->getMessage();
-            return back()->with('error', 'Something went wrong');
+            return back()->with('error', __('Something went wrong. Please try again.'));
         }
     }
 }

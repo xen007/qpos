@@ -1,9 +1,9 @@
 @extends('backend.master')
 
-@section('title', 'Dashboard')
+@section('title', __('Dashboard'))
 
 @section('content')
-<section class="content">
+<section class="content qpos-dashboard">
     @can('dashboard_view')
     <div class="container-fluid">
         <div class="row">
@@ -12,7 +12,7 @@
                     <span class="info-box-icon bg-info elevation-1"><i class="fas fa-cog"></i></span>
 
                     <div class="info-box-content">
-                        <span class="info-box-text">Sale SubTotal</span>
+                        <span class="info-box-text">{{ __('Sale Subtotal') }}</span>
                         <span class="info-box-number">
                             {{currency()->symbol??''}} {{number_format($sub_total,2,'.',',')}}
                             <small></small>
@@ -28,7 +28,7 @@
                     <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-thumbs-up"></i></span>
 
                     <div class="info-box-content">
-                        <span class="info-box-text">Sale Discount</span>
+                        <span class="info-box-text">{{ __('Sale Discount') }}</span>
                         <span class="info-box-number">{{currency()->symbol??''}} {{number_format($discount,2,'.',',')}}</span>
                     </div>
                     <!-- /.info-box-content -->
@@ -45,7 +45,7 @@
                     <span class="info-box-icon bg-success elevation-1"><i class="fas fa-shopping-cart"></i></span>
 
                     <div class="info-box-content">
-                        <span class="info-box-text">Sale</span>
+                        <span class="info-box-text">{{ __('Sale') }}</span>
                         <span class="info-box-number">{{currency()->symbol??''}} {{number_format($total,2,'.',',')}}</span>
                     </div>
                     <!-- /.info-box-content -->
@@ -58,7 +58,7 @@
                     <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
 
                     <div class="info-box-content">
-                        <span class="info-box-text">Sale Due </span>
+                        <span class="info-box-text">{{ __('Sale Due') }}</span>
                         <span class="info-box-number">{{currency()->symbol??''}} {{number_format($due,2,'.',',')}}</span>
                     </div>
                     <!-- /.info-box-content -->
@@ -75,13 +75,13 @@
                 <div class="small-box bg-info">
                     <div class="inner">
                         <h3>{{$total_customer}}</h3>
-                        <p>Customers</p>
+                        <p>{{ __('Customers') }}</p>
                     </div>
                     <div class="icon">
                         <i class="ion ion-bag"></i>
                     </div>
                     <a href="{{route('backend.admin.customers.index')}}" class="small-box-footer">
-                        More info
+                        {{ __('More info') }}
                         <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -92,13 +92,13 @@
                 <div class="small-box bg-success">
                     <div class="inner">
                         <h3>{{$total_product}}</h3>
-                        <p>Products</p>
+                        <p>{{ __('Products') }}</p>
                     </div>
                     <div class="icon">
-                        <i class="ion ion-stats-bars"></i>
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
                     </div>
                     <a href="{{route('backend.admin.products.index')}}" class="small-box-footer">
-                        More info
+                        {{ __('More info') }}
                         <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -109,13 +109,13 @@
                 <div class="small-box bg-warning">
                     <div class="inner">
                         <h3>{{$total_order}}</h3>
-                        <p>Sale</p>
+                        <p>{{ __('Sale') }}</p>
                     </div>
                     <div class="icon">
-                        <i class="ion ion-person-add"></i>
+                        <i class="fas fa-user-plus" aria-hidden="true"></i>
                     </div>
                     <a href="{{route('backend.admin.orders.index')}}" class="small-box-footer">
-                        More info
+                        {{ __('More info') }}
                         <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -126,13 +126,13 @@
                 <div class="small-box bg-danger">
                     <div class="inner">
                         <h3>{{$total_sale_item}}</h3>
-                        <p>Sale Item</p>
+                        <p>{{ __('Sale Item') }}</p>
                     </div>
                     <div class="icon">
-                        <i class="ion ion-pie-graph"></i>
+                        <i class="fas fa-chart-pie" aria-hidden="true"></i>
                     </div>
                     <a href="{{route('backend.admin.orders.index')}}" class="small-box-footer">
-                        More info
+                        {{ __('More info') }}
                         <i class="fas fa-arrow-circle-right"></i>
                     </a>
                 </div>
@@ -143,32 +143,39 @@
 
 
         <div class="row">
-            <div class="col-6">
+            <div class="col-12 col-lg-6">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Daily Total Sales <small>{{ $dateRange }}</small></h5>
+                        <h5 class="mb-0">{{ __('Daily Total Sales') }} <small>{{ $dateRange }}</small></h5>
                         <div class="input-group w-auto">
                             <div class="input-group-prepend">
                                 <span class="input-group-text">
                                     <i class="far fa-calendar-alt"></i>
                                 </span>
                             </div>
-                            <input type="text" class="form-control" id="reservation" style="width: 180px;">
+                            <input type="text" class="form-control" id="reservation"
+            aria-label="{{ __('Filter sales by date range') }}">
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <canvas id="dailySaleLineChart"></canvas>
+                        <div class="qpos-chart-container">
+                            <canvas id="dailySaleLineChart" role="img"
+                                aria-label="{{ __('Daily Total Sales') }}"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-6">
+            <div class="col-12 col-lg-6">
                 <div class="card">
                     <div class="card-header">
-                        <h5>Monthly Total Sales <small>for {{ $currentYear }}</small></h5>
+                        <h5>{{ __('Monthly Total Sales') }} <small>{{ __('for') }} {{ $currentYear }}</small></h5>
                     </div>
                     <div class="card-body">
-                        <canvas id="barChartYear"></canvas>
+                        <div class="qpos-chart-container">
+                            <canvas id="barChartYear" role="img"
+                                aria-label="{{ __('Monthly Total Sales') }}"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,54 +185,37 @@
     <!-- /.container-fluid -->
 </section>
 @endsection
+@push('style')
+<link rel="stylesheet" href="{{ asset('plugins/daterangepicker/daterangepicker.css') }}">
+@endpush
 @push('script')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    const dailySaleChart = document.getElementById('dailySaleLineChart');
-    const barChartYear = document.getElementById('barChartYear');
-
-    new Chart(dailySaleChart, {
-        type: 'line',
-        data: {
-            labels: @json($dates),
-            datasets: [{
-                label: 'Sales',
-                data: @json($totalAmounts),
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-
-    new Chart(barChartYear, {
-        type: 'bar',
-        data: {
-            labels: @json($months),
-            datasets: [{
-                label: 'Sales',
-                data: @json($totalAmountMonth),
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-</script>
+@can('dashboard_view')
+<script src="{{ asset('plugins/moment/moment-with-locales.min.js') }}"></script>
+<script src="{{ asset('plugins/daterangepicker/daterangepicker.js') }}"></script>
+<script type="application/json" id="qpos-dashboard-chart-data">@json([
+    'dates' => $dates,
+    'dailySales' => $totalAmounts,
+    'months' => $months,
+    'monthlySales' => $totalAmountMonth,
+    'salesLabel' => __('Sales'),
+])</script>
+@vite('resources/js/dashboard.js')
 <script>
     $(function() {
-        //Date range picker
-        $('#reservation').daterangepicker().on('apply.daterangepicker', function(e, picker) {
+        moment.locale(window.qposLocale === 'fr' ? 'fr' : 'en');
+        $('#reservation').daterangepicker({
+            locale: {
+                format: 'YYYY-MM-DD',
+                applyLabel: @json(__('Apply')),
+                cancelLabel: @json(__('Cancel')),
+                fromLabel: @json(__('Date range from')),
+                toLabel: @json(__('Date range to')),
+                customRangeLabel: @json(__('Custom Range')),
+                daysOfWeek: moment.weekdaysMin(),
+                monthNames: moment.months(),
+                firstDay: moment.localeData().firstDayOfWeek()
+            }
+        }).on('apply.daterangepicker', function(e, picker) {
             let selectedDateRange = picker.startDate.format('YYYY-MM-DD') + ' to ' + picker.endDate.format('YYYY-MM-DD');
 
             // Update URL with daterange query parameter
@@ -236,4 +226,5 @@
 
     })
 </script>
+@endcan
 @endpush

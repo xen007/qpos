@@ -1,0 +1,42 @@
+<?php
+
+return [
+    'accepted' => 'Le champ :attribute doit être accepté.',
+    'boolean' => 'Le champ :attribute doit être vrai ou faux.',
+    'date' => 'Le champ :attribute doit être une date valide.',
+    'distinct' => 'Le champ :attribute contient une valeur en double.',
+    'email' => 'Le champ :attribute doit être une adresse e-mail valide.',
+    'exists' => 'La valeur sélectionnée pour :attribute est invalide.',
+    'file' => 'Le champ :attribute doit être un fichier.',
+    'in' => 'La valeur sélectionnée pour :attribute est invalide.',
+    'integer' => 'Le champ :attribute doit être un nombre entier.',
+    'mimes' => 'Le fichier :attribute doit être de type :values.',
+    'max' => [
+        'numeric' => 'Le champ :attribute ne peut pas être supérieur à :max.',
+        'string' => 'Le champ :attribute ne peut pas contenir plus de :max caractères.',
+        'file' => 'Le fichier :attribute ne peut pas dépasser :max kilo-octets.',
+        'array' => 'Le champ :attribute ne peut pas contenir plus de :max éléments.',
+    ],
+    'min' => [
+        'numeric' => 'Le champ :attribute doit être au moins égal à :min.',
+        'string' => 'Le champ :attribute doit contenir au moins :min caractères.',
+        'file' => 'Le fichier :attribute doit peser au moins :min kilo-octets.',
+        'array' => 'Le champ :attribute doit contenir au moins :min éléments.',
+    ],
+    'numeric' => 'Le champ :attribute doit être un nombre.',
+    'required_with' => 'Le champ :attribute est obligatoire lorsque :values est renseigné.',
+    'required' => 'Le champ :attribute est obligatoire.',
+    'string' => 'Le champ :attribute doit être du texte.',
+    'unique' => 'Cette valeur pour :attribute est déjà utilisée.',
+    'uploaded' => 'Le fichier :attribute n’a pas pu être téléversé.',
+    'confirmed' => 'La confirmation de :attribute ne correspond pas.',
+    'attributes' => [
+        'email' => 'adresse e-mail',
+        'password' => 'mot de passe',
+        'locale' => 'langue',
+        'file' => 'fichier',
+        'name' => 'nom',
+        'price' => 'prix',
+        'quantity' => 'quantité',
+    ],
+];

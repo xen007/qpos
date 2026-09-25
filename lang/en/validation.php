@@ -1,0 +1,42 @@
+<?php
+
+return [
+    'accepted' => 'The :attribute field must be accepted.',
+    'boolean' => 'The :attribute field must be true or false.',
+    'date' => 'The :attribute field must be a valid date.',
+    'distinct' => 'The :attribute field has a duplicate value.',
+    'email' => 'The :attribute field must be a valid email address.',
+    'exists' => 'The selected :attribute is invalid.',
+    'file' => 'The :attribute field must be a file.',
+    'in' => 'The selected :attribute is invalid.',
+    'integer' => 'The :attribute field must be an integer.',
+    'mimes' => 'The :attribute field must be a file of type: :values.',
+    'max' => [
+        'numeric' => 'The :attribute field must not be greater than :max.',
+        'string' => 'The :attribute field must not be greater than :max characters.',
+        'file' => 'The :attribute file may not be greater than :max kilobytes.',
+        'array' => 'The :attribute field may not have more than :max items.',
+    ],
+    'min' => [
+        'numeric' => 'The :attribute field must be at least :min.',
+        'string' => 'The :attribute field must be at least :min characters.',
+        'file' => 'The :attribute file must be at least :min kilobytes.',
+        'array' => 'The :attribute field must have at least :min items.',
+    ],
+    'numeric' => 'The :attribute field must be a number.',
+    'required_with' => 'The :attribute field is required when :values is present.',
+    'required' => 'The :attribute field is required.',
+    'string' => 'The :attribute field must be a string.',
+    'unique' => 'The :attribute has already been taken.',
+    'uploaded' => 'The :attribute failed to upload.',
+    'confirmed' => 'The :attribute confirmation does not match.',
+    'attributes' => [
+        'email' => 'email address',
+        'password' => 'password',
+        'locale' => 'language',
+        'file' => 'file',
+        'name' => 'name',
+        'price' => 'price',
+        'quantity' => 'quantity',
+    ],
+];

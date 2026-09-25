@@ -1,26 +1,63 @@
 {
-  "resources/js/app.css": {
-    "file": "assets/app-567829f8.css",
-    "src": "resources/js/app.css"
+  "_useDocumentTheme-Bh2v8cnP.js": {
+    "file": "assets/useDocumentTheme-Bh2v8cnP.js",
+    "name": "useDocumentTheme",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
   },
   "resources/js/app.jsx": {
-    "assets": [
-      "assets/beep-07a-24004a82.mp3",
-      "assets/beep-02-4c77c523.mp3"
+    "file": "assets/app-X8vQUAP7.js",
+    "name": "app",
+    "src": "resources/js/app.jsx",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/components/Pos.jsx",
+      "resources/js/components/Purchase/Purchase.jsx"
     ],
     "css": [
-      "assets/app-567829f8.css"
+      "assets/app-DoATZIRU.css"
+    ]
+  },
+  "resources/js/components/Pos.jsx": {
+    "file": "assets/Pos-cm9LKIpb.js",
+    "name": "Pos",
+    "src": "resources/js/components/Pos.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useDocumentTheme-Bh2v8cnP.js"
     ],
-    "file": "assets/app-0c22600c.js",
-    "isEntry": true,
-    "src": "resources/js/app.jsx"
+    "assets": [
+      "assets/beep-07a-BpTYY3WP.mp3",
+      "assets/beep-02-FDF-YbRr.mp3"
+    ]
+  },
+  "resources/js/components/Purchase/Purchase.jsx": {
+    "file": "assets/Purchase-C04z3cUg.js",
+    "name": "Purchase",
+    "src": "resources/js/components/Purchase/Purchase.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx",
+      "_useDocumentTheme-Bh2v8cnP.js"
+    ],
+    "css": [
+      "assets/Purchase-Wk3Ob2xl.css"
+    ]
+  },
+  "resources/js/dashboard.js": {
+    "file": "assets/dashboard-N_HGjRiZ.js",
+    "name": "dashboard",
+    "src": "resources/js/dashboard.js",
+    "isEntry": true
   },
   "resources/js/sounds/beep-02.mp3": {
-    "file": "assets/beep-02-4c77c523.mp3",
+    "file": "assets/beep-02-FDF-YbRr.mp3",
     "src": "resources/js/sounds/beep-02.mp3"
   },
   "resources/js/sounds/beep-07a.mp3": {
-    "file": "assets/beep-07a-24004a82.mp3",
+    "file": "assets/beep-07a-BpTYY3WP.mp3",
     "src": "resources/js/sounds/beep-07a.mp3"
   }
 }

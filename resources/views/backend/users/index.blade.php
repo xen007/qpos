@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'User Management')
+@section('title', __('User Management'))
 
 @section('content')
 <div class="card">
@@ -8,7 +8,7 @@
     <div class="mt-n5 mb-3 d-flex justify-content-end">
         <a href="{{ route('backend.admin.user.create') }}" class="btn bg-gradient-primary">
             <i class="fas fa-plus-circle"></i>
-            Add New
+            {{ __('Add New') }}
         </a>
     </div>
     @endcan
@@ -20,13 +20,13 @@
                         <thead>
                             <tr>
                                 <th data-orderable="false">#</th>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Created</th>
-                                <th>Status</th>
+                                <th>{{ __('Name') }}</th>
+                                <th>{{ __('Email') }}</th>
+                                <th>{{ __('Role') }}</th>
+                                <th>{{ __('Created') }}</th>
+                                <th>{{ __('Status') }}</th>
                                 <th data-orderable="false">
-                                    Action
+                                    {{ __('Action') }}
                                 </th>
                             </tr>
                         </thead>

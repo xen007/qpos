@@ -78,7 +78,7 @@ class CurrencyController extends Controller
         ]);
         $currency = Currency::create($request->only(['name', 'code', 'symbol']));
 
-        return redirect()->route('backend.admin.currencies.index')->with('success', 'Currency created successfully!');
+        return redirect()->route('backend.admin.currencies.index')->with('success', __('Currency created successfully!'));
     }
 
     /**
@@ -116,7 +116,7 @@ class CurrencyController extends Controller
             'symbol' => 'required|string'
         ]);
         $currency->update($request->only(['name', 'code', 'symbol']));
-        return redirect()->route('backend.admin.currencies.index')->with('success', 'Currency updated successfully!');
+        return redirect()->route('backend.admin.currencies.index')->with('success', __('Currency updated successfully!'));
     }
 
 
@@ -129,7 +129,7 @@ class CurrencyController extends Controller
         abort_if(!auth()->user()->can('currency_delete'), 403);
         $currency = Currency::findOrFail($id);
         $currency->delete();
-        return redirect()->back()->with('success', 'Currency Deleted Successfully');
+        return redirect()->back()->with('success', __('Currency Deleted Successfully'));
     }
     public function setDefault($id)
     {
@@ -139,6 +139,6 @@ class CurrencyController extends Controller
         $currency->active = true;
         $currency->save();
         Cache::put('default_currency', $currency, 60 * 24);
-        return redirect()->back()->with('success', 'Currency Set Default Successfully');
+        return redirect()->back()->with('success', __('Currency Set Default Successfully'));
     }
 }

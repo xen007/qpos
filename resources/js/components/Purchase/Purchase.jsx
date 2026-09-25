@@ -2,17 +2,23 @@ import React, { useCallback, useEffect, useState } from "react";
 import Suppliers from "./Suppliers";
 import axios from "axios";
 import Swal from "sweetalert2";
-import toast, { Toaster } from "react-hot-toast";
-import DatePicker from "react-datepicker";
+import { toast, Toaster } from "sonner";
+import DatePicker, { registerLocale } from "react-datepicker";
+import { enUS } from "date-fns/locale/en-US";
+import { fr } from "date-fns/locale/fr";
 import "react-datepicker/dist/react-datepicker.css";
+import translate from "../../utils/translate";
+import useDocumentTheme from "../../utils/useDocumentTheme";
+import { Search } from "lucide-react";
+
+registerLocale("fr", fr);
+registerLocale("en", enUS);
 
 export default function Purchase() {
+    const theme = useDocumentTheme();
     const [searchTerm, setSearchTerm] = useState("");
     const [barcode, setBarcode] = useState("");
-    const [selectedSupplier, setSelectedSupplier] = useState({
-        value: 1,
-        label: "Own Supplier",
-    });
+    const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [purchaseId, setPurchaseId] = useState(null);
     const [date, setDate] = useState(null);
     const [supplierId, setSupplierId] = useState(null);
@@ -63,6 +69,7 @@ export default function Purchase() {
                 value: purchaseData?.supplier_id,
                 label: purchaseData?.supplier?.name,
             });
+            setSupplierId(purchaseData?.supplier_id ?? null);
             setTax(purchaseData?.tax);
             setDiscount(purchaseData?.discount_value);
             setShipping(purchaseData?.shipping);
@@ -212,20 +219,20 @@ export default function Purchase() {
             return;
         }
         if (!date) {
-            toast.error("Please select purchase date.");
+            toast.error(translate("Please select purchase date."));
             return;
         }
         if (!supplierId) {
-            toast.error("Please select a supplier.");
+            toast.error(translate("Please select a supplier."));
             return;
         }
 
         // Show confirmation dialog
         Swal.fire({
-            title: `Are you sure you want to save this purchase?`,
+            title: translate("Are you sure you want to save this purchase?"),
             showDenyButton: true,
-            confirmButtonText: "Yes",
-            denyButtonText: "No",
+            confirmButtonText: translate("Yes"),
+            denyButtonText: translate("No"),
             customClass: {
                 actions: "my-actions",
                 cancelButton: "order-1 right-gap",
@@ -252,7 +259,7 @@ export default function Purchase() {
                     window.location.href = "/admin/purchase";
                 } catch (err) {
                     toast.error(
-                        err.response?.data?.message || "An error occurred"
+                        err.response?.data?.message || translate("An error occurred")
                     );
                 }
             }
@@ -319,27 +326,26 @@ export default function Purchase() {
     };
     return (
         <>
-            <div className="container-fluid">
+            <div className="container-fluid qpos-purchase">
                 <div className="card">
                     <div className="card-body">
                         <div className="row">
                             <div className="mb-3 col-md-6">
                                 <label htmlFor="date" className="form-label">
-                                    Purchase Date
+                                    {translate("Purchase Date")}
                                     <span className="text-danger">*</span>
                                 </label>
                                 <div>
                                     <DatePicker
                                         name="date"
                                         className="form-control"
-                                        placeholderText="Enter purchase date"
-                                        selected={date}
+                                        placeholderText={translate("Enter purchase date")}
+                                        selected={date ? new Date(`${date}T00:00:00`) : null}
                                         dateFormat="yyyy-MM-dd"
+                                        locale={window.qposLocale === "fr" ? "fr" : "en"}
                                         onChange={(date) => {
                                             const formattedDate = date
-                                                ? date
-                                                      .toISOString()
-                                                      .split("T")[0]
+                                                ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
                                                 : null;
                                             setDate(formattedDate);
                                         }}
@@ -351,7 +357,7 @@ export default function Purchase() {
                                     htmlFor="supplier"
                                     className="form-label"
                                 >
-                                    Supplier
+                                    {translate("Supplier")}
                                     <span className="text-danger">*</span>
                                 </label>
                                 <Suppliers
@@ -368,7 +374,7 @@ export default function Purchase() {
                             <div className="input-group col-6">
                                 <div className="input-group-prepend">
                                     <span className="input-group-text">
-                                        <i className="fas fa-search"></i>
+                                        <Search size={18} aria-hidden="true" />
                                     </span>
                                 </div>
                                 <input
@@ -378,13 +384,13 @@ export default function Purchase() {
                                     onChange={(e) =>
                                         setSearchTerm(e.target.value)
                                     }
-                                    placeholder="Enter product barcode/name"
+                                    placeholder={translate("Enter product barcode/name")}
                                 />
                                 <button
                                     className="btn bg-gradient-primary ml-2"
                                     onClick={handleSearchAdd}
                                 >
-                                    Add Product
+                                    {translate("Add Product")}
                                 </button>
                             </div>
                         </div>
@@ -422,23 +428,23 @@ export default function Purchase() {
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Product Name</th>
-                                            <th>Purchase Price</th>
-                                            <th>Current Stock</th>
-                                            <th>Qty</th>
-                                            <th>Sub Total</th>
-                                            <th>Action</th>
+                                            <th>{translate("Product Name")}</th>
+                                            <th>{translate("Purchase Price")}</th>
+                                            <th>{translate("Current Stock")}</th>
+                                            <th>{translate("Qty")}</th>
+                                            <th>{translate("Sub Total")}</th>
+                                            <th>{translate("Action")}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {products.map((product, index) => (
-                                            <tr key={product.id}>
+                                        <tr key={product.id}>
                                                 <td>{index + 1}</td>
                                                 <td>{product.name}</td>
                                                 <td className="d-flex align-items-center justify-content-center">
                                                     <input
                                                         type="number"
-                                                        min="1"
+                                                        min="0"
                                                         className="form-control w-50"
                                                         value={
                                                             product.purchase_price
@@ -480,7 +486,7 @@ export default function Purchase() {
                                                             )
                                                         }
                                                     >
-                                                        Delete
+                                                        {translate("Delete")}
                                                     </button>
                                                 </td>
                                             </tr>
@@ -496,31 +502,31 @@ export default function Purchase() {
                                     <table className="table table-sm">
                                         <tbody>
                                             <tr>
-                                                <th>Subtotal:</th>
+                                                <th>{translate("Subtotal:")}</th>
                                                 <td className="text-right">
                                                     {totals.subTotal.toFixed(2)}
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <th>Tax:</th>
+                                                <th>{translate("Tax:")}</th>
                                                 <td className="text-right">
                                                     {totals.tax.toFixed(2)}
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <th>Discount:</th>
+                                                <th>{translate("Discount:")}</th>
                                                 <td className="text-right">
                                                     {totals.discount.toFixed(2)}
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <th>Shipping:</th>
+                                                <th>{translate("Shipping:")}</th>
                                                 <td className="text-right">
                                                     {totals.shipping.toFixed(2)}
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <th>Grand Total:</th>
+                                                <th>{translate("Grand Total:")}</th>
                                                 <td className="text-right">
                                                     {totals.grandTotal.toFixed(
                                                         2
@@ -539,7 +545,7 @@ export default function Purchase() {
                         <div className="row">
                             <div className="mb-3 col-md-4">
                                 <label htmlFor="tax" className="form-label">
-                                    Tax
+                                    {translate("Tax")}
                                 </label>
                                 <input
                                     type="number"
@@ -549,7 +555,7 @@ export default function Purchase() {
                                     onChange={(e) =>
                                         setTax(parseFloat(e.target.value) || 0)
                                     }
-                                    placeholder="Enter tax"
+                                    placeholder={translate("Enter tax")}
                                     name="tax"
                                     required
                                 />
@@ -559,7 +565,7 @@ export default function Purchase() {
                                     htmlFor="discount"
                                     className="form-label"
                                 >
-                                    Discount
+                                    {translate("Discount")}
                                 </label>
                                 <input
                                     type="number"
@@ -571,7 +577,7 @@ export default function Purchase() {
                                             parseFloat(e.target.value) || 0
                                         )
                                     }
-                                    placeholder="Enter discount"
+                                    placeholder={translate("Enter discount")}
                                     name="discount"
                                     required
                                 />
@@ -581,7 +587,7 @@ export default function Purchase() {
                                     htmlFor="shipping"
                                     className="form-label"
                                 >
-                                    Shipping Charge
+                                    {translate("Shipping Charge")}
                                 </label>
                                 <input
                                     type="number"
@@ -593,7 +599,7 @@ export default function Purchase() {
                                             parseFloat(e.target.value) || 0
                                         )
                                     }
-                                    placeholder="Enter shipping"
+                                    placeholder={translate("Enter shipping")}
                                     name="shipping"
                                     required
                                 />
@@ -606,11 +612,11 @@ export default function Purchase() {
                     className="btn btn-md bg-gradient-primary"
                     onClick={handleSubmit}
                 >
-                    Create
+                    {translate(purchaseId ? "Update" : "Create")}
                 </button>
             </div>
 
-            <Toaster position="top-right" reverseOrder={false} />
+            <Toaster position="top-right" richColors closeButton theme={theme} />
         </>
     );
 }

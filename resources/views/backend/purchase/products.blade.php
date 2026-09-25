@@ -1,15 +1,15 @@
 @extends('backend.master')
 
-@section('title', 'Customers')
+@section('title', __('Purchase'))
 
 @section('content')
 <div class="card">
   <div class="card-body p-2 p-md-4 pt-0">
     <div class="row invoice-info">
       <div class="col-sm-4 invoice-col">
-        Supplier
+        {{ __('Supplier') }}
         <address>
-          <strong>Name: {{ $purchase->supplier->name }}</strong><br>
+          <strong>{{ __('Name') }}: {{ $purchase->supplier->name }}</strong><br>
         </address>
       </div>
     </div>
@@ -20,13 +20,13 @@
             <thead>
               <tr>
                 <th data-orderable="false">#</th>
-                <th>Product</th>
-                <th>Purchase Price{{currency()->symbol??''}}</th>
+                <th>{{ __('Product') }}</th>
+                <th>{{ __('Purchase Price') }} {{currency()->symbol??''}}</th>
                 <th>
-                  Quantity
+                  {{ __('Quantity') }}
                 </th>
                 <th>
-                  Sub Total{{currency()->symbol??''}}
+                  {{ __('Sub Total') }} {{currency()->symbol??''}}
                 </th>
               </tr>
             </thead>
@@ -61,23 +61,23 @@
         <div class="table-responsive">
           <table class="table">
             <tr>
-              <th style="width:50%">Subtotal:</th>
+              <th style="width:50%">{{ __('Subtotal:') }}</th>
               <td class="text-right">{{number_format($purchase->sub_total,2,'.',',')}}</td>
             </tr>
             <tr>
-              <th>Tax:</th>
+              <th>{{ __('Tax:') }}</th>
               <td class="text-right">{{number_format($purchase->tax,2,'.',',')}}</td>
             </tr>
             <tr>
-              <th>Discount:</th>
+              <th>{{ __('Discount:') }}</th>
               <td class="text-right">{{number_format($purchase->discount_value,2,'.',',')}}</td>
             </tr>
             <tr>
-              <th>Shipping:</th>
+              <th>{{ __('Shipping:') }}</th>
               <td class="text-right">{{number_format($purchase->shipping,2,'.',',')}}</td>
             </tr>
             <tr>
-              <th>Total:</th>
+              <th>{{ __('Total:') }}</th>
               <td class="text-right">{{number_format($purchase->grand_total,2,'.',',')}}</td>
             </tr>
           </table>
@@ -87,7 +87,7 @@
     </div>
     <!-- <div class="row no-print">
       <div class="col-12">
-        <button type="button" onclick="window.print()" class="btn btn-success float-right"><i class="fas fa-print"></i> Print</a>
+        <button type="button" onclick="window.print()" class="btn btn-success float-right"><i class="fas fa-print"></i> {{ __('Print') }}</button>
         </button>
       </div>
     </div> -->

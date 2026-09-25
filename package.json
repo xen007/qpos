@@ -8,18 +8,21 @@
         "build:docker": "vite build --config vite.docker.js"
     },
     "devDependencies": {
+        "@tailwindcss/vite": "^4.3.3",
+        "@vitejs/plugin-react": "^6.1.1",
         "axios": "^1.7.7",
-        "laravel-vite-plugin": "^0.7.5",
-        "vite": "^4.0.0"
+        "laravel-vite-plugin": "^3.2.0",
+        "tailwindcss": "^4.3.3",
+        "vite": "^8.3.1"
     },
     "dependencies": {
-        "@vitejs/plugin-react": "^4.3.2",
-        "loadash": "^1.0.0",
-        "react": "^18.3.1",
-        "react-datepicker": "^7.5.0",
-        "react-dom": "^18.3.1",
-        "react-hot-toast": "^2.4.1",
-        "react-select": "^5.8.1",
+        "chart.js": "^4.5.1",
+        "lucide-react": "^1.48.0",
+        "react": "^19.3.0",
+        "react-datepicker": "^9.1.0",
+        "react-dom": "^19.3.0",
+        "react-select": "^5.10.2",
+        "sonner": "^2.0.8",
         "sweetalert2": "^11.14.1"
     }
 }

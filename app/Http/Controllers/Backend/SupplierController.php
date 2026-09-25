@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use App\Models\Purchase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
 
 class SupplierController extends Controller
@@ -15,28 +17,29 @@ class SupplierController extends Controller
     public function index(Request $request)
     {
     abort_if(!auth()->user()->can('supplier_view'), 403);
-        if ($request->ajax()) {
-            $suppliers = Supplier::latest()->get();
+        if ($request->ajax() && $request->has('draw')) {
+            $suppliers = Supplier::query()->latest();
             return DataTables::of($suppliers)
                 ->addIndexColumn()
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('phone', fn($data) => $data->phone)
                 ->addColumn('address', fn($data) => $data->address)
-                ->addColumn('created_at', fn($data) => $data->created_at->format('d M, Y')) // Using Carbon for formatting
+                ->addColumn('created_at', fn($data) => $data->created_at->translatedFormat('d M, Y'))
                 ->addColumn('action', function ($data) {
+                    $isDefaultSupplier = $data->name === 'Own Supplier';
                     return '<div class="btn-group">
-                    <button type="button" class="btn bg-gradient-primary btn-flat">Action</button>
+                    <button type="button" class="btn bg-gradient-primary btn-flat">' . e(__('Actions')) . '</button>
                     <button type="button" class="btn bg-gradient-primary btn-flat dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
-                      <span class="sr-only">Toggle Dropdown</span>
+                      <span class="sr-only">' . e(__('Toggle Dropdown')) . '</span>
                     </button>
                     <div class="dropdown-menu" role="menu">
-                      <a class="dropdown-item" href="' . route('backend.admin.suppliers.edit', $data->id) . '" ' . ($data->id == 1 ? 'onclick="event.preventDefault();"' : '') . ' >
-                    <i class="fas fa-edit"></i> Edit
+                      <a class="dropdown-item" href="' . route('backend.admin.suppliers.edit', $data->id) . '" ' . ($isDefaultSupplier ? 'onclick="event.preventDefault();" aria-disabled="true"' : '') . ' >
+                    <i class="fas fa-edit"></i> ' . e(__('Edit')) . '
                 </a> <div class="dropdown-divider"></div>
 <form action="' . route('backend.admin.suppliers.destroy', $data->id) . '"method="POST" style="display:inline;">
                    ' . csrf_field() . '
                     ' . method_field("DELETE") . '
-<button type="submit" ' . ($data->id == 1 ? 'disabled' : '') . ' class="dropdown-item" onclick="return confirm(\'Are you sure ?\')"><i class="fas fa-trash"></i> Delete</button>
+<button type="submit" ' . ($isDefaultSupplier ? 'disabled' : '') . ' class="dropdown-item" onclick="return confirm(\'' . e(__('Are you sure you want to delete this item?')) . '\')"><i class="fas fa-trash"></i> ' . e(__('Delete')) . '</button>
                   </form>
                     </div>
                   </div>';
@@ -87,7 +90,7 @@ class SupplierController extends Controller
 
         $supplier = Supplier::create($request->only(['name', 'phone', 'address']));
 
-        session()->flash('success', 'Supplier created successfully.');
+        session()->flash('success', __('Supplier created successfully.'));
         return to_route('backend.admin.suppliers.index');
     }
 
@@ -126,7 +129,7 @@ class SupplierController extends Controller
 
         $supplier->update($request->only(['name', 'phone', 'address']));
 
-        session()->flash('success', 'Supplier updated successfully.');
+        session()->flash('success', __('Supplier updated successfully.'));
         return to_route('backend.admin.suppliers.index');
     }
 
@@ -137,9 +140,25 @@ class SupplierController extends Controller
     public function destroy($id)
     {
         abort_if(!auth()->user()->can('supplier_delete'), 403);
-        $supplier = Supplier::findOrFail($id);
-        $supplier->delete();
-        session()->flash('success', 'Supplier deleted successfully.');
+        $result = DB::transaction(function () use ($id) {
+            $supplier = Supplier::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($supplier->name === 'Own Supplier') {
+                return 'default';
+            }
+            if (Purchase::where('supplier_id', $supplier->id)->exists()) {
+                return 'history';
+            }
+            $supplier->delete();
+            return 'deleted';
+        });
+
+        if ($result === 'default') {
+            return back()->with('error', __('The default supplier cannot be deleted.'));
+        }
+        if ($result === 'history') {
+            return back()->with('error', __('Suppliers with purchase history cannot be deleted.'));
+        }
+        session()->flash('success', __('Supplier deleted successfully.'));
         return to_route('backend.admin.suppliers.index');
     }
     public function getCustomers(Request $request)

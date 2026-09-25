@@ -1,11 +1,9 @@
 @extends('backend.master')
 
-@section('title', 'Product Purchase')
+@section('title', request()->filled('purchase_id') ? __('Edit Purchase') : __('Purchase Create'))
 
 @section('content')
-</div>
-<section class="content-header" id="purchase">
-</section>
+<div id="purchase"></div>
 @endsection
 @push('style')
 <style>

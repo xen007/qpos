@@ -18,10 +18,20 @@
         @can('sale_create')
         <li class="nav-item dropdown">
             <a class="nav-link btn bg-gradient-primary text-white" href="{{route('backend.admin.cart.index')}}">
-                <i class="fas fa-cart-plus"> POS</i>
+                <i class="fas fa-cart-plus"> {{ __('POS') }}</i>
             </a>
         </li>
         @endcan
+        <li class="nav-item d-flex align-items-center px-2">
+            <x-language-switcher />
+        </li>
+        <li class="nav-item d-flex align-items-center">
+            <button type="button" class="nav-link qpos-theme-toggle" data-theme-toggle
+                aria-label="{{ __('Toggle color theme') }}" title="{{ __('Toggle color theme') }}">
+                <i class="fas fa-moon" data-theme-icon aria-hidden="true"></i>
+                <span class="sr-only">{{ __('Toggle color theme') }}</span>
+            </button>
+        </li>
         <!-- Notifications Dropdown Menu -->
         <!-- <li class="nav-item dropdown">
             <a class="nav-link" data-toggle="dropdown" href="#">
@@ -62,14 +72,14 @@
             <div class="dropdown-menu ">
                 <a href="{{ route('backend.admin.profile') }}" class="dropdown-item dropdown-footer">
                     <i class="fas fa-address-card"></i>
-                    Profile
+                    {{ __('Profile') }}
                 </a>
                 <div class="dropdown-divider"></div>
                 <form action="{{ route('logout') }}" method="post">
                     @csrf
                     <button type="submit" class="dropdown-item dropdown-footer">
                         <i class="fas fa-sign-out-alt"></i>
-                        Logout
+                        {{ __('Logout') }}
                     </button>
                 </form>
             </div>

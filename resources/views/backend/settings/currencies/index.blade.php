@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Currency')
+@section('title', __('Currency'))
 
 @section('content')
 <div class="card">
@@ -21,10 +21,10 @@
             <thead>
               <tr>
                 <th data-orderable="false">#</th>
-                <th>Name</th>
-                <th>Code</th>
-                <th>Symbol</th>
-                <th data-orderable="false">Action</th>
+                <th>{{ __('Name') }}</th>
+                <th>{{ __('Code') }}</th>
+                <th>{{ __('Symbol') }}</th>
+                <th data-orderable="false">{{ __('Action') }}</th>
               </tr>
             </thead>
           </table>

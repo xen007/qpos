@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Create Customer')
+@section('title', __('Update Customer'))
 
 @section('content')
 <div class="card">
@@ -13,31 +13,31 @@
         <div class="row">
           <div class="mb-3 col-md-6">
             <label for="title" class="form-label">
-              Name
+              {{ __('Name') }}
               <span class="text-danger">*</span>
             </label>
-            <input type="text" class="form-control" placeholder="Enter title" name="name"
+            <input type="text" class="form-control" placeholder="{{ __('Enter title') }}" name="name"
               value="{{ $customer->name }}" required>
           </div>
           <div class="mb-3 col-md-6">
             <label for="title" class="form-label">
-              Phone
+              {{ __('Phone') }}
               <span class="text-danger">*</span>
             </label>
-            <input type="text" class="form-control" placeholder="Enter phone" name="phone"
+            <input type="text" class="form-control" placeholder="{{ __('Enter phone') }}" name="phone"
               value="{{ $customer->phone }}" required>
           </div>
           <div class="mb-3 col-md-6">
             <label for="title" class="form-label">
-              Address
+              {{ __('Address') }}
             </label>
-            <input type="text" class="form-control" placeholder="Enter Address" name="address"
+            <input type="text" class="form-control" placeholder="{{ __('Enter Address') }}" name="address"
               value="{{ $customer->address }}">
           </div>
         </div>
         <div class="row">
           <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">Update</button>
+            <button type="submit" class="btn bg-gradient-primary">{{ __('Update') }}</button>
           </div>
         </div>
       </div>

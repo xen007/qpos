@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Models\User;
+use App\Models\Order;
+use App\Models\OrderTransaction;
+use App\Models\Purchase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Rules\ValidImageType;
 use Yajra\DataTables\DataTables;
@@ -33,7 +37,7 @@ class UserManagementController extends Controller
                     '<img class="img-fluid" src="{{ $pro_pic }}" width="50" alt="{{ $name }}">'
                 )
                 ->addColumn('created', function ($data) {
-                    return date('d M, Y', strtotime($data->created_at));
+                    return \Illuminate\Support\Carbon::parse($data->created_at)->translatedFormat('d M, Y');
                 })
                 ->addColumn(
                     'action',
@@ -103,16 +107,16 @@ class UserManagementController extends Controller
         abort_if(!auth()->user()->can('user_suspend'), 403);
         $user = User::findOrFail($id);
         if (demoUserCheck($user->email)) {
-            return back()->with('error', 'Cannot update details of demo user');
+            return back()->with('error', __('Cannot update details of demo user'));
         }
 
         if ($user->is_suspended == $status) {
-            return back()->with('error', 'User already suspended');
+            return back()->with('error', __('User already suspended'));
         } else {
             $user->is_suspended = $status;
             $user->save();
 
-            return back()->with('success', 'User suspended successfully');
+            return back()->with('success', __('User suspended successfully'));
         }
     }
 
@@ -123,10 +127,10 @@ class UserManagementController extends Controller
         ), 403);
         if ($request->isMethod('post')) {
             $request->validate([
-                'name' => 'required',
-                'email' => 'required|email|unique:users,email',
-                'role' => 'required',
-                'password' => 'required',
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email',
+                'role' => 'required|exists:roles,id',
+                'password' => 'required|string|min:8|max:255',
                 'profile_image' => ['file', new ValidImageType]
             ]);
 
@@ -144,7 +148,7 @@ class UserManagementController extends Controller
             $role = Role::find($request->role);
             $newUser->syncRoles($role);
 
-            return to_route('backend.admin.users')->with('success', 'User added successfully');
+            return to_route('backend.admin.users')->with('success', __('User added successfully'));
         } else {
             $roles = Role::all();
             return view('backend.users.create', compact('roles'));
@@ -159,42 +163,54 @@ class UserManagementController extends Controller
 
         if ($request->isMethod('post')) {
             if (demoUserCheck($user->email)) {
-                return back()->with('error', 'Cannot update details of demo user');
+                return back()->with('error', __('Cannot update details of demo user'));
             }
 
             $request->validate([
-                'name' => 'required',
-                'email' => 'required|email|unique:users,email,' . $id,
-                'role' => 'required',
-                'password' => 'required',
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email,' . $id,
+                'role' => 'required|exists:roles,id',
+                'password' => 'nullable|string|min:8|max:255',
                 'profile_image' => ['file', new ValidImageType]
             ]);
 
-            if ($request->name !== $user->name) {
-                $user->name = $request->name;
+            $change = DB::transaction(function () use ($request, $user) {
+                $adminRole = Role::where('name', 'Admin')->lockForUpdate()->first();
+                $role = Role::whereKey($request->role)->lockForUpdate()->firstOrFail();
+
+                if ($user->hasRole('Admin') && $role->name !== 'Admin' && $adminRole && User::role('Admin')->count() <= 1) {
+                    return ['allowed' => false];
+                }
+
+                $oldImage = $user->profile_image;
+                if ($request->name !== $user->name) {
+                    $user->name = $request->name;
+                }
+                if ($request->email !== $user->email) {
+                    $user->email = $request->email;
+                    $user->google_id = null;
+                    $user->is_google_registered = false;
+                }
+                if ($request->filled('password')) {
+                    $user->password = bcrypt($request->input('password'));
+                }
+                if ($request->hasFile('profile_image')) {
+                    $user->profile_image = $this->fileHandler->fileUploadAndGetPath($request->file('profile_image'), '/public/media/users');
+                }
+                $user->save();
+                $user->syncRoles($role);
+
+                return ['allowed' => true, 'old_image' => $request->hasFile('profile_image') ? $oldImage : null];
+            });
+
+            if (!$change['allowed']) {
+                return back()->with('error', __('The last administrator account must keep the administrator role.'));
+            }
+            if ($change['old_image']) {
+                $this->fileHandler->secureUnlink($change['old_image']);
             }
 
-            if ($request->email !== $user->email) {
-                $user->email = $request->email;
-                $user->google_id = null;
-                $user->is_google_registered = false;
-            }
-
-            if ($request->password) {
-                $user->password = bcrypt($request->password);
-            }
-
-            if ($request->hasFile("profile_image")) {
-                $this->fileHandler->secureUnlink($user->profile_image);
-
-                $user->profile_image = $this->fileHandler->fileUploadAndGetPath($request->file("profile_image"), "/public/media/users");
-            }
-            $user->save();
-
-            $role = Role::find($request->role);
-            $user->syncRoles($role);
-
-            return to_route('backend.admin.users')->with('success', 'User updated successfully');
+            return to_route('backend.admin.users')->with('success', __('User updated successfully'));
         } else {
             if ($id == auth()->id()) {
                 return to_route('backend.admin.profile');
@@ -210,15 +226,36 @@ class UserManagementController extends Controller
         abort_if(!auth()->user()->can('user_delete'), 403);
 
         if ($id == auth()->id()) {
-            return back()->with('error', 'Can not delete your self');
+            return back()->with('error', __('You cannot delete your own account.'));
         }
         if ($id == 1) {
-            return back()->with('error', 'Can not delete master account');
+            return back()->with('error', __('The primary administrator account cannot be deleted.'));
         }
 
-        $user = User::findOrFail($id);
-        $user->delete();
+        $deletionBlock = DB::transaction(function () use ($id) {
+            $user = User::whereKey($id)->lockForUpdate()->firstOrFail();
+            $adminRole = Role::where('name', 'Admin')->lockForUpdate()->first();
+            if ($user->hasRole('Admin') && $adminRole && User::role('Admin')->count() <= 1) {
+                return 'last_admin';
+            }
+            if (
+                Order::where('user_id', $user->id)->exists()
+                || Purchase::where('user_id', $user->id)->exists()
+                || OrderTransaction::where('user_id', $user->id)->exists()
+            ) {
+                return 'history';
+            }
+            $user->delete();
+            return null;
+        });
 
-        return back()->with('success', 'User deleted successfully');
+        if ($deletionBlock === 'last_admin') {
+            return back()->with('error', __('The last administrator account cannot be deleted.'));
+        }
+        if ($deletionBlock === 'history') {
+            return back()->with('error', __('Users with sales or purchase history cannot be deleted.'));
+        }
+
+        return back()->with('success', __('User deleted successfully'));
     }
 }

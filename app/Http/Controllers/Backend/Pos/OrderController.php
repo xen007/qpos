@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderTransaction;
 use App\Models\PosCart;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,30 +23,33 @@ class OrderController extends Controller
     {
         $this->authorizeSale('sale_view');
         if ($request->ajax()) {
-            $orders = Order::with('customer')->get();
+            $orders = Order::query()
+                ->with('customer')
+                ->withSum('products as item_quantity_sum', 'quantity')
+                ->select('orders.*');
             return DataTables::of($orders)
                 ->addIndexColumn()
                 ->addColumn('saleId', fn($data) => "#" . $data->id)
                 ->addColumn('customer', fn($data) => $data->customer->name ?? '-')
-                ->addColumn('item', fn($data) => $data->total_item)
+                ->addColumn('item', fn($data) => (int) ($data->item_quantity_sum ?? 0))
                 ->addColumn('sub_total', fn($data) => number_format($data->sub_total, 2, '.', ','))
                 ->addColumn('discount', fn($data) => number_format($data->discount, 2, '.', ','))
                 ->addColumn('total', fn($data) => number_format($data->total, 2, '.', ','))
                 ->addColumn('paid', fn($data) => number_format($data->paid, 2, '.', ','))
                 ->addColumn('due', fn($data) => number_format($data->due, 2, '.', ','))
                 ->addColumn('status', fn($data) => $data->status
-                    ? '<span class="badge bg-primary">Paid</span>'
-                    : '<span class="badge bg-danger">Due</span>')
+                    ? '<span class="badge bg-primary">' . e(__('Paid')) . '</span>'
+                    : '<span class="badge bg-danger">' . e(__('Due')) . '</span>')
                 ->addColumn('action', function ($data) {
                     $buttons = '';
 
-                    $buttons .= '<a class="btn btn-success btn-sm" href="' . route('backend.admin.orders.invoice', $data->id) . '"><i class="fas fa-file-invoice"></i> Invoice</a>';
+                    $buttons .= '<a class="btn btn-success btn-sm" href="' . route('backend.admin.orders.invoice', $data->id) . '"><i class="fas fa-file-invoice"></i> ' . e(__('Invoice')) . '</a>';
 
-                    $buttons .= '<a class="btn btn-secondary btn-sm" href="' . route('backend.admin.orders.pos-invoice', $data->id) . '"><i class="fas fa-file-invoice"></i> Pos Invoice</a>';
-                    if (!$data->status) {
-                        $buttons .= '<a class="btn btn-warning btn-sm" href="' . route('backend.admin.due.collection', $data->id) . '"><i class="fas fa-receipt"></i> Due Collection</a>';
+                    $buttons .= '<a class="btn btn-secondary btn-sm" href="' . route('backend.admin.orders.pos-invoice', $data->id) . '"><i class="fas fa-file-invoice"></i> ' . e(__('POS Receipt')) . '</a>';
+                    if (!$data->status && auth()->user()->can('sale_update')) {
+                        $buttons .= '<a class="btn btn-warning btn-sm" href="' . route('backend.admin.due.collection', $data->id) . '"><i class="fas fa-receipt"></i> ' . e(__('Collect Due')) . '</a>';
                     }
-                    $buttons .= '<a class="btn btn-primary btn-sm" href="' . route('backend.admin.orders.transactions', $data->id) . '"><i class="fas fa-exchange-alt"></i> Transactions</a>';
+                    $buttons .= '<a class="btn btn-primary btn-sm" href="' . route('backend.admin.orders.transactions', $data->id) . '"><i class="fas fa-exchange-alt"></i> ' . e(__('Transactions')) . '</a>';
                     return $buttons;
                 })
                 ->rawColumns(['status', 'action'])
@@ -72,19 +76,20 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
-            'order_discount' => ['nullable', 'numeric', 'min:0'],
-            'paid' => ['nullable', 'numeric', 'min:0'],
+            'order_discount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'paid' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
         ]);
 
         $order = DB::transaction(function () use ($request, $validated) {
+            $userId = $request->user()->id;
+            User::whereKey($userId)->lockForUpdate()->firstOrFail();
             $carts = PosCart::where('user_id', $request->user()->id)
                 ->orderBy('product_id')
-                ->lockForUpdate()
                 ->get();
 
             if ($carts->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'cart' => 'The cart is empty.',
+                    'cart' => __('The cart is empty.'),
                 ]);
             }
 
@@ -94,27 +99,35 @@ class OrderController extends Controller
             ]);
 
             $productTotal = 0.0;
+            $subTotal = 0.0;
+            $maxStoredAmount = 99999999.99;
 
             foreach ($carts as $cart) {
                 $product = Product::whereKey($cart->product_id)->lockForUpdate()->firstOrFail();
 
                 if (!$product->status || $product->quantity < $cart->quantity) {
                     throw ValidationException::withMessages([
-                        'cart' => 'A product is no longer available in the requested quantity.',
+                        'cart' => __('A product is no longer available in the requested quantity.'),
                     ]);
                 }
 
                 $unitPrice = (float) $product->price;
                 $discountedUnitPrice = (float) $product->discounted_price;
-                if ($discountedUnitPrice < 0) {
+                if ($unitPrice < 0 || $discountedUnitPrice < 0 || $discountedUnitPrice > $unitPrice) {
                     throw ValidationException::withMessages([
-                        'cart' => 'A product has an invalid sale price.',
+                        'cart' => __('A product has an invalid sale price.'),
                     ]);
                 }
 
                 $lineSubTotal = round($unitPrice * $cart->quantity, 2);
                 $lineTotal = round($discountedUnitPrice * $cart->quantity, 2);
                 $lineDiscount = round($lineSubTotal - $lineTotal, 2);
+
+                if ($lineSubTotal > $maxStoredAmount || $lineTotal > $maxStoredAmount || $productTotal + $lineTotal > $maxStoredAmount || $subTotal + $lineSubTotal > $maxStoredAmount) {
+                    throw ValidationException::withMessages([
+                        'cart' => __('The sale total exceeds the supported limit.'),
+                    ]);
+                }
 
                 $order->products()->create([
                     'quantity' => $cart->quantity,
@@ -128,12 +141,13 @@ class OrderController extends Controller
 
                 $product->decrement('quantity', $cart->quantity);
                 $productTotal += $lineTotal;
+                $subTotal += $lineSubTotal;
             }
 
             $discount = (float) ($validated['order_discount'] ?? 0);
             if ($discount > $productTotal) {
                 throw ValidationException::withMessages([
-                    'order_discount' => 'The order discount cannot exceed the sale total.',
+                    'order_discount' => __('The order discount cannot exceed the sale total.'),
                 ]);
             }
 
@@ -161,13 +175,13 @@ class OrderController extends Controller
                 ]);
             }
 
-            PosCart::where('user_id', $request->user()->id)->delete();
+            PosCart::where('user_id', $userId)->delete();
 
             return $order->fresh();
         });
 
         return response()->json([
-            'message' => 'Order completed successfully',
+            'message' => __('Order completed successfully'),
             'order' => $order,
         ], 200);
     }
@@ -227,7 +241,7 @@ class OrderController extends Controller
 
                 if ($amount > (float) $order->due) {
                     throw ValidationException::withMessages([
-                        'amount' => 'The amount cannot exceed the remaining balance.',
+                        'amount' => __('The amount cannot exceed the remaining balance.'),
                     ]);
                 }
 

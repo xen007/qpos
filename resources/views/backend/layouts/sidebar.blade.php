@@ -26,7 +26,7 @@ $route = request()->route()->getName();
                     class="nav-link {{ $route === 'backend.admin.dashboard' ? 'active' : '' }}">
                     <i class="nav-icon fas fa-tachometer-alt"></i>
                     <p>
-                        Dashboard
+                        {{ __('Dashboard') }}
                     </p>
                 </a>
             </li>
@@ -37,7 +37,7 @@ $route = request()->route()->getName();
                     class="nav-link {{ $route === 'backend.admin.cart.index' ? 'active' : '' }}">
                     <i class="nav-icon fas fa-cart-plus"></i>
                     <p>
-                        POS
+                        {{ __('POS') }}
                     </p>
                 </a>
             </li>
@@ -59,7 +59,7 @@ $route = request()->route()->getName();
                 <a href="#" class="nav-link">
                     <i class="fas fa-user-circle nav-icon"></i>
                     <p>
-                        People
+                        {{ __('People') }}
                         <i class="fas fa-angle-left right"></i>
                     </p>
                 </a>
@@ -69,7 +69,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.customers.index')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.customers.index','backend.admin.customers.edit','backend.admin.customers.create']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Customer</p>
+                            <p>{{ __('Customer') }}</p>
                         </a>
                     </li>
                     @endif
@@ -80,7 +80,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.suppliers.index')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.suppliers.index','backend.admin.suppliers.edit','backend.admin.suppliers.create']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Supplier</p>
+                            <p>{{ __('Supplier') }}</p>
                         </a>
                     </li>
                     @endif
@@ -100,7 +100,7 @@ $route = request()->route()->getName();
 
                     <i class="fas fa-box nav-icon"></i>
                     <p>
-                        Product
+                        {{ __('Product') }}
                         <i class="fas fa-angle-left right"></i>
                     </p>
                 </a>
@@ -110,7 +110,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.products.index')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.products.index', 'backend.admin.products.edit']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Product List</p>
+                            <p>{{ __('Product List') }}</p>
                         </a>
                     </li>
                     @endif
@@ -119,7 +119,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.products.create')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.products.create']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Product Create</p>
+                            <p>{{ __('Product Create') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -129,7 +129,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.products.import')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.products.import']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Product Import</p>
+                            <p>{{ __('Product Import') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -138,7 +138,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.brands.index')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.brands.index', 'backend.admin.brands.create', 'backend.admin.brands.edit']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Brand</p>
+                            <p>{{ __('Brand') }}</p>
                         </a>
                     </li>@endif
                     @if (auth()->user()->hasAnyPermission(['category_create','category_view','category_update','category_delete']))
@@ -146,7 +146,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.categories.index')}}"
                             class="nav-link {{ request()->routeIs([ 'backend.admin.categories.index', 'backend.admin.categories.create', 'backend.admin.categories.edit']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Category</p>
+                            <p>{{ __('Category') }}</p>
                         </a>
                     </li>@endif
                     @if (auth()->user()->hasAnyPermission(['unit_create','unit_view','unit_update','unit_delete']))
@@ -154,7 +154,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.units.index')}}"
                             class="nav-link {{ request()->routeIs([ 'backend.admin.units.index', 'backend.admin.units.create', 'backend.admin.units.edit']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Unit</p>
+                            <p>{{ __('Unit') }}</p>
                         </a>
                     </li>
                     @endif
@@ -169,7 +169,7 @@ $route = request()->route()->getName();
                 <a href="#" class="nav-link {{ request()->routeIs(['backend.admin.orders.index', 'backend.admin.orders.create', 'backend.admin.orders.edit']) ? 'menu-open' : '' }}">
                     <i class="fas fa-tags nav-icon"></i>
                     <p>
-                        Sale
+                        {{ __('Sale') }}
                         <i class="fas fa-angle-left right"></i>
                     </p>
                 </a>
@@ -179,7 +179,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.orders.index')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.orders.index']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Sale List</p>
+                            <p>{{ __('Sale List') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -196,7 +196,7 @@ $route = request()->route()->getName();
                 <a href="#" class="nav-link {{ request()->routeIs(['backend.admin.purchase.index', 'backend.admin.purchase.create', 'backend.admin.purchase.edit']) ? 'menu-open' : '' }}">
                     <i class="fas fa-shopping-bag nav-icon"></i>
                     <p>
-                        Purchase
+                        {{ __('Purchase') }}
                         <i class="fas fa-angle-left right"></i>
                     </p>
                 </a>
@@ -206,7 +206,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.purchase.index')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.purchase.index']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Purchase List</p>
+                            <p>{{ __('Purchase List') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -215,7 +215,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.purchase.create')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.purchase.create']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Purchase Create</p>
+                            <p>{{ __('Purchase Create') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -231,7 +231,7 @@ $route = request()->route()->getName();
                 <a href="#" class="nav-link {{ request()->routeIs(['backend.admin.sale.report','backend.admin.sale.summery']) ? 'menu-open' : '' }}">
                     <i class="fas fa-chart-bar nav-icon"></i>
                     <p>
-                        Reports
+                        {{ __('Reports') }}
                         <i class="fas fa-angle-left right"></i>
                     </p>
                 </a>
@@ -241,7 +241,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.sale.summery')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.sale.summery']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Sales Summary</p>
+                            <p>{{ __('Sales Summary') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -250,7 +250,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.sale.report')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.sale.report']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Sales</p>
+                            <p>{{ __('Sales') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -259,7 +259,7 @@ $route = request()->route()->getName();
                         <a href="{{route('backend.admin.inventory.report')}}"
                             class="nav-link {{ request()->routeIs(['backend.admin.inventory.report']) ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>Inventory</p>
+                            <p>{{ __('Inventory') }}</p>
                         </a>
                     </li>
                     @endcan
@@ -296,13 +296,13 @@ $route = request()->route()->getName();
             'website_status_settings',
             'invoice_settings',
             ]))
-            <li class="nav-header">SETTINGS</li>
+            <li class="nav-header">{{ __('Settings') }}</li>
 
             <li class="nav-item">
                 <a href="#" class="nav-link">
                     <i class="fas fa-cog nav-icon"></i>
                     <p>
-                        Website Settings
+                        {{ __('Website Settings') }}
                         <i class="fas fa-angle-left right"></i>
                     </p>
                 </a>
@@ -321,7 +321,7 @@ $route = request()->route()->getName();
                         <a href="{{ route('backend.admin.settings.website.general') }}?active-tab=website-info"
                             class="nav-link {{ $route === 'backend.admin.settings.website.general' ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>General Settings</p>
+                            <p>{{ __('General Settings') }}</p>
                         </a>
                     </li>
                     @endif
@@ -330,7 +330,7 @@ $route = request()->route()->getName();
                         <a href="{{ route('backend.admin.currencies.index') }}"
                             class="nav-link {{ request()->routeIs([ 'backend.admin.currencies.index', 'backend.admin.currencies.create', 'backend.admin.currencies.edit']) ? 'active' : '' }}">
                             <i class="fas fa-coins nav-icon"></i>
-                            <p>Currency</p>
+                            <p>{{ __('Currency') }}</p>
                         </a>
                     </li>
                     @endif
@@ -345,7 +345,7 @@ $route = request()->route()->getName();
                         <a href="#" class="nav-link d-flex justify-content-between align-items-center">
                             <span>
                                 <i class="fas fa-chevron-circle-right nav-icon"></i>
-                                Roles & Permissions
+                                {{ __('Roles & Permissions') }}
                             </span>
                             <span class="d-flex justify-content-between align-items-center">
                                 <i class="fas fa-angle-left right"></i>
@@ -357,7 +357,7 @@ $route = request()->route()->getName();
                                 <a href="{{ route('backend.admin.roles') }}"
                                     class="nav-link {{ $route === 'backend.admin.roles' ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Roles</p>
+                                    <p>{{ __('Roles') }}</p>
                                 </a>
                             </li>
                             @endcan
@@ -366,7 +366,7 @@ $route = request()->route()->getName();
                                 <a href="{{ route('backend.admin.permissions') }}"
                                     class="nav-link {{ $route === 'backend.admin.permissions' ? 'active' : '' }}">
                                     <i class="far fa-circle nav-icon"></i>
-                                    <p>Permissions</p>
+                                    <p>{{ __('Permissions') }}</p>
                                 </a>
                             </li>
                             @endcan
@@ -385,7 +385,7 @@ $route = request()->route()->getName();
                         <a href="{{ route('backend.admin.users') }}"
                             class="nav-link {{ $route === 'backend.admin.users' ? 'active' : '' }}">
                             <i class="fas fa-circle nav-icon"></i>
-                            <p>User Management</p>
+                            <p>{{ __('User Management') }}</p>
                         </a>
                     </li>
                     @endif

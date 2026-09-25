@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        Reset Password | {{ readConfig('site_name') }}
+        {{ __('Password Reset') }} | {{ readConfig('site_name') }}
     </title>
     <!-- FAVICON ICON -->
     <link rel="shortcut icon" href="{{ assetImage(readconfig('site_logo')) }}" type="image/svg+xml">
@@ -35,8 +35,8 @@
                     <a href="{{ route('frontend.home') }}" class="logo">
                         <img src="{{ assetImage(readconfig('site_logo')) }}" width="200px" alt="brand-logo">
                     </a>
-                    <h3 class="form-title">Password Reset</h3>
-                    <p class="form-des">Please enter the code we emailed you.</p>
+                    <h3 class="form-title">{{ __('Password Reset') }}</h3>
+                    <p class="form-des">{{ __('Please enter the code we emailed you.') }}</p>
                 </div>
                 <div class="authentication-form-content">
                     <div class="row g-4">
@@ -52,19 +52,19 @@
 
                         <div class="col-12">
                             <div class="form-group">
-                                <button type="submit" class="create-account-btn w-100">Continue</button>
+                                <button type="submit" class="create-account-btn w-100">{{ __('Continue') }}</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="authentication-form-footer">
-                    <form action="{{ route('resend.otp') }}" method="post" class="mt-2">
-                        @csrf
-                        <button type="submit" class="btn btn-link p-0">Resend code</button>
-                    </form>
-                    <p>Back to <a href="{{ route('login') }}">Log in </a></p>
-                </div>
             </form>
+            <div class="authentication-form-footer">
+                <form action="{{ route('resend.otp') }}" method="post" class="mt-2">
+                    @csrf
+                    <button type="submit" class="btn btn-link p-0">{{ __('Resend code') }}</button>
+                </form>
+                <p>{{ __('Back to') }} <a href="{{ route('login') }}">{{ __('Log in') }}</a></p>
+            </div>
         </div>
     </section>
     <!-- AUTHENTICATION-END -->

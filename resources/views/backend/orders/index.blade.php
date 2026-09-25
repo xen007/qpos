@@ -1,6 +1,6 @@
 @extends('backend.master')
 
-@section('title', 'Sale')
+@section('title', __('Sales'))
 
 @section('content')
 <div class="card">
@@ -12,16 +12,16 @@
             <thead>
               <tr>
                 <th data-orderable="false">#</th>
-                <th>SaleId</th>
-                <th>Customer</th>
-                <th>Item</th>
-                <th>Sub Total {{currency()->symbol??''}}</th>
-                <th>Discount {{currency()->symbol??''}}</th>
-                <th>Total {{currency()->symbol??''}}</th>
-                <th>Paid {{currency()->symbol??''}}</th>
-                <th>Due {{currency()->symbol??''}}</th>
-                <th>Status</th>
-                <th data-orderable="false">Action</th>
+                <th>{{ __('Sale ID') }}</th>
+                <th>{{ __('Customer') }}</th>
+                <th>{{ __('Items') }}</th>
+                <th>{{ __('Sub Total') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Discount') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Total') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Paid') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Due') }} {{currency()->symbol??''}}</th>
+                <th>{{ __('Status') }}</th>
+                <th data-orderable="false">{{ __('Action') }}</th>
               </tr>
             </thead>
           </table>
@@ -40,6 +40,23 @@
       processing: true,
       serverSide: true,
       ordering: true,
+      language: {
+        emptyTable: @json(__('No data available in table')),
+        info: @json(__('Showing _START_ to _END_ of _TOTAL_ entries')),
+        infoEmpty: @json(__('Showing 0 to 0 of 0 entries')),
+        infoFiltered: @json(__('(filtered from _MAX_ total entries)')),
+        lengthMenu: @json(__('Show _MENU_ entries')),
+        loadingRecords: @json(__('Loading...')),
+        processing: @json(__('Processing...')),
+        search: @json(__('Search:')),
+        zeroRecords: @json(__('No matching records found')),
+        paginate: {
+          first: @json(__('First')),
+          last: @json(__('Last')),
+          next: @json(__('Next')),
+          previous: @json(__('Previous'))
+        }
+      },
       order: [
         [1, 'desc']
       ],
@@ -53,7 +70,7 @@
         },
         {
           data: 'saleId',
-          name: 'saleId'
+          name: 'id'
         },
         {
           data: 'customer',
@@ -61,7 +78,7 @@
         },
         {
           data: 'item',
-          name: 'item'
+          name: 'item_quantity_sum'
         },
         {
           data: 'sub_total',

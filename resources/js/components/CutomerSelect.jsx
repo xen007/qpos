@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from "react";
 import CreatableSelect from "react-select/creatable";
 import axios from "axios";
+import { toast } from "sonner";
+import getErrorMessage from "../utils/getErrorMessage";
+import translate from "../utils/translate";
 
 const CustomerSelect = ({ setCustomerId }) => {
     const [customers, setCustomers] = useState([]);
-    const [selectedCustomer, setSelectedCustomer] = useState({value:1,label:"Walking Customer"});
+    const [selectedCustomer, setSelectedCustomer] = useState({
+        value: 1,
+        label: translate("Walking Customer"),
+    });
 
     // Fetch existing customers from the backend
     useEffect(() => {
@@ -33,7 +39,7 @@ const CustomerSelect = ({ setCustomerId }) => {
                 setSelectedCustomer(newOption);
             })
             .catch((error) => {
-                console.error("Error creating customer:", error);
+                toast.error(getErrorMessage(error));
             });
     };
 
@@ -47,8 +53,12 @@ const CustomerSelect = ({ setCustomerId }) => {
             options={customers}
             onChange={handleChange}
             onCreateOption={handleCreateCustomer} // Handle creating a new customer
+            formatCreateLabel={(inputValue) =>
+                `${translate("Create customer:")} ${inputValue}`
+            }
+            noOptionsMessage={() => translate("No options")}
             value={selectedCustomer}
-            placeholder="Select or create customer"
+            placeholder={translate("Select or create customer")}
         />
     );
 };
