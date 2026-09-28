@@ -28,7 +28,7 @@
     <section class="authentications">
         <div class="left-content">
             <figure class="">
-                <img src="{{ asset('assets/images/authentication/register.svg') }}" alt="register image ">
+                <img src="{{ asset('assets/images/authentication/register.svg') }}" alt="">
             </figure>
         </div>
         <div class="right-content">
@@ -37,7 +37,7 @@
                 @csrf
                 <div class="authentication-form-header">
                     <a href="{{ route('frontend.home') }}" class="logo">
-                        <img src="{{ assetImage(readconfig('site_logo')) }}" width="200px" alt="brand-logo">
+                        <img src="{{ assetImage(readconfig('site_logo')) }}" width="200px" alt="{{ readConfig('site_name') }}">
                     </a>
                     <h3 class="form-title">{{ __('Sign in') }}</h3>
                     <p class="form-des">{{ __('Welcome back! Sign in to access your account.') }}</p>

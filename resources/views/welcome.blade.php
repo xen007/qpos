@@ -1,7 +1,7 @@
 @extends('backend.master')
 
-@section('title', 'Test')
+@section('title', __('Home'))
 
 @section('content')
-    <h1>{{ env('APP_NAME') }}</h1>
+    <h1>{{ readConfig('site_name') }}</h1>
 @endsection

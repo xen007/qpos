@@ -346,7 +346,7 @@
                                                             <div
                                                                 style="font-size: 14px; line-height: 140%; text-align: center; word-wrap: break-word;">
                                                                 <p style="line-height: 140%;">
-                                                                    {{ env('WEBSITE_NAME') }}
+                                                                    {{ readConfig('site_name') }}
                                                                 </p>
                                                             </div>
 
