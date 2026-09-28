@@ -267,7 +267,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'profile_image' => ['file', new ValidImageType]
+            'profile_image' => ['file', new ValidImageType, 'max:2048']
         ]);
 
         if ($request->name !== $user->name) {

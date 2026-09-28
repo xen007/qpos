@@ -2,7 +2,9 @@
 
 namespace App\Trait;
 
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Facades\Image;
 
 class FileHandler
@@ -66,11 +68,44 @@ class FileHandler
 
     public function fileUploadAndGetPath($file, $path = "/public/media/others")
     {
-        $file_name = time() . "_" . $file->getClientOriginalName();
+        // Extension deduced from the real mime type, never from the client file name
+        $extension = $this->extensionFromMimeType($file->getMimeType());
 
-        $file->storeAs($path, $file_name);
+        // File name generated server side only
+        $file_name = time() . "_" . bin2hex(random_bytes(16)) . "." . $extension;
+        $storingPath = storage_path() . "/app" . $path . "/" . $file_name;
+
+        File::ensureDirectoryExists(dirname($storingPath));
+
+        // Re-encode the image so any payload added to the uploaded file is dropped
+        Image::make($file->getRealPath())->save($storingPath);
 
         // Remove Public from link
         return substr($path . "/" . $file_name, 8);
+    }
+
+    /**
+     * Resolve the file extension matching a real mime type.
+     */
+    protected function extensionFromMimeType($mimeType)
+    {
+        $extensions = [
+            "image/jpeg" => "jpg",
+            "image/png" => "png",
+            "image/gif" => "gif",
+            "image/bmp" => "bmp",
+            "image/x-ms-bmp" => "bmp",
+            "image/webp" => "webp",
+        ];
+
+        $extension = $extensions[strtolower((string) $mimeType)] ?? null;
+
+        if (is_null($extension)) {
+            throw ValidationException::withMessages([
+                'image' => __('validation.invalid_image_content'),
+            ]);
+        }
+
+        return $extension;
     }
 }

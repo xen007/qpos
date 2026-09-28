@@ -192,13 +192,15 @@
 @can('dashboard_view')
 <script src="{{ asset('plugins/moment/moment-with-locales.min.js') }}"></script>
 <script src="{{ asset('plugins/daterangepicker/daterangepicker.js') }}"></script>
-<script type="application/json" id="qpos-dashboard-chart-data">@json([
+<script type="application/json" id="qpos-dashboard-chart-data">
+{!! json_encode([
     'dates' => $dates,
     'dailySales' => $totalAmounts,
     'months' => $months,
     'monthlySales' => $totalAmountMonth,
     'salesLabel' => __('Sales'),
-])</script>
+]) !!}
+</script>
 @vite('resources/js/dashboard.js')
 <script>
     $(function() {

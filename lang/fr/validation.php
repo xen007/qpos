@@ -11,6 +11,8 @@ return [
     'in' => 'La valeur sélectionnée pour :attribute est invalide.',
     'integer' => 'Le champ :attribute doit être un nombre entier.',
     'mimes' => 'Le fichier :attribute doit être de type :values.',
+    'valid_image_type' => 'Le champ :attribute doit être un fichier image valide (JPEG, JPG, PNG, GIF, BMP ou WebP).',
+    'invalid_image_content' => 'Le fichier téléversé n\'est pas une image valide.',
     'max' => [
         'numeric' => 'Le champ :attribute ne peut pas être supérieur à :max.',
         'string' => 'Le champ :attribute ne peut pas contenir plus de :max caractères.',

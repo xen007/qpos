@@ -11,6 +11,8 @@ return [
     'in' => 'The selected :attribute is invalid.',
     'integer' => 'The :attribute field must be an integer.',
     'mimes' => 'The :attribute field must be a file of type: :values.',
+    'valid_image_type' => 'The :attribute must be a valid image file (JPEG, JPG, PNG, GIF, BMP or WebP).',
+    'invalid_image_content' => 'The uploaded file is not a valid image.',
     'max' => [
         'numeric' => 'The :attribute field must not be greater than :max.',
         'string' => 'The :attribute field must not be greater than :max characters.',

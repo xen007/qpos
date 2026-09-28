@@ -65,9 +65,9 @@ class WebsiteSettingController extends Controller
     {
         abort_if(!auth()->user()->can('style_settings'), 403);
         $request->validate([
-            'site_logo' => ['file', new ValidImageType],
-            'favicon_icon' => ['file', new ValidImageType],
-            'favicon_icon_apple' => ['file', new ValidImageType],
+            'site_logo' => ['file', new ValidImageType, 'max:2048'],
+            'favicon_icon' => ['file', new ValidImageType, 'max:2048'],
+            'favicon_icon_apple' => ['file', new ValidImageType, 'max:2048'],
         ]);
 
         writeConfig('newsletter_subscribe', $request->newsletter_subscribe);

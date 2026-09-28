@@ -131,7 +131,7 @@ class UserManagementController extends Controller
                 'email' => 'required|email|max:255|unique:users,email',
                 'role' => 'required|exists:roles,id',
                 'password' => 'required|string|min:8|max:255',
-                'profile_image' => ['file', new ValidImageType]
+                'profile_image' => ['file', new ValidImageType, 'max:2048']
             ]);
 
             $newUser = new User();
@@ -171,7 +171,7 @@ class UserManagementController extends Controller
                 'email' => 'required|email|max:255|unique:users,email,' . $id,
                 'role' => 'required|exists:roles,id',
                 'password' => 'nullable|string|min:8|max:255',
-                'profile_image' => ['file', new ValidImageType]
+                'profile_image' => ['file', new ValidImageType, 'max:2048']
             ]);
 
             $change = DB::transaction(function () use ($request, $user) {
