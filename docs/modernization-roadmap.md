@@ -178,14 +178,16 @@ Faire évoluer QPOS vers une application de point de vente professionnelle, sûr
 - Prochain : Sprint 2 — i18n + thème
 
 
-## Sprint 2 — Finalisation Lot 1 — code terminé, commits et recette en attente (28/09/2026)
+## Sprint 2 — Finalisation Lot 1 (i18n + thème) — TERMINÉ côté code, poussé (28/09/2026)
 
-- Code livré, **non commité** : L1 flash/middleware, L2 colonnes DataTables des 5 contrôleurs, L3 vues backend, L4 messages de validation FR/EN, L5 mails + page d'accueil + pages d'authentification, L6a-f thème sombre, L6g contrastes AA, durcissement `.htaccess`.
-- 43 fichiers modifiés ou créés par l'agent ; le présent document reste la modification du propriétaire.
-- Catalogues : 428 → 449 clés, parité FR/EN exacte, aucun doublon. `lang/*/validation.php` : +3 règles (`digits`, `image`, `url`) et +33 libellés de champs ; ces règles affichaient auparavant la clé brute (`validation.image`).
+- Livré et commité : L1 flash/middleware, L2 colonnes DataTables des 5 contrôleurs, L3 vues backend, L4 messages de validation FR/EN, L5 mails + `env()` → `readConfig()` + accessibilité, L6a-f thème sombre, L6g contrastes AA, durcissement `.htaccess`, nettoyage du code mort.
+- Catalogues : 428 → 449 clés, parité FR/EN exacte, aucun doublon. `lang/*/validation.php` : 24 règles / 40 libellés de champs, dont `digits`, `image` et `url` qui affichaient auparavant la clé brute (`validation.image`).
 - Thème sombre : navbar, sidebar, `.bg-white`/`.bg-light`, select2, tempusdominus, flèche `select`, champs désactivés, croix des modales, tableaux + pagination DataTables + boutons d'export, impression (`@media print`), boutons/badges (3,04–3,98:1 → 5,0–5,8:1), toasts warning (1,63:1) et success (3,13:1) → plus de 5:1, scrollbars OverlayScrollbars.
-- Sécurité : `.htaccess` racine (`Require all denied`) + `public/.htaccess` (`Require all granted`) → 10 URL sensibles en 403 (`.env`, `.git`, journaux, sources) ; application et images toujours servies.
-- Vérifications automatiques : `php -l` sur les fichiers PHP touchés, compilation Blade de 29 vues, rendu réel des mails FR/EN, parité des catalogues, smoke test 40 routes × FR/EN + 12 endpoints DataTables en AJAX, sondes HTTP sur `.htaccess`. Aucun test automatisé n'a été ajouté au dépôt.
-- **Restant : les 5 commits (propriétaire), la recette visuelle navigateur (19 écrans × FR/EN × clair/sombre) et les arbitrages éventuels.**
-- Rectificatifs par rapport à la note précédente : les limites d'images sont 2 Mo pour profil/logo/favicon et pour produits/marques/catégories (5 Mo concerne l'import de produits) ; les commits A à E ne sont pas encore créés.
-- Prochain : Sprint 3 — Layout Tailwind + architecture, une fois le Sprint 2 commité et recetté.
+- Sécurité : `.htaccess` racine (`Require all denied`) + `public/.htaccess` (`Require all granted`) → `.env`, `.git`, journaux, sources et `artisan` en 403 ; application et images toujours servies.
+- Configuration : `APP_URL` corrigé en `http://localhost/qpos/public` (l'ancienne valeur `http://localhost/` produisait un double slash dans `config('filesystems.disks.public.url')`) ; `php artisan config:clear` exécuté alors qu'aucun cache de configuration n'était actif ; aucun `env()` actif ne subsiste dans les vues.
+- Nettoyage : `FileHandler::uploader()` supprimée (méthode morte) ; vues jamais rendues supprimées (`welcome.blade.php`, `mail/login-otp.blade.php`, `mail/support-mail.blade.php`, récupérables via `git show`) ; sujet du mail de réinitialisation traduit (il était codé en dur en anglais).
+- Vérifications automatiques : `php -l`, compilation Blade (29 vues), rendu réel des mails FR/EN, parité des catalogues, smoke test 40 routes × FR/EN + 12 endpoints DataTables en AJAX, sondes HTTP (`.htaccess` et `APP_URL`). Aucun test automatisé n'a été ajouté au dépôt.
+- Commits : `4d376d0`, `e21289a`, `5dd0e4d`, `211a061`, `099fc76`, `c624934`, `68d5290` — branche `main` synchronisée avec `origin/main`.
+- **Seul restant : la recette visuelle navigateur** (19 écrans × FR/EN × clair/sombre), non exécutable côté agent : bascule de thème et persistance, sidebar/navbar, select2, tempusdominus, pagination et rayures DataTables, modales, impression d'un reçu, mails réels (désormais en FR).
+- Backlog hors sprint : `readConfig`/`writeConfig` écrivent `config/system.php` en clair (Lots 6/9) ; montée Laravel 13 après PHP 8.3+ (Lot 2).
+- Prochain : Sprint 3 — Layout Tailwind + architecture.
