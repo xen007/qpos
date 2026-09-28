@@ -9,23 +9,6 @@ use Intervention\Image\Facades\Image;
 
 class FileHandler
 {
-    public function uploader($file, $path, $width, $height)
-    {
-        $file_name = time() . "_" . uniqid() . "_" . $file->getClientOriginalName();
-        $storingPath = storage_path() . "/app" . $path . "/" . $file_name;
-
-        if (!file_exists($path)) {
-            Storage::makeDirectory($path);
-        }
-
-        Image::make($file->getRealPath())->resize($width, $height, function ($constraint) {
-            $constraint->aspectRatio();
-        })->save($storingPath);
-
-        // Remove Public from link
-        return substr($path . "/" . $file_name, 8);
-    }
-
     public function uploadToPublic($file, $path = "/assets/images")
     {
         $file_name = time() . "_" . uniqid() . "_" . $file->getClientOriginalName();
