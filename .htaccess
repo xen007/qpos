@@ -1,0 +1,24 @@
+# ==========================================================================
+# QPOS - protection de la racine du projet
+# --------------------------------------------------------------------------
+# Ce projet est place dans le DocumentRoot Apache (C:/xampp/htdocs) : sans ce
+# fichier, .env, .git/, storage/logs/, config/system.php, artisan et
+# composer.json sont telechargeables, et le listing des repertoires est actif.
+#
+# Seul le dossier public/ doit etre servi. Il re-autorise l'acces pour lui-meme
+# via public/.htaccess (un Require defini dans un .htaccess enfant remplace
+# celui herite du parent).
+# ==========================================================================
+
+# Pas de listing de repertoires
+Options -Indexes
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Compatibilite Apache 2.2
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

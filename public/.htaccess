@@ -1,3 +1,10 @@
+# Re-autorise l'acces a public/ : la racine du projet est interdite par
+# le .htaccess parent (Require all denied). Un Require defini ici remplace
+# celui herite du parent.
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
