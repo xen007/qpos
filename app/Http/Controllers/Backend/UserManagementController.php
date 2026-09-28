@@ -45,26 +45,26 @@ class UserManagementController extends Controller
                     <a class="btn btn-sm bg-gradient-primary"
                         href="{{ route(\'backend.admin.user.edit\', $id) }}">
                         <i class="fas fa-edit"></i>
-                        Edit
+                        {{ __(\'Edit\') }}
                     </a>
                     <form action="{{ route(\'backend.admin.user.delete\', $id) }}" method="post"
-                        onsubmit="return confirm(\'Are you sure?\')">
+                        onsubmit="return confirm(\'{{ __(\'Are you sure you want to delete this item?\') }}\')">
                         @csrf
                         <button type="submit" class="btn btn-sm bg-gradient-danger">
                             <i class="fas fa-trash-alt"></i>
-                            Delete
+                            {{ __(\'Delete\') }}
                         </button>
                     </form>
                     @if ($is_suspended)
                         <form action="{{ route(\'backend.admin.user.suspend\', [\'id\' => $id, \'status\' => 0]) }}" method="post">
                             @csrf
-                            <button type="submit" class="btn btn-sm bg-gradient-success">Activate</button>
+                            <button type="submit" class="btn btn-sm bg-gradient-success">{{ __(\'Activate\') }}</button>
                         </form>
                     @else
                         <form action="{{ route(\'backend.admin.user.suspend\', [\'id\' => $id, \'status\' => 1]) }}" method="post"
-                            onsubmit="return confirm(\'Are you sure?\')">
+                            onsubmit="return confirm(\'{{ __(\'Are you sure you want to change the status of this user?\') }}\')">
                             @csrf
-                            <button type="submit" class="btn btn-sm bg-gradient-warning">Suspend</button>
+                            <button type="submit" class="btn btn-sm bg-gradient-warning">{{ __(\'Suspend\') }}</button>
                         </form>
                     @endif
                     
@@ -72,9 +72,9 @@ class UserManagementController extends Controller
                 )
                 ->addColumn('suspend', function ($data) {
                     if ($data->is_suspended == 0) {
-                        return '<span class="badge badge-pill badge-success">Active</span>';
+                        return '<span class="badge badge-pill badge-success">' . e(__('Active')) . '</span>';
                     } else {
-                        return '<span class="badge badge-pill badge-danger">Suspended</span>';
+                        return '<span class="badge badge-pill badge-danger">' . e(__('Suspended')) . '</span>';
                     }
                 })
                 ->addColumn('roles', function ($data) {

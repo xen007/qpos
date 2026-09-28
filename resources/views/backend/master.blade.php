@@ -143,7 +143,7 @@
         <aside class="main-sidebar elevation-4 sidebar-light-lightblue">
             <!-- Brand Logo -->
             <a href="{{ route('frontend.home') }}" class="brand-link">
-                <img src="{{ assetImage(readconfig('site_logo')) }}" alt="Logo"
+                <img src="{{ assetImage(readconfig('site_logo')) }}" alt="{{ __('Logo') }}"
                     class="brand-image img-circle elevation-3" style="opacity: .8">
                 <span class="brand-text font-weight-light">{{ readConfig('site_name') }}</span>
             </a>

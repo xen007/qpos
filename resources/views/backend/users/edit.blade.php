@@ -49,7 +49,7 @@
                             <label for="thumbnail">{{ __('Profile Image') }}</label>
                             <input type="file" class="form-control" name="profile_image"
                                 onchange="previewThumbnail(this)">
-                            <img class="img-fluid thumbnail-preview" src="{{ nullImg() }}" alt="preview-image">
+                            <img class="img-fluid thumbnail-preview" src="{{ nullImg() }}" alt="{{ __('Profile Image') }}">
                         </div>
                     </div>
                 </div>

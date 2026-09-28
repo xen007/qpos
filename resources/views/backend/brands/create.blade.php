@@ -25,7 +25,7 @@
             <div class="image-upload-container" id="imageUploadContainer">
               <input type="file" class="form-control" name="brand_image" id="thumbnailInput" accept="image/*" style="display: none;">
               <div class="thumb-preview" id="thumbPreviewContainer">
-                <img src="{{ asset('backend/assets/images/blank.png') }}" alt="Thumbnail Preview"
+                <img src="{{ asset('backend/assets/images/blank.png') }}" alt="{{ __('Thumbnail Preview') }}"
                   class="img-thumbnail d-none" id="thumbnailPreview">
                 <div class="upload-text">
                   <i class="fas fa-plus-circle"></i>

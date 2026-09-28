@@ -125,7 +125,7 @@
             <div class="image-upload-container" id="imageUploadContainer">
               <input type="file" class="form-control" name="product_image" id="thumbnailInput" accept="image/*" style="display: none;">
               <div class="thumb-preview" id="thumbPreviewContainer">
-                <img src="{{ asset('storage/' . $product->image) }}" alt="Thumbnail Preview"
+                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ __('Thumbnail Preview') }}"
                   class="img-thumbnail" id="thumbnailPreview" onerror="this.onerror=null; this.src='{{ asset('assets/images/no-image.png') }}'">
                 <div class="upload-text d-none">
                   <i class="fas fa-plus-circle"></i>

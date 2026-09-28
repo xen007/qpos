@@ -9,7 +9,7 @@
       <div class="row mb-4">
         <div class="col-4">
           <h2 class="page-header">
-            <img src="{{ assetImage(readconfig('site_logo')) }}" height="40" width="40" alt="Logo"
+            <img src="{{ assetImage(readconfig('site_logo')) }}" height="40" width="40" alt="{{ __('Logo') }}"
               class="brand-image img-circle elevation-3" style="opacity: .8"> {{ readConfig('site_name') }}
           </h2>
         </div>

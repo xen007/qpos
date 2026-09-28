@@ -22,7 +22,7 @@
                             <i class="fas fa-plus-circle"></i>
                             {{ __('Add new role') }}
                         </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('Close') }}">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -93,7 +93,7 @@
                                                     {{ __('Edit Role') }}
                                                 </h5>
                                                 <button type="button" class="close" data-dismiss="modal"
-                                                    aria-label="Close">
+                                                    aria-label="{{ __('Close') }}">
                                                     <span aria-hidden="true">&times;</span>
                                                 </button>
                                             </div>

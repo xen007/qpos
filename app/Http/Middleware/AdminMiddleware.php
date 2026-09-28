@@ -28,6 +28,6 @@ class AdminMiddleware
             $request->session()->regenerateToken();
         }
 
-        return redirect()->route('login')->with('error', 'Your account is not authorized');
+        return redirect()->route('login')->with('error', __('Your account is not authorized'));
     }
 }

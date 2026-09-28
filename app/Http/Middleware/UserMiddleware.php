@@ -19,17 +19,17 @@ class UserMiddleware
         if (Auth::check()) {
             if (auth()->user()->is_suspended == 1) {
                 Auth::logout();
-                return redirect()->route('login')->with('error', 'Your account is temporarily suspended');
+                return redirect()->route('login')->with('error', __('Your account is temporarily suspended'));
             }
 
             if (auth()->user()->type != 'User') {
                 Auth::logout();
-                return redirect()->route('login')->with('error', 'You are not a User');
+                return redirect()->route('login')->with('error', __('You are not a User'));
             }
 
             return $next($request);
         } else {
-            return redirect()->route('login')->with('error', 'You are not logged in');
+            return redirect()->route('login')->with('error', __('You are not logged in'));
         }
     }
 }

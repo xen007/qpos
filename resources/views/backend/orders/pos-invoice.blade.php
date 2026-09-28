@@ -7,7 +7,7 @@
   <div class="receipt-container mt-0" id="printable-section" style="max-width: {{ $maxWidth}}; font-size: 12px; font-family: 'Courier New', Courier, monospace;">
     <div class="text-center">
       @if(readConfig('is_show_logo_invoice'))
-      <img src="{{ assetImage(readconfig('site_logo')) }}" height="30" width="70" alt="Logo">
+      <img src="{{ assetImage(readconfig('site_logo')) }}" height="30" width="70" alt="{{ __('Logo') }}">
       @endif
       @if(readConfig('is_show_site_invoice'))
       <h3>{{ readConfig('site_name') }}</h3>

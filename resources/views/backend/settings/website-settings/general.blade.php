@@ -293,7 +293,7 @@
                             onchange="previewThumbnail(this)">
                         <small>
                             <i class="far fa-question-circle"></i>
-                            ( 260x60 px ) - Extensions: .png, .jpg, .jpeg, .gif, .svg
+                            {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '260x60']) }}
                         </small>
                     </div>
                     <hr>
@@ -314,7 +314,7 @@
                                 onchange="previewThumbnail(this)">
                             <small>
                                 <i class="far fa-question-circle"></i>
-                                ( 32x32 px ) - Extensions: .png, .jpg, .jpeg, .gif, .svg
+                                {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '32x32']) }}
                             </small>
                         </div>
                         <div class="col-sm-6">
@@ -333,7 +333,7 @@
                                 onchange="previewThumbnail(this)">
                             <small>
                                 <i class="far fa-question-circle"></i>
-                                ( 180x180 px ) - Extensions: .png, .jpg, .jpeg, .gif, .svg
+                                {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '180x180']) }}
                             </small>
                         </div>
                     </div>
@@ -418,7 +418,7 @@
                                     <input {{ readConfig('notify_messages_status') == 0 ? 'checked' : '' }}
                                         name="notify_messages_status" type="radio" value="0">
                                     <i class="dark-white"></i>
-                                    No
+                                    {{ __('No') }}
                                 </label>
                             </div>
                         </div>
@@ -436,7 +436,7 @@
                                     <input {{ readConfig('notify_comments_status') == 0 ? 'checked' : '' }}
                                         name="notify_comments_status" type="radio" value="0">
                                     <i class="dark-white"></i>
-                                    No
+                                    {{ __('No') }}
                                 </label>
                             </div>
                         </div>

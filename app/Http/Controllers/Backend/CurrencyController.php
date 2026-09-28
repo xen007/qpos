@@ -24,26 +24,26 @@ class CurrencyController extends Controller
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('code', fn($data) => $data->code)
                 ->addColumn('symbol', fn($data) => $data->symbol
-                    . ($data->active ? ' (Default Currency)' : ''))
+                    . ($data->active ? ' (' . e(__('Default Currency')) . ')' : ''))
                 ->addColumn('action', function ($data) {
                     return '<div class="btn-group">
-                    <button type="button" class="btn bg-gradient-primary btn-flat">Action</button>
+                    <button type="button" class="btn bg-gradient-primary btn-flat">' . e(__('Action')) . '</button>
                     <button type="button" class="btn bg-gradient-primary btn-flat dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
-                      <span class="sr-only">Toggle Dropdown</span>
+                      <span class="sr-only">' . e(__('Toggle Dropdown')) . '</span>
                     </button>
                     <div class="dropdown-menu" role="menu">
                       <a class="dropdown-item" href="' . route('backend.admin.currencies.edit', $data->id) . '" ' . ' >
-                    <i class="fas fa-edit"></i> Edit
+                    <i class="fas fa-edit"></i> ' . e(__('Edit')) . '
                 </a> <div class="dropdown-divider"></div>
 <form action="' . route('backend.admin.currencies.destroy', $data->id) . '"method="POST" style="display:inline;">
                    ' . csrf_field() . '
                     ' . method_field("DELETE") . '
-<button type="submit" class="dropdown-item" onclick="return confirm(\'Are you sure ?\')"><i class="fas fa-trash"></i> Delete</button>
+<button type="submit" class="dropdown-item" onclick="return confirm(\'' . e(__('Are you sure you want to delete this item?')) . '\')"><i class="fas fa-trash"></i> ' . e(__('Delete')) . '</button>
                   </form><div class="dropdown-divider"></div>
                    <form action="' . route('backend.admin.currencies.setDefault', $data->id) . '" method="POST">
                     ' . csrf_field() . '
-                    <button type="submit" class="dropdown-item" onclick="return confirm(\'Are you sure to set Default ?\')">
-                    <i class="fas fa-edit"></i> Set Default
+                    <button type="submit" class="dropdown-item" onclick="return confirm(\'' . e(__('Are you sure you want to set this currency as default?')) . '\')">
+                    <i class="fas fa-edit"></i> ' . e(__('Set Default')) . '
                     </button>
                    </form>
                   </div>';

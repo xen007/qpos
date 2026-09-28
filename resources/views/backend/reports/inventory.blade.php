@@ -89,17 +89,17 @@
       dom: 'lBfrtip', // Enables the buttons
       buttons: [{
           extend: 'excel',
-          text: 'Export to Excel',
+          text: @json(__('Export to Excel')),
           className: 'btn'
         },
         {
           extend: 'pdf',
-          text: 'Export to PDF',
+          text: @json(__('Export to PDF')),
           className: 'btn'
         },
         {
           extend: 'print',
-          text: 'Print',
+          text: @json(__('Print')),
           className: 'btn'
         }
       ],
