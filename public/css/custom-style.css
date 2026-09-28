@@ -847,3 +847,81 @@ input:checked+.slider:before {
         height: 18rem;
     }
 }
+
+/* ========= theme sombre : correctifs L6g (contrastes WCAG AA) ========== */
+
+/* L6g - boutons et badges : les fonds Bootstrap clairs donnaient 3.04 a 3.98:1 avec du texte blanc.
+   Ils sont assombris en theme sombre uniquement : le theme clair garde l'identite AdminLTE.
+   Ratios obtenus avec texte blanc : #0b5ed7 = 5.8:1, #1e7e34 = 5.1:1, #117a8b = 5.0:1,
+   et le degrade primaire #5268d8 -> #4a5fc9 = 4.9 a 5.6:1. */
+:root[data-theme="dark"] .bg-gradient-primary {
+    background: linear-gradient(180deg, #5268d8, #4a5fc9) !important;
+}
+
+:root[data-theme="dark"] .btn-primary,
+:root[data-theme="dark"] .bg-primary,
+:root[data-theme="dark"] .badge-primary {
+    background-color: #0b5ed7 !important;
+    border-color: #0b5ed7 !important;
+}
+
+:root[data-theme="dark"] .btn-primary:hover,
+:root[data-theme="dark"] .btn-primary:focus {
+    background-color: #0a58ca !important;
+    border-color: #0a58ca !important;
+}
+
+:root[data-theme="dark"] .btn-success,
+:root[data-theme="dark"] .bg-success,
+:root[data-theme="dark"] .badge-success {
+    background-color: #1e7e34 !important;
+    border-color: #1e7e34 !important;
+}
+
+:root[data-theme="dark"] .btn-success:hover,
+:root[data-theme="dark"] .btn-success:focus {
+    background-color: #1c7430 !important;
+    border-color: #1c7430 !important;
+}
+
+:root[data-theme="dark"] .btn-info,
+:root[data-theme="dark"] .bg-info,
+:root[data-theme="dark"] .badge-info {
+    background-color: #117a8b !important;
+    border-color: #117a8b !important;
+}
+
+:root[data-theme="dark"] .btn-info:hover,
+:root[data-theme="dark"] .btn-info:focus {
+    background-color: #10707f !important;
+    border-color: #10707f !important;
+}
+
+/* Toasts flash : le fond reste semantique, le texte passe en fonce.
+   Echec constate dans les DEUX themes : warning 1.63:1 et success 3.13:1 avec texte blanc.
+   Bootstrap definit .text-white en !important : l'override est en !important et plus specifique. */
+.toast.bg-warning,
+.toast.bg-warning .toast-body,
+.toast.bg-success,
+.toast.bg-success .toast-body {
+    color: #0b1220 !important;
+}
+
+/* Icone du toast warning : triangle fonce + point blanc, lisible sur fond ambre. */
+.toast.bg-warning .toast-body svg path:first-of-type {
+    fill: #0b1220 !important;
+}
+
+.toast.bg-warning .toast-body svg path:last-of-type {
+    fill: #ffffff !important;
+}
+
+/* Barres de defilement OverlayScrollbars : AdminLTE impose os-theme-light (poignee claire). */
+:root[data-theme="dark"] .os-theme-light > .os-scrollbar > .os-scrollbar-track > .os-scrollbar-handle {
+    background: var(--qpos-border);
+}
+
+:root[data-theme="dark"] .os-theme-light > .os-scrollbar:hover > .os-scrollbar-track > .os-scrollbar-handle,
+:root[data-theme="dark"] .os-theme-light > .os-scrollbar > .os-scrollbar-track > .os-scrollbar-handle.active {
+    background: var(--qpos-muted);
+}
