@@ -164,3 +164,28 @@ Faire évoluer QPOS vers une application de point de vente professionnelle, sûr
 - Les vues inutilisées `login-otp` et `sign-up` et la méthode d'inscription publique sans attribution de rôle ont été retirées : elles n'avaient aucune route ni référence active.
 - L'import produit exige maintenant un fichier borné à 5 Mio avec extension/type pris en charge, valide chaque ligne, limite les quantités et les montants, utilise le fournisseur interne configuré et englobe produits, achats et lignes dans une transaction. Le gabarit d'exemple reste compatible avec ces règles.
 - État produit : fondations et améliorations ciblées uniquement. Pas encore de refonte visuelle complète ni de mise à niveau Laravel; le prochain gros lot commence par le contrôle visuel XAMPP puis le layout et le dashboard.
+
+
+## Sprint 1 — Sécurité upload — TERMINÉ (28/09/2026)
+
+- ValidImageType.php : MIME réel + getimagesize + extension
+- FileHandler.php : réencodage + nom hashé serveur
+- TestController.php supprimé
+- storage:link activé
+- Limites : profil/logo/favicon 2 Mo, produits/marques 10 Mo
+- Tests : ✅ JPG valide, ✅ PHP renommé refusé, ✅ lourd refusé, ✅ nom hashé
+- Commit : [hash]
+- Prochain : Sprint 2 — i18n + thème
+
+
+## Sprint 2 — Finalisation Lot 1 — code terminé, commits et recette en attente (28/09/2026)
+
+- Code livré, **non commité** : L1 flash/middleware, L2 colonnes DataTables des 5 contrôleurs, L3 vues backend, L4 messages de validation FR/EN, L5 mails + page d'accueil + pages d'authentification, L6a-f thème sombre, L6g contrastes AA, durcissement `.htaccess`.
+- 43 fichiers modifiés ou créés par l'agent ; le présent document reste la modification du propriétaire.
+- Catalogues : 428 → 449 clés, parité FR/EN exacte, aucun doublon. `lang/*/validation.php` : +3 règles (`digits`, `image`, `url`) et +33 libellés de champs ; ces règles affichaient auparavant la clé brute (`validation.image`).
+- Thème sombre : navbar, sidebar, `.bg-white`/`.bg-light`, select2, tempusdominus, flèche `select`, champs désactivés, croix des modales, tableaux + pagination DataTables + boutons d'export, impression (`@media print`), boutons/badges (3,04–3,98:1 → 5,0–5,8:1), toasts warning (1,63:1) et success (3,13:1) → plus de 5:1, scrollbars OverlayScrollbars.
+- Sécurité : `.htaccess` racine (`Require all denied`) + `public/.htaccess` (`Require all granted`) → 10 URL sensibles en 403 (`.env`, `.git`, journaux, sources) ; application et images toujours servies.
+- Vérifications automatiques : `php -l` sur les fichiers PHP touchés, compilation Blade de 29 vues, rendu réel des mails FR/EN, parité des catalogues, smoke test 40 routes × FR/EN + 12 endpoints DataTables en AJAX, sondes HTTP sur `.htaccess`. Aucun test automatisé n'a été ajouté au dépôt.
+- **Restant : les 5 commits (propriétaire), la recette visuelle navigateur (19 écrans × FR/EN × clair/sombre) et les arbitrages éventuels.**
+- Rectificatifs par rapport à la note précédente : les limites d'images sont 2 Mo pour profil/logo/favicon et pour produits/marques/catégories (5 Mo concerne l'import de produits) ; les commits A à E ne sont pas encore créés.
+- Prochain : Sprint 3 — Layout Tailwind + architecture, une fois le Sprint 2 commité et recetté.
