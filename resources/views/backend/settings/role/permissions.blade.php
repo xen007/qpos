@@ -1,61 +1,55 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', $role->name . ' ' . __('Role Permission'))
 
+@section('page-actions')
+    @can('role_view')
+        <a href="{{ route('backend.admin.roles') }}"
+            class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            <i class="fas fa-ruler-vertical" aria-hidden="true"></i>
+            {{ __('Roles') }}
+        </a>
+    @endcan
+@endsection
+
 @section('content')
-@can('role_view')
-<div class="mt-n5 mb-3 d-flex justify-content-end">
-    <a href="{{ route('backend.admin.roles') }}" class="btn bg-gradient-primary">
-        <i class="fas fa-ruler-vertical"></i>
-        {{ __('Roles') }}
-    </a>
-</div>
-@endcan
-<div class="card">
-    <div class="row">
-        <div class="col-md-12">
-            <form action="{{ route('backend.admin.update.role-permissions', $role->id) }}" method="post">
-                @csrf
-                <table class="table">
-                    <tbody>
-                        @foreach ($permissions->chunk(4) as $permission)
-                        <tr>
-                            @foreach ($permission as $data)
-                            <td>
-                                <?php
-                                $per_found = null;
+    <x-backend.card>
+        <form action="{{ route('backend.admin.update.role-permissions', $role->id) }}" method="post">
+            @csrf
 
-                                if (isset($role)) {
-                                    $per_found = $role->hasPermissionTo($data->name) ?? null;
-                                }
+            {{-- Chaque permission est une case a cocher : cochee si le role la detient.
+                 (L'ancienne vue comparait le nom de la permission au booleen trouve,
+                 ce qui revenait au meme ; la condition est ici explicite.) --}}
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach ($permissions as $data)
+                    @php
+                        $per_found = null;
 
-                                if (isset($user)) {
-                                    $per_found = $user->hasDirectPermission($data->name);
-                                }
-                                ?>
+                        if (isset($role)) {
+                            $per_found = $role->hasPermissionTo($data->name);
+                        }
 
-                                <div
-                                    class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
-                                    <input type="checkbox" class="custom-control-input"
-                                        id="customSwitch{{ $data->id }}" name="permissions[]"
-                                        value="{{ $data->name }}"
-                                        {{ $data->name == $per_found ? 'checked' : '' }}>
-                                    <label class="custom-control-label" for="customSwitch{{ $data->id }}">
-                                        {{ snakeToTitle($data->name) }}
-                                    </label>
-                                </div>
+                        if (isset($user)) {
+                            $per_found = $user->hasDirectPermission($data->name);
+                        }
+                    @endphp
 
-                            </td>
-                            @endforeach
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                <div class="text-center mb-3">
-                    <button type="submit" class="btn bg-gradient-primary w-25">{{ __('Submit') }}</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+                    <label for="customSwitch{{ $data->id }}"
+                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-qpos-line px-3 py-2 text-sm text-qpos-ink transition hover:bg-qpos-page">
+                        <input type="checkbox" id="customSwitch{{ $data->id }}" name="permissions[]"
+                            value="{{ $data->name }}" @checked((bool) $per_found)
+                            class="h-4 w-4 rounded border-qpos-line accent-qpos-brand focus:outline-none focus:ring-2 focus:ring-qpos-brand/40">
+                        <span>{{ snakeToTitle($data->name) }}</span>
+                    </label>
+                @endforeach
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <button type="submit"
+                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    {{ __('Submit') }}
+                </button>
+            </div>
+        </form>
+    </x-backend.card>
 @endsection

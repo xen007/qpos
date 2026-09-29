@@ -1,129 +1,95 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Roles'))
 
-@section('content')
-<div class="card">
-    <div class="mt-n5 mb-3 d-flex justify-content-end">
-        @can('role_create')
-        <button class="btn bg-gradient-primary" data-toggle="modal" data-target="#roleModal">
-            <i class="fas fa-plus-circle"></i>
+@section('page-actions')
+    @can('role_create')
+        <button type="button" data-qpos-modal-open="#roleModal"
+            class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            <i class="fas fa-plus-circle" aria-hidden="true"></i>
             {{ __('Add New') }}
         </button>
-        @endcan
-        <!-- Modal -->
-        <div class="modal fade" id="roleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <form action="{{ route('backend.admin.roles.create') }}" method="POST">
-                @csrf
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">
-                            <i class="fas fa-plus-circle"></i>
-                            {{ __('Add new role') }}
-                        </h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ __('Close') }}">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="role-name">{{ __('Name') }}</label>
-                            <input id="role-name" type="text" name="name" value="{{ old('name') }}"
-                                class="form-control" placeholder="{{ __('Role Name') }}" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn bg-gradient-secondary" data-dismiss="modal">{{ __('Close') }}</button>
-                        <button class="btn bg-gradient-primary">{{ __('Submit') }}</button>
-                    </div>
-                </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-12 table-responsive">
-                <table class="table table-bordered table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>{{ __('Name') }}</th>
-                            <th class="text-center">{{ __('Actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($roles as $role)
-                        <tr>
-                            <td> {{ $role->name }} </td>
-                            <td>
-                                <div class="text-center">
-                                    <a title="{{ __('Permission Setup') }}"
-                                        href="{{ route('backend.admin.roles.show', $role->id) }}" type="button"
-                                        class="btn btn-dark btn-xs">
-                                        <i class="fas fa-cog"></i>
-                                    </a>
-                                    @if ($role->name !== 'Admin')
-                                    <button title="{{ __('Edit Role') }}" type="button" class="btn bg-gradient-primary btn-xs"
-                                        data-toggle="modal" data-target="#editRole-{{ $role->id }}">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </button>
-                                    <form method="POST" action="{{ route('backend.admin.roles.delete', $role->id) }}" style="display:inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button title="{{ __('Delete Role') }}" type="submit" class="btn btn-danger btn-xs"
-                                        onclick="return confirm(@json(__('Are you sure you want to delete this item?'))) ">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                    </form>
-                                    @endif
-                                </div>
+    @endcan
+@endsection
 
-                                <!-- Modal -->
-                                <div class="modal fade" id="editRole-{{ $role->id }}" tabindex="-1"
-                                    aria-labelledby="exampleModalLabel" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <form method="POST" action="{{ route('backend.admin.roles.update', $role->id) }}">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title fs-5" id="exampleModalLabel">
-                                                    <i class="fas fa-pencil-alt"></i>
-                                                    {{ __('Edit Role') }}
-                                                </h5>
-                                                <button type="button" class="close" data-dismiss="modal"
-                                                    aria-label="{{ __('Close') }}">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="form-group">
-                                                    <label class="control-label">{{ __('Name') }}:</label>
-                                                    <input type="text" name="name" value="{{ old('name', $role->name) }}"
-                                                        class="form-control" placeholder="{{ __('Role Name') }}" required>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn bg-gradient-secondary"
-                                                    data-dismiss="modal">
-                                                    {{ __('Close') }}
-                                                </button>
-                                                <button type="submit" class="btn bg-gradient-primary">
-                                                    {{ __('Save changes') }}
-                                                </button>
-                                            </div>
-                                        </div>
+@section('content')
+    @php
+        $iconButton = 'flex h-9 w-9 items-center justify-center rounded-lg border border-qpos-line text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink';
+    @endphp
+
+    <x-backend.card :padded="false">
+        <div class="overflow-x-auto p-4 sm:p-6">
+            <table class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
+                        <th class="px-3 py-3">{{ __('Name') }}</th>
+                        <th class="px-3 py-3 text-right">{{ __('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($roles as $role)
+                        <tr class="border-b border-qpos-line/60 last:border-0">
+                            <td class="px-3 py-3 text-qpos-ink">{{ $role->name }}</td>
+                            <td class="px-3 py-3">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('backend.admin.roles.show', $role->id) }}"
+                                        title="{{ __('Permission Setup') }}" aria-label="{{ __('Permission Setup') }}"
+                                        class="{{ $iconButton }}">
+                                        <i class="fas fa-cog" aria-hidden="true"></i>
+                                    </a>
+
+                                    @if ($role->name !== 'Admin')
+                                        <button type="button" data-qpos-modal-open="#editRole-{{ $role->id }}"
+                                            title="{{ __('Edit Role') }}" aria-label="{{ __('Edit Role') }}"
+                                            class="{{ $iconButton }}">
+                                            <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                                        </button>
+
+                                        <form action="{{ route('backend.admin.roles.delete', $role->id) }}"
+                                            method="POST"
+                                            onsubmit="return confirm(@js(__('Are you sure you want to delete this item?')))">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" title="{{ __('Delete Role') }}"
+                                                aria-label="{{ __('Delete Role') }}" class="{{ $iconButton }}">
+                                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                            </button>
                                         </form>
-                                    </div>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
-    </div>
-</div>
+    </x-backend.card>
+
+    @can('role_create')
+        <x-backend.modal id="roleModal" :title="__('Add new role')" :action="route('backend.admin.roles.create')"
+            :submit-label="__('Submit')">
+            <div>
+                <label for="role-name" class="block text-sm font-medium text-qpos-ink">{{ __('Name') }}</label>
+                <input id="role-name" type="text" name="name" value="{{ old('name') }}" required
+                    placeholder="{{ __('Role Name') }}"
+                    class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+            </div>
+        </x-backend.modal>
+    @endcan
+
+    {{-- Une modale d'edition par role modifiable (le role Admin n'est pas modifiable). --}}
+    @foreach ($roles as $role)
+        @continue ($role->name === 'Admin')
+
+        <x-backend.modal id="editRole-{{ $role->id }}" :title="__('Edit Role')"
+            :action="route('backend.admin.roles.update', $role->id)" method="PUT" :submit-label="__('Save changes')">
+            <div>
+                <label for="role-name-{{ $role->id }}"
+                    class="block text-sm font-medium text-qpos-ink">{{ __('Name') }}</label>
+                <input id="role-name-{{ $role->id }}" type="text" name="name"
+                    value="{{ old('name', $role->name) }}" required placeholder="{{ __('Role Name') }}"
+                    class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+            </div>
+        </x-backend.modal>
+    @endforeach
 @endsection

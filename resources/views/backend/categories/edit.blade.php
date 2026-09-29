@@ -1,68 +1,37 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Update Category'))
 
 @section('content')
-<div class="card">
-  <div class="card-body">
-    <form action="{{ route('backend.admin.categories.update',$category->id) }}" method="post" class="accountForm"
-      enctype="multipart/form-data">
-      @csrf
-      @method('PUT')
-      <div class="card-body">
-        <div class="row">
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Name') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter title') }}" name="name"
-              value="{{ old('name', $category->name) }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="thumbnailInput" class="form-label">
-              {{ __('Image') }}
-            </label>
-            <div class="image-upload-container" id="imageUploadContainer">
-              <input type="file" class="form-control" name="category_image" id="thumbnailInput" accept="image/*" style="display: none;">
-              <div class="thumb-preview" id="thumbPreviewContainer">
-                <img src="{{ asset('storage/' . $category->image) }}" alt="{{ __('Thumbnail Preview') }}"
-                  class="img-thumbnail" id="thumbnailPreview" onerror="this.onerror=null; this.src='{{ asset('assets/images/no-image.png') }}'">
-                <div class="upload-text d-none">
-                  <i class="fas fa-plus-circle"></i>
-                  <span>{{ __('Upload Image') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    <x-backend.card>
+        <form action="{{ route('backend.admin.categories.update', $category->id) }}" method="post" class="accountForm"
+            enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
 
-          <div class="mb-3 col-md-12">
-            <label for="description" class="form-label">
-              {{ __('Description') }}
-            </label>
-            <textarea class="form-control" placeholder="{{ __('Enter description') }}" name="description">{{ old('description',$category->description) }}</textarea>
-          </div>
-          <div class="mb-3 col-md-12">
-            <div class="form-switch px-4">
-              <input type="hidden" name="status" value="0">
-              <input class="form-check-input" type="checkbox" name="status" id="active"
-                value="1" @if($category->status==1) checked @endif>
-              <label class="form-check-label" for="active">
-                {{ __('Active') }}
-              </label>
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <x-backend.input name="name" :label="__('Name')" :value="$category->name"
+                    :placeholder="__('Enter title')" required />
+
+                <x-backend.image-field name="category_image" :label="__('Image')"
+                    :current-image="$category->image" />
+
+                <div class="lg:col-span-2">
+                    <x-backend.textarea name="description" :label="__('Description')" :value="$category->description"
+                        :placeholder="__('Enter description')" />
+                </div>
+
+                <div class="lg:col-span-2">
+                    <x-backend.switch name="status" :label="__('Active')" :checked="$category->status == 1" />
+                </div>
             </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">{{ __('Update') }}</button>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
+
+            <div class="mt-6">
+                <button type="submit"
+                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    {{ __('Update') }}
+                </button>
+            </div>
+        </form>
+    </x-backend.card>
 @endsection
-@push('script')
-<script src="{{ asset('js/image-field.js') }}"></script>
-@endpush

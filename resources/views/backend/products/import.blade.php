@@ -1,50 +1,41 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Product Import'))
 
 @section('content')
-<div class="card">
-  <div class="card-body">
-    <form action="{{ route('backend.admin.products.import') }}" method="post" class="accountForm"
-      enctype="multipart/form-data">
-      @csrf
-      <div class="card-body">
-        <div class="row">
-          <div class="mb-3 col-md-6">
-            <div class="form-group">
-              <label for="exampleInputFile">{{ __('File input') }}</label>
-              <div class="input-group">
-                <div class="custom-file">
-                  <input type="file" class="custom-file-input" name="file" id="exampleInputFile" required>
-                  <label class="custom-file-label" for="exampleInputFile">{{ __('Choose file') }}</label>
+    <x-backend.card>
+        {{-- Page sans champ image ni select2 : les scripts que poussait l'ancienne
+             version n'ont plus lieu d'etre charges. --}}
+        <form action="{{ route('backend.admin.products.import') }}" method="post" class="accountForm"
+            enctype="multipart/form-data">
+            @csrf
+
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div>
+                    <label for="exampleInputFile" class="block text-sm font-medium text-qpos-ink">
+                        {{ __('File input') }}
+                        <span class="text-red-600" aria-hidden="true">*</span>
+                    </label>
+
+                    <input type="file" name="file" id="exampleInputFile" required
+                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink file:mr-3 file:rounded-md file:border-0 file:bg-qpos-brand file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-white focus:border-qpos-brand focus:outline-none">
+
+                    <p class="mt-2 text-xs">
+                        <a href="{{ route('backend.admin.products.import', ['download-demo' => true]) }}"
+                            class="inline-flex items-center gap-1 font-medium text-qpos-brand transition hover:opacity-80">
+                            <i class="fas fa-download" aria-hidden="true"></i>
+                            {{ __('Download sample') }}
+                        </a>
+                    </p>
                 </div>
-                <div class="input-group-append">
-                  <a class="input-group-text" href="{{ route('backend.admin.products.import',['download-demo' => true]) }}"><i class="fas fa-download"></i> {{ __('Download sample') }}</a>
-                </div>
-              </div>
             </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="mb-3 col-md-6">
-            <button type="submit" class="btn btn-block bg-gradient-primary">{{ __('Import') }}</button>
-            <!-- /.card-body -->
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
+
+            <div class="mt-6">
+                <button type="submit"
+                    class="w-full rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90 lg:w-auto">
+                    {{ __('Import') }}
+                </button>
+            </div>
+        </form>
+    </x-backend.card>
 @endsection
-
-@push('style')
-<style>
-  .select2-container--default .select2-selection--single {
-    height: calc(1.5em + 0.75rem + 2px) !important;
-  }
-</style>
-
-@endpush
-@push('script')
-<script src="{{ asset('js/image-field.js') }}"></script>
-@endpush

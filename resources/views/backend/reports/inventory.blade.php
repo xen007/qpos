@@ -1,115 +1,130 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Inventory Report'))
 
 @section('content')
-<div class="card">
-  <div class="card-body p-2 p-md-4 pt-0">
-    <div class="row g-4">
-      <div class="col-md-12">
-        <div class="card-body table-responsive p-0" id="table_data">
-          <table id="datatables" class="table table-hover">
-            <thead>
-              <tr>
-                <th data-orderable="false">#</th>
-<th>{{ __('Name') }}</th>
-<th>{{ __('SKU') }}</th>
-<th>{{ __('Price') }}</th>
-<th>{{ __('Stock') }}</th>
-              </tr>
-            </thead>
-          </table>
-          <!-- Pagination Links -->
+    <x-backend.card :padded="false">
+        <div class="overflow-x-auto p-4 sm:p-6">
+            <table id="datatables" class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
+                        <th data-orderable="false" class="px-3 py-3">#</th>
+                        <th class="px-3 py-3">{{ __('Name') }}</th>
+                        <th class="px-3 py-3">{{ __('SKU') }}</th>
+                        <th class="px-3 py-3">{{ __('Price') }}</th>
+                        <th class="px-3 py-3">{{ __('Stock') }}</th>
+                    </tr>
+                </thead>
+            </table>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </x-backend.card>
 @endsection
+
+@include('backend.layouts.tailwind.plugins.datatables-export')
+
 @push('style')
-<style>
-  .dataTables_length select {
-    margin-right: 6px;
-    height: 37px !important;
-    border: 1px solid rgba(0, 0, 0, 0.3);
-  }
-
-  .dataTables_length label {
-    display: flex;
-    align-items: center;
-  }
-</style>
-@endpush
-@push('script')
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.print.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-
-<script type="text/javascript">
-  $(function() {
-    let table = $('#datatables').DataTable({
-      processing: true,
-      serverSide: true,
-      ordering: true,
-      order: [
-        [1, 'desc']
-      ],
-      lengthMenu: [
-        [10, 25, 50, 100, -1],
-        [10, 25, 50, 100, "All"]
-      ],
-      ajax: {
-        url: "{{ route('backend.admin.inventory.report') }}"
-      },
-      lengthChange: true,
-      columns: [{
-          data: 'DT_RowIndex',
-          name: 'DT_RowIndex'
-        },
-        {
-          data: 'name',
-          name: 'name'
-        },
-        {
-          data: 'sku',
-          name: 'sku'
-        }, {
-          data: 'price',
-          name: 'price'
-        },
-        {
-          data: 'quantity',
-          name: 'quantity'
-        },
-      ],
-      dom: 'lBfrtip', // Enables the buttons
-      buttons: [{
-          extend: 'excel',
-          text: @json(__('Export to Excel')),
-          className: 'btn'
-        },
-        {
-          extend: 'pdf',
-          text: @json(__('Export to PDF')),
-          className: 'btn'
-        },
-        {
-          extend: 'print',
-          text: @json(__('Print')),
-          className: 'btn'
+    <style>
+        /* Markup genere par DataTables et par ses boutons : ces elements ne
+           peuvent pas recevoir d'utilitaires Tailwind. */
+        .dt-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
         }
-      ],
-      initComplete: function() {
-        // Hide the "entries" text length changes button
-        $('.dataTables_length label').contents().filter(function() {
-          return this.nodeType === 3;
-        }).remove();
-      }
-    });
-  });
-</script>
+
+        .dt-buttons .dt-button {
+            background: none;
+            border: 0;
+        }
+
+        .dataTables_length label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dataTables_length select {
+            border: 1px solid var(--qpos-line);
+            border-radius: 0.5rem;
+            background: var(--qpos-surface);
+            color: var(--qpos-ink);
+            padding: 0.35rem 0.5rem;
+        }
+    </style>
+@endpush
+
+@push('script')
+    <script type="text/javascript">
+        $(function() {
+            const exportButton = 'rounded-lg border border-qpos-line px-3 py-2 text-sm font-medium text-qpos-muted transition hover:bg-qpos-page';
+
+            $('#datatables').DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: true,
+                order: [
+                    [1, 'desc']
+                ],
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "All"]
+                ],
+                ajax: {
+                    url: "{{ route('backend.admin.inventory.report') }}"
+                },
+                lengthChange: true,
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex'
+                    },
+                    {
+                        data: 'name',
+                        name: 'name'
+                    },
+                    {
+                        data: 'sku',
+                        name: 'sku'
+                    },
+                    {
+                        // Prix applique, avec le prix d'origine barre s'il est plus eleve.
+                        data: 'price_value',
+                        name: 'price_value',
+                        render: (value, type, row) => parseFloat(row.price_original) > parseFloat(value) ?
+                            value + '<br><del class="text-qpos-muted">' + row.price_original + '</del>' :
+                            value,
+                    },
+                    {
+                        // Stock suivi de l'unite.
+                        data: 'quantity_value',
+                        name: 'quantity_value',
+                        render: (value, type, row) => row.unit_short ? value + ' ' + row.unit_short : value,
+                    },
+                ],
+                dom: 'lBfrtip', // active les boutons
+                buttons: [{
+                        extend: 'excel',
+                        text: @json(__('Export to Excel')),
+                        className: exportButton
+                    },
+                    {
+                        extend: 'pdf',
+                        text: @json(__('Export to PDF')),
+                        className: exportButton
+                    },
+                    {
+                        extend: 'print',
+                        text: @json(__('Print')),
+                        className: exportButton
+                    }
+                ],
+                initComplete: function() {
+                    // Masque le texte du selecteur de longueur, seul le menu reste.
+                    $('.dataTables_length label').contents().filter(function() {
+                        return this.nodeType === 3;
+                    }).remove();
+                }
+            });
+        });
+    </script>
 @endpush

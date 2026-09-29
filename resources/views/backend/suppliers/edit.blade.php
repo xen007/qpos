@@ -1,52 +1,31 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Update Supplier'))
 
 @section('content')
-<div class="card">
-  <div class="card-body">
-    <form action="{{ route('backend.admin.suppliers.update',$supplier->id) }}" method="post" class="accountForm"
-      enctype="multipart/form-data">
-      @method('PUT')
-      @csrf
-      <div class="card-body">
-        <div class="row">
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Name') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter title') }}" name="name"
-              value="{{ $supplier->name }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Phone') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter phone') }}" name="phone"
-              value="{{ $supplier->phone }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Address') }}
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter Address') }}" name="address"
-              value="{{ $supplier->address }}">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">{{ __('Update') }}</button>
-          </div>
-        </div>
-      </div>
-      <!-- /.card-body -->
-    </form>
-  </div>
-</div>
+    <x-backend.card>
+        <form action="{{ route('backend.admin.suppliers.update', $supplier->id) }}" method="post" class="accountForm"
+            enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <x-backend.input name="name" :label="__('Name')" :value="$supplier->name"
+                    :placeholder="__('Enter title')" required />
+
+                <x-backend.input name="phone" :label="__('Phone')" :value="$supplier->phone"
+                    :placeholder="__('Enter phone')" required />
+
+                <x-backend.input name="address" :label="__('Address')" :value="$supplier->address"
+                    :placeholder="__('Enter Address')" />
+            </div>
+
+            <div class="mt-6">
+                <button type="submit"
+                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    {{ __('Update') }}
+                </button>
+            </div>
+        </form>
+    </x-backend.card>
 @endsection
-@push('script')
-<script>
-</script>
-@endpush

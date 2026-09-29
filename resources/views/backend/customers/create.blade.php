@@ -1,51 +1,27 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Create Customer'))
 
 @section('content')
-<div class="card">
-  <div class="card-body">
-    <form action="{{ route('backend.admin.customers.store') }}" method="post" class="accountForm"
-      enctype="multipart/form-data">
-      @csrf
-      <div class="card-body">
-        <div class="row">
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Name') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter title') }}" name="name"
-              value="{{ old('name') }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Phone') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter phone') }}" name="phone"
-              value="{{ old('phone') }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="title" class="form-label">
-              {{ __('Address') }}
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter Address') }}" name="address"
-              value="{{ old('Address') }}">
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">{{ __('Create') }}</button>
-          </div>
-        </div>
-      </div>
-      <!-- /.card-body -->
-    </form>
-  </div>
-</div>
+    <x-backend.card>
+        <form action="{{ route('backend.admin.customers.store') }}" method="post" class="accountForm"
+            enctype="multipart/form-data">
+            @csrf
+
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <x-backend.input name="name" :label="__('Name')" :placeholder="__('Enter title')" required />
+
+                <x-backend.input name="phone" :label="__('Phone')" :placeholder="__('Enter phone')" required />
+
+                <x-backend.input name="address" :label="__('Address')" :placeholder="__('Enter Address')" />
+            </div>
+
+            <div class="mt-6">
+                <button type="submit"
+                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    {{ __('Create') }}
+                </button>
+            </div>
+        </form>
+    </x-backend.card>
 @endsection
-@push('script')
-<script>
-</script>
-@endpush

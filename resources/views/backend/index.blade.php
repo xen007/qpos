@@ -1,232 +1,93 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Dashboard'))
 
 @section('content')
-<section class="content qpos-dashboard">
+    @php
+        $currencySymbol = currency()?->symbol ?? '';
+        $formatMoney = fn ($amount) => trim($currencySymbol . ' ' . number_format((float) $amount, 2, '.', ','));
+    @endphp
+
     @can('dashboard_view')
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12 col-sm-6 col-md-3">
-                <div class="info-box">
-                    <span class="info-box-icon bg-info elevation-1"><i class="fas fa-cog"></i></span>
-
-                    <div class="info-box-content">
-                        <span class="info-box-text">{{ __('Sale Subtotal') }}</span>
-                        <span class="info-box-number">
-                            {{currency()->symbol??''}} {{number_format($sub_total,2,'.',',')}}
-                            <small></small>
-                        </span>
-                    </div>
-                    <!-- /.info-box-content -->
-                </div>
-                <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-            <div class="col-12 col-sm-6 col-md-3">
-                <div class="info-box mb-3">
-                    <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-thumbs-up"></i></span>
-
-                    <div class="info-box-content">
-                        <span class="info-box-text">{{ __('Sale Discount') }}</span>
-                        <span class="info-box-number">{{currency()->symbol??''}} {{number_format($discount,2,'.',',')}}</span>
-                    </div>
-                    <!-- /.info-box-content -->
-                </div>
-                <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-
-            <!-- fix for small devices only -->
-            <div class="clearfix hidden-md-up"></div>
-
-            <div class="col-12 col-sm-6 col-md-3">
-                <div class="info-box mb-3">
-                    <span class="info-box-icon bg-success elevation-1"><i class="fas fa-shopping-cart"></i></span>
-
-                    <div class="info-box-content">
-                        <span class="info-box-text">{{ __('Sale') }}</span>
-                        <span class="info-box-number">{{currency()->symbol??''}} {{number_format($total,2,'.',',')}}</span>
-                    </div>
-                    <!-- /.info-box-content -->
-                </div>
-                <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
-            <div class="col-12 col-sm-6 col-md-3">
-                <div class="info-box mb-3">
-                    <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
-
-                    <div class="info-box-content">
-                        <span class="info-box-text">{{ __('Sale Due') }}</span>
-                        <span class="info-box-number">{{currency()->symbol??''}} {{number_format($due,2,'.',',')}}</span>
-                    </div>
-                    <!-- /.info-box-content -->
-                </div>
-                <!-- /.info-box -->
-            </div>
-            <!-- /.col -->
+        {{-- Totaux de la periode --}}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-backend.stat-card :label="__('Sale Subtotal')" :value="$formatMoney($sub_total)" icon="fas fa-cog" />
+            <x-backend.stat-card :label="__('Sale Discount')" :value="$formatMoney($discount)" icon="fas fa-thumbs-up" />
+            <x-backend.stat-card :label="__('Sale')" :value="$formatMoney($total)" icon="fas fa-shopping-cart" />
+            <x-backend.stat-card :label="__('Sale Due')" :value="$formatMoney($due)" icon="fas fa-users" />
         </div>
 
-        <!-- Small boxes (Stat box) -->
-        <div class="row">
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-info">
-                    <div class="inner">
-                        <h3>{{$total_customer}}</h3>
-                        <p>{{ __('Customers') }}</p>
-                    </div>
-                    <div class="icon">
-                        <i class="ion ion-bag"></i>
-                    </div>
-                    <a href="{{route('backend.admin.customers.index')}}" class="small-box-footer">
-                        {{ __('More info') }}
-                        <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            <!-- ./col -->
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-success">
-                    <div class="inner">
-                        <h3>{{$total_product}}</h3>
-                        <p>{{ __('Products') }}</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
-                    </div>
-                    <a href="{{route('backend.admin.products.index')}}" class="small-box-footer">
-                        {{ __('More info') }}
-                        <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            <!-- ./col -->
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-warning">
-                    <div class="inner">
-                        <h3>{{$total_order}}</h3>
-                        <p>{{ __('Sale') }}</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-user-plus" aria-hidden="true"></i>
-                    </div>
-                    <a href="{{route('backend.admin.orders.index')}}" class="small-box-footer">
-                        {{ __('More info') }}
-                        <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            <!-- ./col -->
-            <div class="col-lg-3 col-6">
-                <!-- small box -->
-                <div class="small-box bg-danger">
-                    <div class="inner">
-                        <h3>{{$total_sale_item}}</h3>
-                        <p>{{ __('Sale Item') }}</p>
-                    </div>
-                    <div class="icon">
-                        <i class="fas fa-chart-pie" aria-hidden="true"></i>
-                    </div>
-                    <a href="{{route('backend.admin.orders.index')}}" class="small-box-footer">
-                        {{ __('More info') }}
-                        <i class="fas fa-arrow-circle-right"></i>
-                    </a>
-                </div>
-            </div>
-            <!-- ./col -->
+        {{-- Compteurs --}}
+        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-backend.stat-card :label="__('Customers')" :value="$total_customer" icon="fas fa-users"
+                :href="route('backend.admin.customers.index')" />
+            <x-backend.stat-card :label="__('Products')" :value="$total_product" icon="fas fa-chart-bar"
+                :href="route('backend.admin.products.index')" />
+            <x-backend.stat-card :label="__('Sale')" :value="$total_order" icon="fas fa-user-plus"
+                :href="route('backend.admin.orders.index')" />
+            <x-backend.stat-card :label="__('Sale Item')" :value="$total_sale_item" icon="fas fa-chart-pie"
+                :href="route('backend.admin.orders.index')" />
         </div>
-        <!-- /.row -->
 
-
-        <div class="row">
-            <div class="col-12 col-lg-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">{{ __('Daily Total Sales') }} <small>{{ $dateRange }}</small></h5>
-                        <div class="input-group w-auto">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <i class="far fa-calendar-alt"></i>
-                                </span>
-                            </div>
-                            <input type="text" class="form-control" id="reservation"
-            aria-label="{{ __('Filter sales by date range') }}">
+        {{-- Graphiques --}}
+        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <x-backend.card :title="__('Daily Total Sales')" :subtitle="__('Date range from') . ' ' . $dateFrom . ' ' . __('Date range to') . ' ' . $dateTo">
+                <x-slot:actions>
+                    <form method="get" action="{{ route('backend.admin.dashboard') }}"
+                        class="flex flex-wrap items-end gap-2">
+                        <div>
+                            <label for="date_from"
+                                class="block text-xs font-medium text-qpos-muted">{{ __('Date range from') }}</label>
+                            <input type="date" id="date_from" name="date_from" value="{{ $dateFrom }}"
+                                class="mt-1 rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink">
                         </div>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="qpos-chart-container">
-                            <canvas id="dailySaleLineChart" role="img"
-                                aria-label="{{ __('Daily Total Sales') }}"></canvas>
+                        <div>
+                            <label for="date_to"
+                                class="block text-xs font-medium text-qpos-muted">{{ __('Date range to') }}</label>
+                            <input type="date" id="date_to" name="date_to" value="{{ $dateTo }}"
+                                class="mt-1 rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink">
                         </div>
-                    </div>
+                        <button type="submit"
+                            class="rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                            {{ __('Apply') }}
+                        </button>
+                        @if (request()->hasAny(['date_from', 'date_to', 'daterange']))
+                            <a href="{{ route('backend.admin.dashboard') }}"
+                                class="rounded-lg border border-qpos-line px-4 py-2 text-sm font-medium text-qpos-muted transition hover:bg-qpos-page">
+                                {{ __('Reset') }}
+                            </a>
+                        @endif
+                    </form>
+                </x-slot:actions>
+
+                <div class="relative h-80">
+                    <canvas id="dailySaleLineChart" role="img" aria-label="{{ __('Daily Total Sales') }}"></canvas>
                 </div>
-            </div>
-            <div class="col-12 col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>{{ __('Monthly Total Sales') }} <small>{{ __('for') }} {{ $currentYear }}</small></h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="qpos-chart-container">
-                            <canvas id="barChartYear" role="img"
-                                aria-label="{{ __('Monthly Total Sales') }}"></canvas>
-                        </div>
-                    </div>
+            </x-backend.card>
+
+            <x-backend.card :title="__('Monthly Total Sales')" :subtitle="__('for') . ' ' . $currentYear">
+                <div class="relative h-80">
+                    <canvas id="barChartYear" role="img" aria-label="{{ __('Monthly Total Sales') }}"></canvas>
                 </div>
-            </div>
+            </x-backend.card>
         </div>
-    </div>
     @endcan
-    <!-- /.container-fluid -->
-</section>
 @endsection
-@push('style')
-<link rel="stylesheet" href="{{ asset('plugins/daterangepicker/daterangepicker.css') }}">
-@endpush
+
 @push('script')
-@can('dashboard_view')
-<script src="{{ asset('plugins/moment/moment-with-locales.min.js') }}"></script>
-<script src="{{ asset('plugins/daterangepicker/daterangepicker.js') }}"></script>
-<script type="application/json" id="qpos-dashboard-chart-data">
-{!! json_encode([
-    'dates' => $dates,
-    'dailySales' => $totalAmounts,
-    'months' => $months,
-    'monthlySales' => $totalAmountMonth,
-    'salesLabel' => __('Sales'),
-]) !!}
-</script>
-@vite('resources/js/dashboard.js')
-<script>
-    $(function() {
-        moment.locale(window.qposLocale === 'fr' ? 'fr' : 'en');
-        $('#reservation').daterangepicker({
-            locale: {
-                format: 'YYYY-MM-DD',
-                applyLabel: @json(__('Apply')),
-                cancelLabel: @json(__('Cancel')),
-                fromLabel: @json(__('Date range from')),
-                toLabel: @json(__('Date range to')),
-                customRangeLabel: @json(__('Custom Range')),
-                daysOfWeek: moment.weekdaysMin(),
-                monthNames: moment.months(),
-                firstDay: moment.localeData().firstDayOfWeek()
-            }
-        }).on('apply.daterangepicker', function(e, picker) {
-            let selectedDateRange = picker.startDate.format('YYYY-MM-DD') + ' to ' + picker.endDate.format('YYYY-MM-DD');
-
-            // Update URL with daterange query parameter
-            let url = new URL(window.location.href);
-            url.searchParams.set('daterange', selectedDateRange);
-            window.location.href = url.toString();
-        });
-
-    })
-</script>
-@endcan
+    @can('dashboard_view')
+        <script type="application/json" id="qpos-dashboard-chart-data">
+            {!! json_encode(
+                [
+                    'dates' => $dates,
+                    'dailySales' => $totalAmounts,
+                    'months' => $months,
+                    'monthlySales' => $totalAmountMonth,
+                    'salesLabel' => __('Sales'),
+                ],
+                JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+            ) !!}
+        </script>
+        @vite('resources/js/dashboard.js')
+    @endcan
 @endpush

@@ -1,115 +1,176 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Sales'))
 
 @section('content')
-<div class="card">
-  <div class="card-body p-2 p-md-4 pt-0">
-    <div class="row g-4">
-      <div class="col-md-12">
-        <div class="card-body table-responsive p-0" id="table_data">
-          <table id="datatables" class="table table-hover">
-            <thead>
-              <tr>
-                <th data-orderable="false">#</th>
-                <th>{{ __('Sale ID') }}</th>
-                <th>{{ __('Customer') }}</th>
-                <th>{{ __('Items') }}</th>
-                <th>{{ __('Sub Total') }} {{currency()->symbol??''}}</th>
-                <th>{{ __('Discount') }} {{currency()->symbol??''}}</th>
-                <th>{{ __('Total') }} {{currency()->symbol??''}}</th>
-                <th>{{ __('Paid') }} {{currency()->symbol??''}}</th>
-                <th>{{ __('Due') }} {{currency()->symbol??''}}</th>
-                <th>{{ __('Status') }}</th>
-                <th data-orderable="false">{{ __('Action') }}</th>
-              </tr>
-            </thead>
-          </table>
+    @php
+        // L'action d'encaissement reste soumise a la permission, comme dans le
+        // controleur d'origine.
+        $canCollect = auth()->user()->can('sale_update');
+    @endphp
+
+    <x-backend.card :padded="false">
+        <div class="overflow-x-auto p-4 sm:p-6">
+            <table id="datatables" class="w-full border-collapse text-sm">
+                <thead>
+                    <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
+                        <th data-orderable="false" class="px-3 py-3">#</th>
+                        <th class="px-3 py-3">{{ __('Sale ID') }}</th>
+                        <th class="px-3 py-3">{{ __('Customer') }}</th>
+                        <th class="px-3 py-3">{{ __('Items') }}</th>
+                        <th class="px-3 py-3">{{ __('Sub Total') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Discount') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Total') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Paid') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Due') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Status') }}</th>
+                        <th data-orderable="false" class="px-3 py-3 text-right">{{ __('Action') }}</th>
+                    </tr>
+                </thead>
+            </table>
         </div>
-      </div>
-    </div>
-  </div>
-</div>
+    </x-backend.card>
+
+    <script type="application/json" id="qpos-orders-table">
+        {!! json_encode(
+            [
+                'ajax' => route('backend.admin.orders.index'),
+                'csrf' => csrf_token(),
+                'can' => [
+                    'collect' => $canCollect,
+                ],
+                'routes' => [
+                    'invoice' => route('backend.admin.orders.invoice', ':id'),
+                    'posInvoice' => route('backend.admin.orders.pos-invoice', ':id'),
+                    'transactions' => route('backend.admin.orders.transactions', ':id'),
+                    'collect' => route('backend.admin.due.collection', ':id'),
+                ],
+                'labels' => [
+                    'invoice' => __('Invoice'),
+                    'posReceipt' => __('POS Receipt'),
+                    'collectDue' => __('Collect Due'),
+                    'transactions' => __('Transactions'),
+                    'paid' => __('Paid'),
+                    'due' => __('Due'),
+                ],
+            ],
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+        ) !!}
+    </script>
 @endsection
 
+@include('backend.layouts.tailwind.plugins.datatables')
+
 @push('script')
+    @vite('resources/js/table-actions.js')
 
-<script type="text/javascript">
-  $(function() {
-    let table = $('#datatables').DataTable({
-      processing: true,
-      serverSide: true,
-      ordering: true,
-      language: {
-        emptyTable: @json(__('No data available in table')),
-        info: @json(__('Showing _START_ to _END_ of _TOTAL_ entries')),
-        infoEmpty: @json(__('Showing 0 to 0 of 0 entries')),
-        infoFiltered: @json(__('(filtered from _MAX_ total entries)')),
-        lengthMenu: @json(__('Show _MENU_ entries')),
-        loadingRecords: @json(__('Loading...')),
-        processing: @json(__('Processing...')),
-        search: @json(__('Search:')),
-        zeroRecords: @json(__('No matching records found')),
-        paginate: {
-          first: @json(__('First')),
-          last: @json(__('Last')),
-          next: @json(__('Next')),
-          previous: @json(__('Previous'))
-        }
-      },
-      order: [
-        [1, 'desc']
-      ],
-      ajax: {
-        url: "{{ route('backend.admin.orders.index') }}"
-      },
+    <script type="text/javascript">
+        $(function() {
+            const config = JSON.parse(document.getElementById('qpos-orders-table').textContent);
+            const withId = (template, id) => template.replace(':id', id);
 
-      columns: [{
-          data: 'DT_RowIndex',
-          name: 'DT_RowIndex'
-        },
-        {
-          data: 'saleId',
-          name: 'id'
-        },
-        {
-          data: 'customer',
-          name: 'customer'
-        },
-        {
-          data: 'item',
-          name: 'item_quantity_sum'
-        },
-        {
-          data: 'sub_total',
-          name: 'sub_total'
-        },
-        {
-          data: 'discount',
-          name: 'discount'
-        },
-        {
-          data: 'total',
-          name: 'total'
-        }, 
-         {
-          data: 'paid',
-          name: 'paid'
-        },
-         {
-          data: 'due',
-          name: 'due'
-        },
-        {
-          data: 'status',
-          name: 'status'
-        },
-        {
-          data: 'action',
-          name: 'action'
-        },
-      ]
-    });
-  });
-</script>
+            $('#datatables').DataTable({
+                processing: true,
+                serverSide: true,
+                ordering: true,
+                order: [
+                    [1, 'desc']
+                ],
+                ajax: {
+                    url: config.ajax
+                },
+
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex'
+                    },
+                    {
+                        data: 'saleId',
+                        name: 'id'
+                    },
+                    {
+                        data: 'customer',
+                        name: 'customer'
+                    },
+                    {
+                        data: 'item',
+                        name: 'item_quantity_sum'
+                    },
+                    {
+                        data: 'sub_total',
+                        name: 'sub_total'
+                    },
+                    {
+                        data: 'discount',
+                        name: 'discount'
+                    },
+                    {
+                        data: 'total',
+                        name: 'total'
+                    },
+                    {
+                        data: 'paid',
+                        name: 'paid'
+                    },
+                    {
+                        data: 'due',
+                        name: 'due'
+                    },
+                    {
+                        data: 'is_paid',
+                        name: 'is_paid',
+                        render: (isPaid) => window.qposTableActions.statusBadge(isPaid, {
+                            active: config.labels.paid,
+                            inactive: config.labels.due
+                        }, {
+                            inactive: 'bg-red-600 text-white',
+                        }),
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-right',
+                        render: (value, type, row) => {
+                            const items = [{
+                                    type: 'link',
+                                    url: withId(config.routes.invoice, row.id),
+                                    label: config.labels.invoice,
+                                    icon: 'fas fa-file-invoice',
+                                },
+                                {
+                                    type: 'link',
+                                    url: withId(config.routes.posInvoice, row.id),
+                                    label: config.labels.posReceipt,
+                                    icon: 'fas fa-file-invoice',
+                                },
+                            ];
+
+                            if (!row.is_paid && config.can.collect) {
+                                items.push({
+                                    type: 'link',
+                                    url: withId(config.routes.collect, row.id),
+                                    label: config.labels.collectDue,
+                                    icon: 'fas fa-receipt',
+                                });
+                            }
+
+                            items.push({
+                                type: 'link',
+                                url: withId(config.routes.transactions, row.id),
+                                label: config.labels.transactions,
+                                icon: 'fas fa-exchange-alt',
+                            });
+
+                            return window.qposTableActions.buttons({
+                                csrf: config.csrf,
+                                items
+                            });
+                        },
+                    },
+                ]
+            });
+        });
+    </script>
 @endpush

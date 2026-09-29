@@ -1,591 +1,348 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('General Settings'))
 
 @section('content')
+    @php
+        // Onglets : la cle est reprise du parametre ?active-tab=, exactement les
+        // valeurs qu'utilisent les redirections du controleur apres enregistrement.
+        $tabs = [
+            ['key' => 'website-info', 'icon' => 'fas fa-desktop', 'label' => __('Website Info'), 'permission' => 'website_settings'],
+            ['key' => 'contacts', 'icon' => 'fas fa-address-book', 'label' => __('Contacts'), 'permission' => 'contact_settings'],
+            ['key' => 'social-links', 'icon' => 'fas fa-share-alt', 'label' => __('Social Links'), 'permission' => 'socials_settings'],
+            ['key' => 'style-settings', 'icon' => 'fas fa-swatchbook', 'label' => __('Style Settings'), 'permission' => 'style_settings'],
+            ['key' => 'custom-css', 'icon' => 'fas fa-code', 'label' => __('Custom CSS'), 'permission' => 'custom_settings'],
+            ['key' => 'notification-settings', 'icon' => 'fas fa-envelope', 'label' => __('Notification Settings'), 'permission' => 'notification_settings'],
+            ['key' => 'website-status', 'icon' => 'fas fa-power-off', 'label' => __('Website Status'), 'permission' => 'website_status_settings'],
+            ['key' => 'invoice-settings', 'icon' => 'fas fa-file-invoice', 'label' => __('Invoice Settings'), 'permission' => 'invoice_settings'],
+        ];
+    @endphp
 
-<div class="row">
-    <div class="col-4 col-sm-2">
-        <div class="nav flex-column nav-tabs h-100" id="vert-tabs-tab" role="tablist" aria-orientation="vertical">
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr]" data-qpos-tabs>
+        <nav class="flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap" role="tablist" aria-orientation="vertical">
+            @foreach ($tabs as $tab)
+                @can($tab['permission'])
+                    <button type="button" role="tab" data-qpos-tab="{{ $tab['key'] }}" aria-selected="false"
+                        class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-qpos-muted transition hover:bg-qpos-page">
+                        <i class="{{ $tab['icon'] }}" aria-hidden="true"></i>
+                        {{ $tab['label'] }}
+                    </button>
+                @endcan
+            @endforeach
+        </nav>
+
+        <div class="space-y-6">
+            {{-- 1. Informations du site --}}
             @can('website_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'website-info' ? 'active' : '' }}" id="vert-tabs-1"
-                data-toggle="pill" href="#tabs-1" role="tab" aria-controls="tabs-1" aria-selected="true">
-                <i class="fas fa-desktop"></i>
-                &nbsp;{{ __('Website Info') }}
-            </a>
+                <div data-qpos-tab-panel="website-info" class="hidden">
+                    <x-backend.card :title="__('Website Info')">
+                        <form action="{{ route('backend.admin.settings.website.info.update') }}" method="post">
+                            @csrf
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <x-backend.input name="site_name" :label="__('Website Title')" :value="readConfig('site_name')"
+                                    :placeholder="__('Enter Site Title')" />
+
+                                <x-backend.textarea name="meta_description" :label="__('Meta Description')"
+                                    :value="readConfig('meta_description')" :placeholder="__('Enter Meta Description')"
+                                    rows="2" />
+
+                                <x-backend.textarea name="meta_keywords" :label="__('Meta Keywords')"
+                                    :value="readConfig('meta_keywords')" :placeholder="__('Enter Keywords')" rows="2" />
+
+                                <x-backend.input name="site_url" type="url" :label="__('Website URL')"
+                                    :value="readConfig('site_url')" :placeholder="__('Enter Site URL')" />
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 2. Coordonnees --}}
             @can('contact_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'contacts' ? 'active' : '' }}" id="vert-tabs-2"
-                data-toggle="pill" href="#tabs-2" role="tab" aria-controls="tabs-2" aria-selected="false">
-                <i class="fas fa-address-book"></i>
-                &nbsp;{{ __('Contacts') }}
-            </a>
+                <div data-qpos-tab-panel="contacts" class="hidden">
+                    <x-backend.card :title="__('Contacts')">
+                        <form action="{{ route('backend.admin.settings.website.contacts.update') }}" method="post">
+                            @csrf
+
+                            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                                <x-backend.input name="contact_address" :label="__('Address')"
+                                    :value="readConfig('contact_address')" />
+
+                                <x-backend.input name="contact_phone" type="tel" :label="__('Phone')"
+                                    :value="readConfig('contact_phone')" :placeholder="__('Phone')" />
+
+                                <x-backend.input name="contact_fax" type="tel" :label="__('Fax')"
+                                    :value="readConfig('contact_fax')" :placeholder="__('Fax')" />
+
+                                <x-backend.input name="contact_mobile" type="tel" :label="__('Mobile')"
+                                    :value="readConfig('contact_mobile')" :placeholder="__('Mobile')" />
+
+                                <x-backend.input name="contact_email" type="email" :label="__('Email')"
+                                    :value="readConfig('contact_email')" :placeholder="__('Email')" />
+
+                                <x-backend.input name="working_hour" :label="__('Working Time')"
+                                    :value="readConfig('working_hour')"
+                                    :placeholder="__('Sunday to Thursday, 8:00 AM to 5:00 PM')" />
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 3. Reseaux sociaux --}}
             @can('socials_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'social-links' ? 'active' : '' }}" id="vert-tabs-3"
-                data-toggle="pill" href="#tabs-3" role="tab" aria-controls="tabs-3" aria-selected="false">
-                <i class="fas fa-share-alt"></i>
-                &nbsp;{{ __('Social Links') }}
-            </a>
+                <div data-qpos-tab-panel="social-links" class="hidden">
+                    <x-backend.card :title="__('Social Links')">
+                        <form action="{{ route('backend.admin.settings.website.social.link.update') }}" method="post">
+                            @csrf
+
+                            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                                <x-backend.input name="facebook_link" type="url" icon="fab fa-facebook"
+                                    label="Facebook" :value="readConfig('facebook_link')" placeholder="Facebook" />
+
+                                <x-backend.input name="twitter_link" type="url" icon="fab fa-twitter" label="Twitter"
+                                    :value="readConfig('twitter_link')" placeholder="Twitter" />
+
+                                <x-backend.input name="linkedin_link" type="url" icon="fab fa-linkedin"
+                                    label="Linkedin" :value="readConfig('linkedin_link')" placeholder="Linkedin" />
+
+                                <x-backend.input name="youtube_link" type="url" icon="fab fa-youtube" label="Youtube"
+                                    :value="readConfig('youtube_link')" placeholder="Youtube" />
+
+                                <x-backend.input name="instagram_link" type="url" icon="fab fa-instagram"
+                                    label="Instagram" :value="readConfig('instagram_link')" placeholder="Instagram" />
+
+                                <x-backend.input name="pinterest_link" type="url" icon="fab fa-pinterest"
+                                    label="Pinterest" :value="readConfig('pinterest_link')" placeholder="Pinterest" />
+
+                                <x-backend.input name="tumblr_link" type="url" icon="fab fa-tumblr" label="Tumblr"
+                                    :value="readConfig('tumblr_link')" placeholder="Tumblr" />
+
+                                <x-backend.input name="snapchat_link" type="url" icon="fab fa-snapchat"
+                                    label="Snapchat" :value="readConfig('snapchat_link')" placeholder="Snapchat" />
+
+                                <x-backend.input name="whatsapp_link" type="url" icon="fab fa-whatsapp"
+                                    label="Whatsapp" :value="readConfig('whatsapp_link')" placeholder="Whatsapp" />
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 4. Style (logo, favicon, icone Apple, newsletter) --}}
             @can('style_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'style-settings' ? 'active' : '' }}" id="vert-tabs-4"
-                data-toggle="pill" href="#tabs-4" role="tab" aria-controls="tabs-4" aria-selected="false">
-                <i class="fas fa-swatchbook"></i>
-                &nbsp;{{ __('Style Settings') }}
-            </a>
+                <div data-qpos-tab-panel="style-settings" class="hidden">
+                    <x-backend.card :title="__('Style Settings')">
+                        <form action="{{ route('backend.admin.settings.website.style.settings.update') }}" method="post"
+                            enctype="multipart/form-data">
+                            @csrf
+
+                            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                <div class="lg:col-span-2">
+                                    <x-backend.image-field name="site_logo" field-id="siteLogo" :label="__('Site') . ' ' . __('Logo')"
+                                        :current-image-url="assetImage(readconfig('site_logo'))" />
+                                    <p class="mt-2 text-xs text-qpos-muted">
+                                        <i class="far fa-question-circle" aria-hidden="true"></i>
+                                        {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '260x60']) }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <x-backend.image-field name="favicon_icon" field-id="faviconIcon" :label="__('Favicon')"
+                                        :current-image-url="assetImage(readconfig('favicon_icon'))" />
+                                    <p class="mt-2 text-xs text-qpos-muted">
+                                        <i class="far fa-question-circle" aria-hidden="true"></i>
+                                        {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '32x32']) }}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <x-backend.image-field name="favicon_icon_apple" field-id="faviconApple"
+                                        :label="__('Apple Icon')"
+                                        :current-image-url="assetImage(readconfig('favicon_icon_apple'))" />
+                                    <p class="mt-2 text-xs text-qpos-muted">
+                                        <i class="far fa-question-circle" aria-hidden="true"></i>
+                                        {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '180x180']) }}
+                                    </p>
+                                </div>
+
+                                <div class="lg:col-span-2">
+                                    <x-backend.radio-group name="newsletter_subscribe" :label="__('Newsletter Subscribe')" :options="[
+                                        1 => __('Active'),
+                                        0 => __('Not Active'),
+                                    ]" :selected="readConfig('newsletter_subscribe')" />
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 5. CSS personnalise --}}
             @can('custom_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'custom-css' ? 'active' : '' }}" id="vert-tabs-5"
-                data-toggle="pill" href="#tabs-5" role="tab" aria-controls="tabs-5" aria-selected="false">
-                <i class="fas fa-code"></i>
-                &nbsp;{{ __('Custom CSS') }}
-            </a>
+                <div data-qpos-tab-panel="custom-css" class="hidden">
+                    <x-backend.card :title="__('Custom CSS')">
+                        <form action="{{ route('backend.admin.settings.website.custom.css.update') }}" method="post">
+                            @csrf
+
+                            <x-backend.textarea name="custom_css" :value="readConfig('custom_css')" rows="17" />
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 6. Notifications --}}
             @can('notification_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'notification-settings' ? 'active' : '' }}" id="vert-tabs-6"
-                data-toggle="pill" href="#tabs-6" role="tab" aria-controls="tabs-6" aria-selected="false">
-                <i class="fas fa-envelope"></i>
-                &nbsp;{{ __('Notification Settings') }}
-            </a>
+                <div data-qpos-tab-panel="notification-settings" class="hidden">
+                    <x-backend.card :title="__('Notification Settings')">
+                        <form action="{{ route('backend.admin.settings.website.notification.settings.update') }}"
+                            method="post">
+                            @csrf
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <x-backend.input name="notify_email_address" type="email"
+                                    :label="__('Website Notification Email')" :value="readConfig('notify_email_address')"
+                                    :placeholder="__('Enter email')" />
+
+                                <x-backend.radio-group name="notify_messages_status"
+                                    :label="__('Send me an email on new contact messages')" :options="[
+                                        1 => __('Yes'),
+                                        0 => __('No'),
+                                    ]" :selected="readConfig('notify_messages_status')" />
+
+                                <x-backend.radio-group name="notify_comments_status"
+                                    :label="__('Send me an email on new comments')" :options="[
+                                        1 => __('Yes'),
+                                        0 => __('No'),
+                                    ]" :selected="readConfig('notify_comments_status')" />
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 7. Etat du site --}}
             @can('website_status_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'website-status' ? 'active' : '' }}" id="vert-tabs-7"
-                data-toggle="pill" href="#tabs-7" role="tab" aria-controls="tabs-7" aria-selected="false">
-                <i class="fas fa-power-off"></i>
-                &nbsp;{{ __('Website Status') }}
-            </a>
+                <div data-qpos-tab-panel="website-status" class="hidden">
+                    <x-backend.card :title="__('Website Status')">
+                        <form action="{{ route('backend.admin.settings.website.status.update') }}" method="post">
+                            @csrf
+
+                            <div class="grid grid-cols-1 gap-5">
+                                <x-backend.radio-group name="is_live" :label="__('Website Status')" :options="[
+                                    1 => __('Active'),
+                                    0 => __('Not Active'),
+                                ]" :selected="readConfig('is_live')" />
+
+                                {{-- Visible seulement si le site est hors ligne (script en bas de page). --}}
+                                <div data-qpos-close-message-panel
+                                    class="{{ readConfig('is_live') == 1 ? 'hidden' : '' }}">
+                                    <x-backend.textarea name="close_msg" :label="__('Close Message')"
+                                        :value="readConfig('close_msg')" :placeholder="__('Close Message')" rows="4" />
+                                    {{-- Le controleur websiteStatusUpdate() n'enregistre que is_live :
+                                         ce message n'est donc pas conserve (voir la documentation). --}}
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
+
+            {{-- 8. Facture --}}
             @can('invoice_settings')
-            <a class="nav-link {{ @$_GET['active-tab'] == 'invoice-settings' ? 'active' : '' }}" id="vert-tabs-8"
-                data-toggle="pill" href="#tabs-8" role="tab" aria-controls="tabs-8" aria-selected="false">
-                <i class="fas fa-file-invoice"></i>
-                &nbsp;{{ __('Invoice Settings') }}
-            </a>
+                <div data-qpos-tab-panel="invoice-settings" class="hidden">
+                    <x-backend.card :title="__('Invoice Settings')">
+                        <form action="{{ route('backend.admin.settings.website.invoice.update') }}" method="post">
+                            @csrf
+
+                            <x-backend.input name="note_to_customer_invoice" :label="__('Note to customer')"
+                                :value="readConfig('note_to_customer_invoice')"
+                                :placeholder="__('Enter message for invoice')" />
+
+                            <div class="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                @foreach ([
+                                    'is_show_logo_invoice' => __('Logo'),
+                                    'is_show_site_invoice' => __('Site Name'),
+                                    'is_show_phone_invoice' => __('Phone'),
+                                    'is_show_email_invoice' => __('Email'),
+                                    'is_show_address_invoice' => __('Address'),
+                                    'is_show_customer_invoice' => __('Customer'),
+                                    'is_show_note_invoice' => __('Note to customer'),
+                                ] as $field => $label)
+                                    <x-backend.switch :name="$field" :label="$label"
+                                        :checked="readConfig($field) == 1" />
+                                @endforeach
+                            </div>
+
+                            <div class="mt-5 lg:w-1/2">
+                                <x-backend.select name="receiptMaxwidth" :label="__('POS Invoice Width')" :options="[
+                                    '300px' => __('Small'),
+                                    '400px' => __('Medium'),
+                                    '500px' => __('Large'),
+                                ]" :selected="readConfig('receiptMaxwidth')" />
+                            </div>
+
+                            <div class="mt-6">
+                                <x-backend.button icon="fas fa-reply">{{ __('Save changes') }}</x-backend.button>
+                            </div>
+                        </form>
+                    </x-backend.card>
+                </div>
             @endcan
         </div>
     </div>
-    <div class="col-8 col-sm-10">
-        <div class="tab-content" id="vert-tabs-tabContent">
-            @can('website_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'website-info' ? 'active show' : '' }}" id="tabs-1"
-                role="tabpanel" aria-labelledby="vert-tabs-1">
-
-                <form action="{{ route('backend.admin.settings.website.info.update') }}" method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-desktop"></i>
-                            &nbsp;&nbsp;{{ __('Website Info') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label>{{ __('Website Title') }}</label>
-                            <input class="form-control" name="site_name" type="text"
-                                value="{{ readConfig('site_name') }}" placeholder="{{ __('Enter Site Title') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Meta Description') }}</label>
-                            <textarea class="form-control" rows="2" name="meta_description" cols="50"
-                                placeholder="{{ __('Enter Meta Description') }}">{{ readConfig('meta_description') }}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Meta Keywords') }}</label>
-                            <textarea class="form-control" rows="2" name="meta_keywords" cols="50" placeholder="{{ __('Enter Keywords') }}">{{ readConfig('meta_keywords') }}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Website URL') }}</label>
-                            <input class="form-control" name="site_url" type="url"
-                                value="{{ readConfig('site_url') }}" placeholder="{{ __('Enter Site URL') }}">
-                        </div>
-                    </div>
-                </form>
-
-            </div>
-            @endcan
-            @can('contact_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'contacts' ? 'active show' : '' }}" id="tabs-2"
-                role="tabpanel" aria-labelledby="vert-tabs-2">
-
-                <form action="{{ route('backend.admin.settings.website.contacts.update') }}" method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-address-book"></i>
-                            &nbsp;&nbsp;{{ __('Contacts') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label>{{ __('Address') }}</label>
-                            <input placeholder="" class="form-control" name="contact_address" type="text"
-                                value="{{ readConfig('contact_address') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Phone') }}</label>
-                            <input placeholder="{{ __('Phone') }}" class="form-control" name="contact_phone" type="tel"
-                                value="{{ readConfig('contact_phone') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Fax') }}</label>
-                            <input placeholder="{{ __('Fax') }}" class="form-control" name="contact_fax" type="tel"
-                                value="{{ readConfig('contact_fax') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Mobile') }}</label>
-                            <input placeholder="{{ __('Mobile') }}" class="form-control" name="contact_mobile" type="tel"
-                                value="{{ readConfig('contact_mobile') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Email') }}</label>
-                            <input placeholder="{{ __('Email') }}" class="form-control" name="contact_email" type="email"
-                                value="{{ readConfig('contact_email') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Working Time') }}</label>
-                            <input placeholder="{{ __('Sunday to Thursday, 8:00 AM to 5:00 PM') }}" class="form-control"
-                                name="working_hour" type="text" value="{{ readConfig('working_hour') }}">
-                        </div>
-                    </div>
-                </form>
-
-            </div>
-            @endcan
-            @can('socials_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'social-links' ? 'active show' : '' }}"
-                id="tabs-3" role="tabpanel" aria-labelledby="vert-tabs-3">
-                <form action="{{ route('backend.admin.settings.website.social.link.update') }}" method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-share-alt"></i>
-                            &nbsp;&nbsp;{{ __('Social Links') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-facebook"></i>
-                                &nbsp; Facebook
-                            </label>
-                            <input placeholder="Facebook" class="form-control" name="facebook_link" type="url"
-                                value="{{ readConfig('facebook_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-twitter"></i>
-                                &nbsp; Twitter
-                            </label>
-                            <input placeholder="Twitter" class="form-control" name="twitter_link" type="url"
-                                value="{{ readConfig('twitter_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-linkedin"></i>
-                                &nbsp; Linkedin
-                            </label>
-                            <input placeholder="Linkedin" class="form-control" name="linkedin_link" type="url"
-                                value="{{ readConfig('linkedin_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-youtube"></i>
-                                &nbsp; Youtube
-                            </label>
-                            <input placeholder="Youtube" class="form-control" name="youtube_link" type="url"
-                                value="{{ readConfig('youtube_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-instagram"></i>
-                                &nbsp; Instagram
-                            </label>
-                            <input placeholder="Instagram" class="form-control" name="instagram_link" type="url"
-                                value="{{ readConfig('instagram_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-pinterest"></i>
-                                &nbsp; Pinterest
-                            </label>
-                            <input placeholder="Pinterest" class="form-control" name="pinterest_link" type="url"
-                                value="{{ readConfig('pinterest_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-tumblr"></i>
-                                &nbsp; Tumblr
-                            </label>
-                            <input placeholder="Tumblr" class="form-control" name="tumblr_link" type="url"
-                                value="{{ readConfig('tumblr_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-snapchat"></i>
-                                &nbsp; Snapchat
-                            </label>
-                            <input placeholder="Snapchat" class="form-control" name="snapchat_link" type="url"
-                                value="{{ readConfig('snapchat_link') }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label>
-                                <i class="fab fa-whatsapp"></i>
-                                &nbsp; Whatsapp
-                            </label>
-                            <input placeholder="Whatsapp" class="form-control" name="whatsapp_link" type="url"
-                                value="{{ readConfig('whatsapp_link') }}">
-                        </div>
-                    </div>
-                </form>
-            </div>
-            @endcan
-            @can('style_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'style-settings' ? 'active show' : '' }}"
-                id="tabs-4" role="tabpanel" aria-labelledby="vert-tabs-4">
-
-                <form action="{{ route('backend.admin.settings.website.style.settings.update') }}" method="post"
-                    enctype="multipart/form-data">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-swatchbook"></i>
-                            &nbsp;&nbsp;{{ __('Style Settings') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-
-                    <div class="col-12 my-2">
-                        <label>{{ __('Site') }} {{ __('Logo') }}</label>
-
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <div class="col-sm-12 box p-a-xs text-center">
-                                    <img src="{{ assetImage(readconfig('site_logo')) }}"
-                                        class="img-fluid thumbnail-preview site-logo-placeholder">
-                                </div>
-                            </div>
-                        </div>
-                        <input class="form-control" accept="image/*" name="site_logo" type="file"
-                            onchange="previewThumbnail(this)">
-                        <small>
-                            <i class="far fa-question-circle"></i>
-                            {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '260x60']) }}
-                        </small>
-                    </div>
-                    <hr>
-                    <div class="form-group row">
-                        <div class="col-sm-6">
-                            <label for="style_fav">{{ __('Favicon') }}</label>
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <div class="col-sm-12 box p-a-xs text-center">
-                                        <a target="_blank" href="{{ assetImage(readconfig('favicon_icon')) }}">
-                                            <img src="{{ assetImage(readconfig('favicon_icon')) }}"
-                                                class="img-fluid thumbnail-preview site-logo-placeholder">
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <input class="form-control" accept="image/*" name="favicon_icon" type="file"
-                                onchange="previewThumbnail(this)">
-                            <small>
-                                <i class="far fa-question-circle"></i>
-                                {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '32x32']) }}
-                            </small>
-                        </div>
-                        <div class="col-sm-6">
-                            <label for="style_apple">{{ __('Apple Icon') }}</label>
-                            <div class="row">
-                                <div class="col-sm-12">
-                                    <div class="col-sm-12 box p-a-xs text-center">
-                                        <a target="_blank" href="{{ assetImage(readconfig('favicon_icon_apple')) }}">
-                                            <img src="{{ assetImage(readconfig('favicon_icon_apple')) }}"
-                                                class="img-fluid thumbnail-preview site-logo-placeholder">
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <input class="form-control" accept="image/*" name="favicon_icon_apple" type="file"
-                                onchange="previewThumbnail(this)">
-                            <small>
-                                <i class="far fa-question-circle"></i>
-                                {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '180x180']) }}
-                            </small>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="form-group">
-                        <label>{{ __('Newsletter Subscribe') }}</label>
-                        <div class="radio bg-white rounded pt-2 pl-2 border">
-                            <label class="ui-check ui-check-md">
-                                <input {{ readConfig('newsletter_subscribe') == 1 ? 'checked' : '' }}
-                                    name="newsletter_subscribe" type="radio" value="1">
-                                <i class="dark-white"></i>
-                                {{ __('Active') }}
-                            </label>
-                            &nbsp; &nbsp;
-                            <label class="ui-check ui-check-md">
-                                <input {{ readConfig('newsletter_subscribe') == 0 ? 'checked' : '' }}
-                                    name="newsletter_subscribe" type="radio" value="0">
-                                <i class="dark-white"></i>
-                                {{ __('Not Active') }}
-                            </label>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            @endcan
-            @can('custom_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'custom-css' ? 'active show' : '' }}" id="tabs-5"
-                role="tabpanel" aria-labelledby="vert-tabs-5">
-                <form action="{{ route('backend.admin.settings.website.custom.css.update') }}" method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-code"></i>
-                            &nbsp;&nbsp;{{ __('Custom CSS') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="col-md-12 mt-2">
-                        <div class="form-group">
-                            <textarea placeholder="" class="form-control" rows="17" name="custom_css" cols="50">{{ readConfig('custom_css') }}</textarea>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            @endcan
-            @can('notification_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'notification-settings' ? 'active show' : '' }}"
-                id="tabs-6" role="tabpanel" aria-labelledby="vert-tabs-6">
-                <form action="{{ route('backend.admin.settings.website.notification.settings.update') }}"
-                    method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-envelope"></i>
-                            &nbsp;&nbsp;{{ __('Notification Settings') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="p-a-md col-md-12">
-                        <div class="form-group">
-                            <label>{{ __('Website Notification Email') }}</label>
-                            <input placeholder="{{ __('Enter email') }}" class="form-control" name="notify_email_address"
-                                type="email" value="{{ readConfig('notify_email_address') }}">
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Send me an email on new contact messages') }} </label>
-                            <div class="radio bg-white rounded pt-2 pl-2 border">
-                                <label class="ui-check ui-check-md">
-                                    <input {{ readConfig('notify_messages_status') == 1 ? 'checked' : '' }}
-                                        name="notify_messages_status" type="radio" value="1">
-                                    <i class="dark-white"></i>
-                                    {{ __('Yes') }}
-                                </label>
-                                &nbsp; &nbsp;
-                                <label class="ui-check ui-check-md">
-                                    <input {{ readConfig('notify_messages_status') == 0 ? 'checked' : '' }}
-                                        name="notify_messages_status" type="radio" value="0">
-                                    <i class="dark-white"></i>
-                                    {{ __('No') }}
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>{{ __('Send me an email on new comments') }} </label>
-                            <div class="radio bg-white rounded pt-2 pl-2 border">
-                                <label class="ui-check ui-check-md">
-                                    <input {{ readConfig('notify_comments_status') == 1 ? 'checked' : '' }}
-                                        name="notify_comments_status" type="radio" value="1">
-                                    <i class="dark-white"></i>
-                                    {{ __('Yes') }}
-                                </label>
-                                &nbsp; &nbsp;
-                                <label class="ui-check ui-check-md">
-                                    <input {{ readConfig('notify_comments_status') == 0 ? 'checked' : '' }}
-                                        name="notify_comments_status" type="radio" value="0">
-                                    <i class="dark-white"></i>
-                                    {{ __('No') }}
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            @endcan
-            @can('website_status_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'website-status' ? 'active show' : '' }}"
-                id="tabs-7" role="tabpanel" aria-labelledby="vert-tabs-7">
-                <form action="{{ route('backend.admin.settings.website.status.update') }}" method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-power-off"></i>
-                            &nbsp;&nbsp;{{ __('Website Status') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="p-a-md col-md-12">
-                        <div class="form-group">
-                            <label>{{ __('Website Status') }} : </label>
-                            <div class="radio bg-white rounded pt-2 pl-2 border">
-                                <label class="ui-check ui-check-md">
-                                    <input {{ readConfig('is_live') == 1 ? 'checked' : '' }} name="is_live"
-                                        type="radio" value="1">
-                                    <i class="dark-white"></i>
-                                    {{ __('Active') }}
-                                </label>
-                                &nbsp; &nbsp;
-                                <label class="ui-check ui-check-md">
-                                    <input {{ readConfig('is_live') == 0 ? 'checked' : '' }} name="is_live"
-                                        type="radio" value="0">
-                                    <i class="dark-white"></i>
-                                    {{ __('Not Active') }}
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group {{ readConfig('is_live') == 1 ? 'd-none' : '' }}" id="close_msg_div">
-                            <label>{{ __('Close Message') }}</label>
-                            <textarea placeholder="{{ __('Close Message') }}" class="form-control" rows="4" name="close_msg" cols="50">Website under maintenance&lt;h1&gt;Comming SOON&lt;/h1&gt;</textarea>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            @endcan
-            @can('invoice_settings')
-            <div class="tab-pane fade {{ @$_GET['active-tab'] == 'invoice-settings' ? 'active show' : '' }}"
-                id="tabs-8" role="tabpanel" aria-labelledby="vert-tabs-8">
-                <form action="{{ route('backend.admin.settings.website.invoice.update') }}" method="post">
-                    @csrf
-                    <div class="col-md-12 d-flex justify-content-between">
-                        <h5>
-                            <i class="fas fa-file-invoice"></i>
-                            &nbsp;&nbsp;{{ __('Invoice Settings') }}
-                        </h5>
-                        <button type="submit" class="btn bg-gradient-primary">
-                            <i class="fas fa-reply"></i>
-                            &nbsp;{{ __('Save changes') }}
-                        </button>
-                    </div>
-                    <div class="form-group">
-                        <label>{{ __('Note to customer') }}</label>
-                        <input type="text" class="form-control" placeholder="{{ __('Enter message for invoice') }}" name="note_to_customer_invoice" value="{{ readConfig('note_to_customer_invoice') }}">
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_logo_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_logo_invoice') == 1 ? 'checked' : '' }} name="is_show_logo_invoice" id="is_show_logo_invoice" value="{{ readConfig('is_show_logo_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="is_show_logo_invoice" class="mx-2">{{ __('Logo') }}</label>
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_site_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_site_invoice') == 1 ? 'checked' : '' }} name="is_show_site_invoice" id="is_show_site_invoice" value="{{ readConfig('is_show_site_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="is_show_site_invoice" class="mx-2">{{ __('Site Name') }}</label>
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_phone_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_phone_invoice') == 1 ? 'checked' : '' }} name="is_show_phone_invoice" id="is_show_phone_invoice" value="{{ readConfig('is_show_phone_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-
-                        <label for="is_show_phone_invoice" class="mx-2">{{ __('Phone') }}</label>
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_email_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_email_invoice') == 1 ? 'checked' : '' }} name="is_show_email_invoice" id="is_show_email_invoice" value="{{ readConfig('is_show_email_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="is_show_email_invoice" class="mx-2">{{ __('Email') }}</label>
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_address_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_address_invoice') == 1 ? 'checked' : '' }} name="is_show_address_invoice" id="is_show_address_invoice" value="{{ readConfig('is_show_address_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="is_show_address_invoice" class="mx-2">{{ __('Address') }}</label>
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_customer_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_customer_invoice') == 1 ? 'checked' : '' }} name="is_show_customer_invoice" id="is_show_customer_invoice" value="{{ readConfig('is_show_customer_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="is_show_customer_invoice" class="mx-2">{{ __('Customer') }}</label>
-                    </div>
-                    <div class="form-group d-flex align-items-center">
-                        <label class="switch"><input type="hidden" name="is_show_note_invoice" value="0">
-                            <input onclick="updateCheckboxValue(this)" type="checkbox" {{ readConfig('is_show_note_invoice') == 1 ? 'checked' : '' }} name="is_show_note_invoice" id="is_show_note_invoice" value="{{ readConfig('is_show_note_invoice') == 1 ? 1 : '0' }}">
-                            <span class="slider round"></span>
-                        </label>
-                        <label for="is_show_note_invoice" class="mx-2">{{ __('Note to customer') }}</label>
-                    </div>
-                    <div class="form-group">
-                        <label class="">{{ __('POS Invoice Width') }}</label>
-                        <select name="receiptMaxwidth" class="form-control col-6">
-                            <option value="300px" {{ readConfig('receiptMaxwidth') == '300px' ? 'selected' : '' }}>{{ __('Small') }}</option>
-                            <option value="400px" {{ readConfig('receiptMaxwidth') == '400px' ? 'selected' : '' }}>{{ __('Medium') }}</option>
-                            <option value="500px" {{ readConfig('receiptMaxwidth') == '500px' ? 'selected' : '' }}>{{ __('Large') }}</option>
-                        </select>
-                    </div>
-
-            </div>
-            @endcan
-            </form>
-        </div>
-    </div>
-</div>
-</div>
 @endsection
 
 @push('script')
-<script>
-    $('input[type=radio][name=is_live]').on("change", function() {
-        if (this.value == '0') {
-            $("#close_msg_div").removeClass('d-none');
-        } else {
-            $("#close_msg_div").addClass('d-none');
-        }
-    });
+    <script>
+        // Le message de fermeture ne sert que si le site est hors ligne.
+        (() => {
+            const panel = document.querySelector('[data-qpos-close-message-panel]');
+            const radios = document.querySelectorAll('input[name="is_live"]');
 
-    function updateCheckboxValue(checkbox) {
-        checkbox.value = checkbox.checked ? '1' : '0';
-    }
-</script>
+            if (!panel || radios.length === 0) {
+                return;
+            }
+
+            const sync = () => {
+                const offline = Array.from(radios).some(
+                    (radio) => radio.checked && radio.value === '0'
+                );
+
+                panel.classList.toggle('hidden', !offline);
+            };
+
+            radios.forEach((radio) => radio.addEventListener('change', sync));
+            sync();
+        })();
+    </script>
 @endpush

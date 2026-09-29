@@ -1,82 +1,64 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Profile'))
 
 @section('content')
-<div class="card">
-    <div class="card-body">
-        <form action="{{ route('backend.admin.profile.update') }}" method="post" class="accountForm" enctype="multipart/form-data">
+    <x-backend.card>
+        <form action="{{ route('backend.admin.profile.update') }}" method="post" class="accountForm"
+            enctype="multipart/form-data">
             @csrf
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label for="fullName" class="form-label">{{ __('Full Name') }}</label>
-                        <input type="text" class="form-control" id="fullName" placeholder="{{ __('Enter full name') }}"
-                            name="name" value="{{ $user->name }}">
-                    </div>
+
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div>
+                    <label for="fullName" class="block text-sm font-medium text-qpos-ink">{{ __('Full Name') }}</label>
+                    <input type="text" id="fullName" name="name" value="{{ $user->name }}"
+                        placeholder="{{ __('Enter full name') }}"
+                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label for="email" class="form-label">{{ __('Email') }}</label>
-                        <input type="email" class="form-control" id="email" placeholder="{{ __('Email') }}" name="email"
-                            value="{{ $user->email }}">
-                    </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-qpos-ink">{{ __('Email') }}</label>
+                    <input type="email" id="email" name="email" value="{{ $user->email }}"
+                        placeholder="{{ __('Email') }}"
+                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
-                <div class="col-12">
-                    <div class="form-group">
-                        <label for="thumbnail">{{ __('Profile Image') }}</label>
-                        <!-- <input type="file" class="form-control" name="profile_image"
-                            onchange="previewThumbnail(this)">
-                        <img class="img-fluid thumbnail-preview" src="{{ nullImg() }}" alt="preview-image"> -->
-                        <div class="image-upload-container" id="imageUploadContainer">
-                            <input type="file" class="form-control" name="profile_image" id="thumbnailInput" accept="image/*" style="display: none;">
-                            <div class="thumb-preview" id="thumbPreviewContainer">
-                                <img src="{{ asset('storage/' . $user->profile_image) }}" alt="{{ __('Thumbnail Preview') }}"
-                                    class="img-thumbnail" id="thumbnailPreview" onerror="this.onerror=null; this.src='{{ asset('assets/images/no-image.png') }}'">
-                                <div class="upload-text d-none">
-                                    <i class="fas fa-plus-circle"></i>
-                                    <span>{{ __('Upload Image') }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <h4 class="font-weight-bold">{{ __('Password change') }}</h4>
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label for="password" class="form-label">{{ __('Current password') }}</label>
-                        <input type="password" class="form-control" id="password" placeholder="{{ __('Enter your password') }}"
-                            name="current_password" autocomplete="new-password">
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label for="new_password" class="form-label">{{ __('New password') }}</label>
-                        <input type="password" class="form-control" id="new_password" placeholder="{{ __('New password') }}"
-                            name="new_password">
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="form-group">
-                        <label for="confirmPassword" class="form-label">{{ __('Confirm password') }}</label>
-                        <input type="password" class="form-control" id="confirmPassword" placeholder="{{ __('Confirm password') }}"
-                            name="new_password_confirmation">
-                    </div>
-                </div>
-                <div class="col-lg-12">
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-block bg-gradient-primary">{{ __('Update') }}</button>
-                    </div>
+
+                <div class="lg:col-span-2">
+                    <x-backend.image-field name="profile_image" :label="__('Profile Image')"
+                        :current-image="$user->profile_image" />
                 </div>
             </div>
 
+            <h2 class="mt-8 text-lg font-semibold text-qpos-ink">{{ __('Password change') }}</h2>
+
+            <div class="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-qpos-ink">{{ __('Current password') }}</label>
+                    <input type="password" id="password" name="current_password" autocomplete="new-password"
+                        placeholder="{{ __('Enter your password') }}"
+                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                </div>
+
+                <div>
+                    <label for="new_password" class="block text-sm font-medium text-qpos-ink">{{ __('New password') }}</label>
+                    <input type="password" id="new_password" name="new_password" placeholder="{{ __('New password') }}"
+                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                </div>
+
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-qpos-ink">{{ __('Confirm password') }}</label>
+                    <input type="password" id="confirmPassword" name="new_password_confirmation"
+                        placeholder="{{ __('Confirm password') }}"
+                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                </div>
+
+                <div class="lg:col-span-2">
+                    <button type="submit"
+                        class="w-full rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                        {{ __('Update') }}
+                    </button>
+                </div>
+            </div>
         </form>
-    </div>
-</div>
+    </x-backend.card>
 @endsection
-
-@push('script')
-<script src="{{ asset('js/image-field.js') }}"></script>
-@endpush

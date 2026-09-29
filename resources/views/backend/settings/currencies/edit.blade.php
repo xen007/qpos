@@ -1,51 +1,31 @@
-@extends('backend.master')
+@extends('backend.master-tailwind')
 
 @section('title', __('Update Currency'))
 
 @section('content')
-<div class="card">
-  <div class="card-body">
-    <form action="{{ route('backend.admin.currencies.update',$currency->id) }}" method="post" class="accountForm"
-      enctype="multipart/form-data">
-      @csrf
-      @method('PUT')
-      <div class="card-body">
-        <div class="row">
-          <div class="mb-3 col-md-6">
-            <label for="name" class="form-label">
-              {{ __('Name') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter name') }}" name="name"
-              value="{{ old('name',$currency->name) }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="code" class="form-label">
-              {{ __('Code') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter short code') }}" name="code"
-              value="{{ old('code',$currency->code) }}" required>
-          </div>
-          <div class="mb-3 col-md-6">
-            <label for="symbol" class="form-label">
-              {{ __('Symbol') }}
-              <span class="text-danger">*</span>
-            </label>
-            <input type="text" class="form-control" placeholder="{{ __('Enter symbol') }}" name="symbol"
-              value="{{ old('symbol',$currency->symbol) }}" required>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-6">
-            <button type="submit" class="btn bg-gradient-primary">{{ __('Update') }}</button>
-          </div>
-        </div>
-      </div>
-    </form>
-  </div>
-</div>
+    <x-backend.card>
+        <form action="{{ route('backend.admin.currencies.update', $currency->id) }}" method="post" class="accountForm"
+            enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <x-backend.input name="name" :label="__('Name')" :value="$currency->name"
+                    :placeholder="__('Enter name')" required />
+
+                <x-backend.input name="code" :label="__('Code')" :value="$currency->code"
+                    :placeholder="__('Enter short code')" required />
+
+                <x-backend.input name="symbol" :label="__('Symbol')" :value="$currency->symbol"
+                    :placeholder="__('Enter symbol')" required />
+            </div>
+
+            <div class="mt-6">
+                <button type="submit"
+                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    {{ __('Update') }}
+                </button>
+            </div>
+        </form>
+    </x-backend.card>
 @endsection
-@push('script')
-<script src="{{ asset('js/image-field.js') }}"></script>
-@endpush
