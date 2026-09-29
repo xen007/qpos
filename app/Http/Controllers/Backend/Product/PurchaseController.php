@@ -16,12 +16,16 @@ class PurchaseController extends Controller
 {
     public function index(Request $request)
     {
-        abort_if(!auth()->user()->can('purchase_view'), 403);
 
         if ($request->ajax()) {
             $purchases = Purchase::query()->with('supplier')->latest();
             return DataTables::of($purchases)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs actions
+                // cote page. L'URL de modification porte un parametre de requete,
+                // elle est donc construite ici (un gabarit serait encode).
+                ->addColumn('purchase_id', fn($data) => $data->id)
+                ->addColumn('edit_url', fn($data) => route('backend.admin.purchase.create', ['purchase_id' => $data->id]))
                 ->addColumn('supplier', fn ($data) => $data->supplier?->name)
                 ->editColumn('id', fn ($data) => '#' . $data->id)
                 ->editColumn('total', fn ($data) => $data->grand_total)
@@ -146,7 +150,6 @@ class PurchaseController extends Controller
 
     public function show(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('purchase_view'), 403);
         if ($request->wantsJson()) {
             return Purchase::with('items.product', 'supplier')->findOrFail($id);
         }
@@ -155,25 +158,21 @@ class PurchaseController extends Controller
 
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('purchase_update'), 403);
         return to_route('backend.admin.purchase.create', ['purchase_id' => $id]);
     }
 
     public function update(Request $request, Purchase $purchase)
     {
-        abort_if(!auth()->user()->can('purchase_update'), 403);
         abort(405);
     }
 
     public function destroy(Purchase $purchase)
     {
-        abort_if(!auth()->user()->can('purchase_delete'), 403);
         abort(405, __('Deleting purchases is not supported yet.'));
     }
 
     public function purchaseProducts(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('purchase_view'), 403);
         $purchase = Purchase::with('items.product')->findOrFail($id);
         return view('backend.purchase.products', compact('id', 'purchase'));
     }

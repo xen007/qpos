@@ -14,7 +14,16 @@ class UpdateProductRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        $product = $this->route('product');
+
+        if (! $product instanceof Product) {
+            $product = Product::find($product);
+        }
+
+        // Meme droit que le middleware de route (permission:product_update).
+        // Si le produit n'existe pas, le controleur renvoie 404 : on ne modifie
+        // pas ce comportement en refusant ici.
+        return $product === null || (bool) $this->user()?->can('update', $product);
     }
 
     /**

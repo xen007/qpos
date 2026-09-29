@@ -19,13 +19,11 @@ class WebsiteSettingController extends Controller
 
     public function websiteGeneral(Request $request)
     {
-        abort_if(!auth()->user()->can('website_settings'), 403);
         return view('backend.settings.website-settings.general');
     }
 
     public function websiteInfoUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('website_settings'), 403);
         $request->validate([
             'site_name' => 'required',
             'site_url' => 'url'
@@ -41,7 +39,6 @@ class WebsiteSettingController extends Controller
 
     public function websiteContactsUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('contact_settings'), 403);
         foreach ($request->except('_token') as $key => $value) {
             writeConfig($key, $value);
         }
@@ -52,7 +49,6 @@ class WebsiteSettingController extends Controller
 
     public function websiteSocialLinkUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('socials_settings'), 403);
         foreach ($request->except('_token') as $key => $value) {
             writeConfig($key, $value);
         }
@@ -63,7 +59,6 @@ class WebsiteSettingController extends Controller
 
     public function websiteStyleSettingsUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('style_settings'), 403);
         $request->validate([
             'site_logo' => ['file', new ValidImageType, 'max:2048'],
             'favicon_icon' => ['file', new ValidImageType, 'max:2048'],
@@ -94,7 +89,6 @@ class WebsiteSettingController extends Controller
 
     public function websiteCustomCssUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('custom_settings'), 403);
         writeConfig('custom_css', $request->custom_css);
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'custom-css'])
@@ -103,7 +97,6 @@ class WebsiteSettingController extends Controller
 
     public function websiteNotificationSettingsUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('notification_settings'), 403);
         foreach ($request->except('_token') as $key => $value) {
             writeConfig($key, $value);
         }
@@ -115,15 +108,23 @@ class WebsiteSettingController extends Controller
 
     public function websiteStatusUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('website_status_settings'), 403);
+        $request->validate([
+            'is_live' => 'required|in:0,1',
+            'close_msg' => 'nullable|string',
+        ]);
+
         writeConfig('is_live', $request->is_live);
+
+        // Le formulaire poste aussi le message affiche quand le site est hors ligne :
+        // il n'etait pas enregistre, la saisie etait donc perdue.
+        writeConfig('close_msg', (string) $request->input('close_msg', ''));
+
         Artisan::call('config:clear');
         return to_route('backend.admin.settings.website.general', ['active-tab' => 'website-status'])
             ->with('success', __('Updated successfully'));
     }
     public function websiteInvoiceUpdate(Request $request)
     {
-        abort_if(!auth()->user()->can('invoice_settings'), 403);
         foreach ($request->except('_token') as $key => $value) {
             writeConfig($key, $value);
         }

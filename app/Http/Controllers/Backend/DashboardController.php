@@ -10,6 +10,7 @@ use App\Models\OrderProduct;
 use App\Models\OrderTransaction;
 use App\Models\Product;
 use App\Models\SupportTicket;
+use App\Support\DateRange;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -17,7 +18,6 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        abort_if(!auth()->user()->can('dashboard_view'), 403);
         $orders = Order::get();
         // Calculate totals
         $data = [
@@ -33,16 +33,10 @@ class DashboardController extends Controller
         ];
 
 
-        $startDate = Carbon::now()->subDays(30)->format('Y-m-d');
-        $endDate = Carbon::now()->format('Y-m-d');
-        if($request->has('daterange')) {
-            $dates = explode(' to ', $request->query('daterange'));
-
-            if (count($dates) == 2) {
-                $startDate = Carbon::parse($dates[0])->format('Y-m-d');
-                $endDate = Carbon::parse($dates[1])->format('Y-m-d');
-            }
-        }
+        // Filtre de periode : deux champs date natifs (date_from / date_to), avec
+        // compatibilite des anciens liens "daterange". Les bornes couvrent la
+        // journee entiere, sans quoi les ventes du jour courant seraient exclues.
+        [$startDate, $endDate] = DateRange::resolve($request, ['date_from', 'date_to']);
         $dailyTotals = OrderTransaction::selectRaw('DATE(created_at) as date, SUM(amount) as total_amount')
         ->whereBetween('created_at', [$startDate, $endDate])
         ->groupBy('date')
@@ -52,7 +46,8 @@ class DashboardController extends Controller
         $totalAmounts = $dailyTotals->pluck('total_amount')->toArray();
         $data['dates'] = $dates;
         $data['totalAmounts'] = $totalAmounts;
-        $data['dateRange'] = 'from '. $startDate . ' to ' . $endDate;
+        $data['dateFrom'] = $startDate->format('Y-m-d');
+        $data['dateTo'] = $endDate->format('Y-m-d');
 
 
         $currentYear = now()->year;

@@ -1,14 +1,28 @@
-/* Tailwind v4 is added without Preflight while AdminLTE pages are migrated. */
+/* Tailwind v4 est charge sans Preflight : la base visuelle des pages migrees
+   est fournie par les utilitaires, celles des pages AdminLTE reste intacte. */
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
 @source "../views/**/*.blade.php";
 @source "../js/**/*.jsx";
+@source "../js/**/*.js";
 
-@theme {
-    --color-qpos-brand: #5268d8;
-    --color-qpos-ink: #182230;
-    --color-qpos-muted: #667085;
-    --color-qpos-surface: #ffffff;
-    --color-qpos-page: #f3f5f9;
+/* Le theme clair/sombre du back-office est pilote par l'attribut data-theme
+   (jetons dans public/css/qpos-tokens.css), et non par la preference systeme.
+   Les variantes dark: suivent donc cet attribut. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Jetons de design exposes en utilitaires Tailwind : bg-qpos-surface,
+   text-qpos-ink, text-qpos-muted, border-qpos-line, bg-qpos-sidebar,
+   bg-qpos-page, bg-qpos-brand, ...
+   Le mode "inline" fait pointer les utilitaires vers les variables CSS : le
+   changement de theme est immediat, sans recompilation ni variante dark:. */
+@theme inline {
+    --color-qpos-brand: var(--qpos-brand);
+    --color-qpos-ink: var(--qpos-text);
+    --color-qpos-muted: var(--qpos-muted);
+    --color-qpos-surface: var(--qpos-surface);
+    --color-qpos-page: var(--qpos-page);
+    --color-qpos-sidebar: var(--qpos-sidebar);
+    --color-qpos-line: var(--qpos-border);
 }

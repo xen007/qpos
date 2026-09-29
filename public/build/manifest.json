@@ -1,32 +1,66 @@
 {
-  "_useDocumentTheme-Bh2v8cnP.js": {
-    "file": "assets/useDocumentTheme-Bh2v8cnP.js",
+  "_jsx-runtime-F9qg0_Rr.js": {
+    "file": "assets/jsx-runtime-F9qg0_Rr.js",
+    "name": "jsx-runtime"
+  },
+  "_useDocumentTheme-p9Jep90U.js": {
+    "file": "assets/useDocumentTheme-p9Jep90U.js",
     "name": "useDocumentTheme",
     "imports": [
-      "resources/js/app.jsx"
+      "_jsx-runtime-F9qg0_Rr.js"
     ]
   },
+  "_useStateManager-7e1e8489.esm-BSHU-xFd.js": {
+    "file": "assets/useStateManager-7e1e8489.esm-BSHU-xFd.js",
+    "name": "useStateManager-7e1e8489.esm",
+    "imports": [
+      "_jsx-runtime-F9qg0_Rr.js"
+    ]
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-PvjdpgU5.css",
+    "name": "app",
+    "names": [
+      "app.css"
+    ],
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
   "resources/js/app.jsx": {
-    "file": "assets/app-X8vQUAP7.js",
+    "file": "assets/app-pnX7RjmE.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
+    "imports": [
+      "_jsx-runtime-F9qg0_Rr.js"
+    ],
     "dynamicImports": [
       "resources/js/components/Pos.jsx",
       "resources/js/components/Purchase/Purchase.jsx"
     ],
     "css": [
-      "assets/app-DoATZIRU.css"
+      "assets/app-PvjdpgU5.css"
+    ]
+  },
+  "resources/js/backend-toast.jsx": {
+    "file": "assets/backend-toast-pkJiPLtp.js",
+    "name": "backend-toast",
+    "src": "resources/js/backend-toast.jsx",
+    "isEntry": true,
+    "imports": [
+      "_jsx-runtime-F9qg0_Rr.js",
+      "_useDocumentTheme-p9Jep90U.js"
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-cm9LKIpb.js",
+    "file": "assets/Pos-DDEuT-Zl.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "resources/js/app.jsx",
-      "_useDocumentTheme-Bh2v8cnP.js"
+      "_jsx-runtime-F9qg0_Rr.js",
+      "_useDocumentTheme-p9Jep90U.js",
+      "_useStateManager-7e1e8489.esm-BSHU-xFd.js"
     ],
     "assets": [
       "assets/beep-07a-BpTYY3WP.mp3",
@@ -34,13 +68,14 @@
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-C04z3cUg.js",
+    "file": "assets/Purchase-BW0oTrkB.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "resources/js/app.jsx",
-      "_useDocumentTheme-Bh2v8cnP.js"
+      "_jsx-runtime-F9qg0_Rr.js",
+      "_useDocumentTheme-p9Jep90U.js",
+      "_useStateManager-7e1e8489.esm-BSHU-xFd.js"
     ],
     "css": [
       "assets/Purchase-Wk3Ob2xl.css"
@@ -52,6 +87,12 @@
     "src": "resources/js/dashboard.js",
     "isEntry": true
   },
+  "resources/js/shell.js": {
+    "file": "assets/shell-C0U6ndT-.js",
+    "name": "shell",
+    "src": "resources/js/shell.js",
+    "isEntry": true
+  },
   "resources/js/sounds/beep-02.mp3": {
     "file": "assets/beep-02-FDF-YbRr.mp3",
     "src": "resources/js/sounds/beep-02.mp3"
@@ -59,5 +100,17 @@
   "resources/js/sounds/beep-07a.mp3": {
     "file": "assets/beep-07a-BpTYY3WP.mp3",
     "src": "resources/js/sounds/beep-07a.mp3"
+  },
+  "resources/js/table-actions.js": {
+    "file": "assets/table-actions-3Po0cbv2.js",
+    "name": "table-actions",
+    "src": "resources/js/table-actions.js",
+    "isEntry": true
+  },
+  "resources/js/theme.js": {
+    "file": "assets/theme-BdbjHLW-.js",
+    "name": "theme",
+    "src": "resources/js/theme.js",
+    "isEntry": true
   }
 }

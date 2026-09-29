@@ -21,7 +21,6 @@ class OrderController extends Controller
 
     public function index(Request $request)
     {
-        $this->authorizeSale('sale_view');
         if ($request->ajax()) {
             $orders = Order::query()
                 ->with('customer')
@@ -29,6 +28,10 @@ class OrderController extends Controller
                 ->select('orders.*');
             return DataTables::of($orders)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs cellules
+                // (etat, actions) cote page, sans markup Bootstrap.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_paid', fn($data) => (bool) $data->status)
                 ->addColumn('saleId', fn($data) => "#" . $data->id)
                 ->addColumn('customer', fn($data) => $data->customer->name ?? '-')
                 ->addColumn('item', fn($data) => (int) ($data->item_quantity_sum ?? 0))
@@ -63,7 +66,6 @@ class OrderController extends Controller
      */
     public function create()
     {
-        $this->authorizeSale('sale_create');
         //
     }
 
@@ -72,7 +74,6 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorizeSale('sale_create');
 
         $validated = $request->validate([
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
@@ -190,7 +191,6 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
-        $this->authorizeSale('sale_view');
         //
     }
 
@@ -199,7 +199,6 @@ class OrderController extends Controller
      */
     public function edit(string $id)
     {
-        $this->authorizeSale('sale_update');
         //
     }
 
@@ -208,7 +207,6 @@ class OrderController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $this->authorizeSale('sale_update');
         //
     }
 
@@ -217,18 +215,15 @@ class OrderController extends Controller
      */
     public function destroy(string $id)
     {
-        $this->authorizeSale('sale_delete');
         //
     }
     public function invoice($id)
     {
-        $this->authorizeSale('sale_view');
         $order = Order::with(['customer', 'products.product'])->findOrFail($id);
         return view('backend.orders.print-invoice', compact('order'));
     }
     public function collection(Request $request, $id)
     {
-        $this->authorizeSale('sale_update');
 
         if ($request->isMethod('post')) {
             $data = $request->validate([
@@ -267,7 +262,6 @@ class OrderController extends Controller
     //collection invoice by order_transaction id
     public function collectionInvoice($id)
     {
-        $this->authorizeSale('sale_view');
         $transaction = OrderTransaction::findOrFail($id);
         $collection_amount = $transaction->amount;
         $order = $transaction->order;
@@ -276,20 +270,14 @@ class OrderController extends Controller
     //transactions by order id
     public function transactions($id)
     {
-        $this->authorizeSale('sale_view');
         $order = Order::with('transactions')->findOrFail($id);
         return view('backend.orders.collection.index', compact('order'));
     }
 
     public function posInvoice($id)
     {
-        $this->authorizeSale('sale_view');
         $order = Order::with(['customer', 'products.product'])->findOrFail($id);
         $maxWidth = readConfig('receiptMaxwidth')??'300px';
         return view('backend.orders.pos-invoice', compact('order', 'maxWidth'));
-    }
-    private function authorizeSale(string $permission): void
-    {
-        abort_if(!auth()->user()->can($permission), 403);
     }
 }

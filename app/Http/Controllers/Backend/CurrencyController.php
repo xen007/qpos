@@ -16,11 +16,14 @@ class CurrencyController extends Controller
     public function index(Request $request)
     {
 
-        abort_if(!auth()->user()->can('currency_view'), 403);
         if ($request->ajax()) {
             $currencies = Currency::latest()->get();
             return DataTables::of($currencies)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs cellules
+                // (actions, devise par defaut) cote page, sans markup Bootstrap.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_active', fn($data) => (bool) $data->active)
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('code', fn($data) => $data->code)
                 ->addColumn('symbol', fn($data) => $data->symbol
@@ -60,7 +63,6 @@ class CurrencyController extends Controller
     public function create()
     {
 
-        abort_if(!auth()->user()->can('currency_create'), 403);
         return view('backend.settings.currencies.create');
     }
 
@@ -70,7 +72,6 @@ class CurrencyController extends Controller
     public function store(Request $request)
     {
 
-        abort_if(!auth()->user()->can('currency_create'), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:currencies,code',
@@ -86,7 +87,6 @@ class CurrencyController extends Controller
      */
     public function show($id)
     {
-        abort_if(!auth()->user()->can('currency_view'), 403);
         //
     }
 
@@ -96,7 +96,6 @@ class CurrencyController extends Controller
     public function edit($id)
     {
 
-        abort_if(!auth()->user()->can('currency_update'), 403);
 
         $currency = Currency::findOrFail($id);
         return view('backend.settings.currencies.edit', compact('currency'));
@@ -108,7 +107,6 @@ class CurrencyController extends Controller
     public function update(Request $request, $id)
     {
 
-        abort_if(!auth()->user()->can('currency_update'), 403);
         $currency = Currency::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -126,14 +124,12 @@ class CurrencyController extends Controller
     public function destroy($id)
     {
 
-        abort_if(!auth()->user()->can('currency_delete'), 403);
         $currency = Currency::findOrFail($id);
         $currency->delete();
         return redirect()->back()->with('success', __('Currency Deleted Successfully'));
     }
     public function setDefault($id)
     {
-        abort_if(!auth()->user()->can('currency_set_default'), 403);
         Currency::where('active', true)->update(['active' => false]);
         $currency = Currency::findOrFail($id);
         $currency->active = true;

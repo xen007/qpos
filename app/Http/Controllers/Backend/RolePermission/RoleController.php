@@ -15,7 +15,6 @@ class RoleController extends Controller
     // show roles page
     public function index()
     { 
-       abort_if(!auth()->user()->can('role_view'), 403);
         $roles = Role::all();
         $permissions = Permission::all();
         return view('backend.settings.role.index', compact('roles', 'permissions'));
@@ -24,7 +23,6 @@ class RoleController extends Controller
     // create new role
     public function store(Request $request)
     {
-        abort_if(!auth()->user()->can('role_create'), 403);
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name'
         ]);
@@ -39,7 +37,6 @@ class RoleController extends Controller
     // update a role
     public function update(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('role_update'), 403);
         $role = Role::findOrFail($id);
         $request->validate([
             'name' => "required|string|max:255|unique:roles,name," . $id
@@ -62,7 +59,6 @@ class RoleController extends Controller
     // show permissions
     public function show($id)
     {
-        abort_if(!auth()->user()->can('role_view'), 403);
         $role = Role::findOrFail($id);
         $permissions = Permission::all();
 
@@ -72,7 +68,6 @@ class RoleController extends Controller
     // delete a role
     public function destroy($id)
     {
-         abort_if(!auth()->user()->can('role_delete'), 403);
         $result = DB::transaction(function () use ($id) {
             $role = Role::whereKey($id)->lockForUpdate()->firstOrFail();
             if ($role->name === 'Admin') {
@@ -99,7 +94,6 @@ class RoleController extends Controller
     // update permissions of a role
     public function updatePermission(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('role_update'), 403);
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
         if ($role = Role::findOrFail($id)) {
@@ -124,7 +118,6 @@ class RoleController extends Controller
     // show permissions according to role
     public function roleWisePermissions($id)
     {
-        abort_if(!auth()->user()->can('role_view'), 403);
         if ($id != '') {
             $data = Role::findOrFail($id);
             return response()->json($data->permissions, 200);

@@ -123,14 +123,12 @@ class RolePermissionSeeder extends Seeder
             'product_update',
             'product_delete',
             'product_import',
-            'product_purchase',
         ];
 
         $salesPermissions = [
             //sale
             'sale_create',
             'sale_view',
-            'sale_edit',
         ];
 
         foreach ($cashierPermissions as $permissionName) {

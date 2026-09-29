@@ -1,0 +1,46 @@
+/* ==========================================================================
+   QPOS - jetons de design (source unique)
+   --------------------------------------------------------------------------
+   Ces variables alimentent le theme clair/sombre du back-office. Elles sont
+   chargees par les deux layouts (backend.master pour les pages AdminLTE et
+   backend.master-tailwind pour les pages migrees), avant toute autre feuille
+   de style. Les valeurs proviennent du Sprint 2 (L6a-g) et sont inchangees.
+   Ne pas redefinir ces variables ailleurs : ajouter ici.
+   ========================================================================== */
+
+:root {
+    color-scheme: light;
+    --qpos-page: #f3f5f9;
+    --qpos-surface: #ffffff;
+    --qpos-text: #182230;
+    --qpos-muted: #667085;
+    --qpos-border: #e3e8ef;
+    --qpos-sidebar: #f7f8fc;
+    --qpos-brand: #5268d8;
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --qpos-page: #111827;
+    --qpos-surface: #1c2533;
+    --qpos-text: #e5eaf2;
+    --qpos-muted: #a5b0c0;
+    --qpos-border: #354153;
+    --qpos-sidebar: #17202d;
+    --qpos-brand: #9baaff;
+}
+
+/* Impression : retour force au theme clair, quel que soit le theme choisi. */
+@media print {
+    :root,
+    :root[data-theme="dark"] {
+        color-scheme: light;
+        --qpos-page: #ffffff;
+        --qpos-surface: #ffffff;
+        --qpos-text: #182230;
+        --qpos-muted: #667085;
+        --qpos-border: #e3e8ef;
+        --qpos-sidebar: #f7f8fc;
+        --qpos-brand: #5268d8;
+    }
+}

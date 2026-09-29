@@ -447,5 +447,11 @@
     "Last 30 Days": "Les 30 derniers jours",
     "This Month": "Ce mois-ci",
     "Last Month": "Le mois dernier",
-    "Apply": "Appliquer"
+    "Apply": "Appliquer",
+    "Reset": "Réinitialiser",
+    "Breadcrumb": "Fil d’Ariane",
+    "Main navigation": "Navigation principale",
+    "Open navigation menu": "Ouvrir le menu de navigation",
+    "Close navigation menu": "Fermer le menu de navigation",
+    "Toggle fullscreen": "Basculer en plein écran"
 }

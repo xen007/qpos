@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Backend\Report;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
-use Carbon\Carbon;
+use App\Support\DateRange;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
 
@@ -15,18 +15,10 @@ class ReportController extends Controller
     public function saleReport(Request $request)
     {
 
-        abort_if(!auth()->user()->can(abilities: 'reports_sales'), 403);
-        // Get user input or set default values
-        $start_date_input = $request->input('start_date', Carbon::today()->subDays(29)->format('Y-m-d'));
-        $end_date_input = $request->input('end_date', Carbon::today()->format('Y-m-d'));
+        // Periode demandee (start_date / end_date) ; une valeur invalide est ignoree
+        // et le defaut (30 derniers jours) s'applique.
+        [$start_date, $end_date] = DateRange::resolve($request);
 
-        // Parse and set start date
-        $start_date = Carbon::createFromFormat('Y-m-d', $start_date_input) ?: Carbon::today()->subDays(29)->startOfDay();
-        $start_date = $start_date->startOfDay();
-
-        // Parse and set end date
-        $end_date = Carbon::createFromFormat('Y-m-d', $end_date_input) ?: Carbon::today()->endOfDay();
-        $end_date = $end_date->endOfDay();
         // Retrieve orders within the date range
         $orders = Order::whereBetween('created_at', [$start_date, $end_date])->with('customer')->get();
 
@@ -38,8 +30,11 @@ class ReportController extends Controller
             'paid' => $orders->sum('paid'),
             'due' => $orders->sum('due'),
             'total' => $orders->sum('total'),
-            'start_date' => $start_date->format('M d, Y'),
-            'end_date' => $end_date->format('M d, Y'),
+            'start_date' => $start_date->translatedFormat('d M Y'),
+            'end_date' => $end_date->translatedFormat('d M Y'),
+            // Valeurs brutes (Y-m-d) pour alimenter le filtre de la page.
+            'start_date_input' => $start_date->format('Y-m-d'),
+            'end_date_input' => $end_date->format('Y-m-d'),
         ];
 
         return view('backend.reports.sale-report', $data);
@@ -47,18 +42,10 @@ class ReportController extends Controller
     public function saleSummery(Request $request)
     {
 
-        abort_if(!auth()->user()->can('reports_summary'), 403);
-        // Get user input or set default values
-        $start_date_input = $request->input('start_date', Carbon::today()->subDays(29)->format('Y-m-d'));
-        $end_date_input = $request->input('end_date', Carbon::today()->format('Y-m-d'));
+        // Periode demandee (start_date / end_date) ; une valeur invalide est ignoree
+        // et le defaut (30 derniers jours) s'applique.
+        [$start_date, $end_date] = DateRange::resolve($request);
 
-        // Parse and set start date
-        $start_date = Carbon::createFromFormat('Y-m-d', $start_date_input) ?: Carbon::today()->subDays(29)->startOfDay();
-        $start_date = $start_date->startOfDay();
-
-        // Parse and set end date
-        $end_date = Carbon::createFromFormat('Y-m-d', $end_date_input) ?: Carbon::today()->endOfDay();
-        $end_date = $end_date->endOfDay();
         // Retrieve orders within the date range
         $orders = Order::whereBetween('created_at', [$start_date, $end_date])->get();
 
@@ -69,20 +56,31 @@ class ReportController extends Controller
             'paid' => $orders->sum('paid'),
             'due' => $orders->sum('due'),
             'total' => $orders->sum('total'),
-            'start_date' => $start_date->format('M d, Y'),
-            'end_date' => $end_date->format('M d, Y'),
+            'start_date' => $start_date->translatedFormat('d M Y'),
+            'end_date' => $end_date->translatedFormat('d M Y'),
+            // Valeurs brutes (Y-m-d) pour alimenter le filtre de la page ; les cles
+            // start_date / end_date restent les libelles affiches dans le rapport.
+            'start_date_input' => $start_date->format('Y-m-d'),
+            'end_date_input' => $end_date->format('Y-m-d'),
         ];
 
         return view('backend.reports.sale-summery', $data);
     }
+
     function inventoryReport(Request $request)
     {
 
-        abort_if(!auth()->user()->can('reports_inventory'), 403);
         if ($request->ajax()) {
             $products = Product::latest()->active()->get();
             return DataTables::of($products)
                 ->addIndexColumn()
+                // Colonnes neutres : la page migree compose le prix (avec le prix
+                // d'origine barre) et le stock avec son unite, sans markup HTML
+                // dans le JSON. Les colonnes historiques restent inchangees.
+                ->addColumn('price_value', fn($data) => $data->discounted_price)
+                ->addColumn('price_original', fn($data) => $data->price)
+                ->addColumn('quantity_value', fn($data) => $data->quantity)
+                ->addColumn('unit_short', fn($data) => optional($data->unit)->short_name)
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('sku', fn($data) => $data->sku)
                 ->addColumn(

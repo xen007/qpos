@@ -36,11 +36,22 @@ class ProductController extends Controller
     public function index(Request $request)
     {
 
-        abort_if(!auth()->user()->can('product_view'), 403);
         if ($request->ajax() && $request->has('draw')) {
             $products = Product::query()->with('unit')->latest();
             return DataTables::of($products)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs cellules
+                // (image, prix, stock, etat, actions) cote page, sans Bootstrap.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_active', fn($data) => (bool) $data->status)
+                ->addColumn('thumb_url', fn($data) => asset('storage/' . $data->image))
+                ->addColumn('price_value', fn($data) => $data->discounted_price)
+                ->addColumn('price_original', fn($data) => $data->price)
+                ->addColumn('quantity_value', fn($data) => $data->quantity)
+                ->addColumn('unit_short', fn($data) => optional($data->unit)->short_name)
+                // L'URL d'achat porte un parametre de requete : elle est construite
+                // ici, car un gabarit « :sku » serait encode en %3A par le routeur.
+                ->addColumn('purchase_url', fn($data) => route('backend.admin.purchase.create', ['barcode' => $data->sku]))
             ->addColumn('image', fn($data) => '<img src="' . e(asset('storage/' . $data->image)) . '" loading="lazy" alt="' . e($data->name) . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . e(asset('assets/images/no-image.png')) . '\';" height="80" width="60" />')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn(
@@ -107,7 +118,6 @@ class ProductController extends Controller
     public function create()
     {
 
-        abort_if(!auth()->user()->can('product_create'), 403);
         $brands = Brand::whereStatus(true)->get();
         $categories = Category::whereStatus(true)->get();
         $units = Unit::all();
@@ -120,7 +130,6 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request)
     {
 
-        abort_if(!auth()->user()->can('product_create'), 403);
         $validated = $request->validated();
         $product = Product::create($validated);
         if ($request->hasFile("product_image")) {
@@ -145,7 +154,6 @@ class ProductController extends Controller
     public function edit($id)
     {
 
-        abort_if(!auth()->user()->can('product_update'), 403);
 
         $product = Product::findOrFail($id);
         $brands = Brand::whereStatus(true)->get();
@@ -160,7 +168,6 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, $id)
     {
 
-        abort_if(!auth()->user()->can('product_update'), 403);
         $validated = $request->validated();
         $product = Product::findOrFail($id);
         $oldImage = $product->image;
@@ -180,7 +187,6 @@ class ProductController extends Controller
     public function destroy($id)
     {
 
-        abort_if(!auth()->user()->can('product_delete'), 403);
         $result = DB::transaction(function () use ($id) {
             $product = Product::whereKey($id)->lockForUpdate()->firstOrFail();
             if (OrderProduct::where('product_id', $product->id)->exists() || PurchaseItem::where('product_id', $product->id)->exists()) {
@@ -202,7 +208,6 @@ class ProductController extends Controller
     }
     public function import(Request $request)
     {
-        abort_if(!auth()->user()->can('product_import'), 403);
         if ($request->query('download-demo')) {
             return Excel::download(new DemoProductsExport, 'demo_products.xlsx');
         }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCustomerRequest;
+use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,11 +16,15 @@ class CustomerController extends Controller
      */
     public function index(Request $request)
     {
-        abort_if(!auth()->user()->can('customer_view'), 403);
         if ($request->ajax()) {
             $customers = Customer::query()->latest();
             return DataTables::of($customers)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs actions
+                // cote page, en respectant les memes regles (permissions,
+                // client protege).
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_default', fn($data) => $data->name === 'Walking Customer')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('phone', fn($data) => $data->phone)
                 ->addColumn('address', fn($data) => $data->address)
@@ -76,34 +82,21 @@ class CustomerController extends Controller
     public function create()
     {
 
-        abort_if(!auth()->user()->can('customer_create'), 403);
         return view('backend.customers.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreCustomerRequest $request)
     {
-
-        abort_if(!auth()->user()->can('customer_create'), 403);
-
         if ($request->wantsJson()) {
-            $request->validate([
-                'name' => 'required|string',
-            ]);
-
             $customer = Customer::create([
                 'name' => $request->name,
             ]);
 
             return response()->json($customer);
         }
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:customers,phone',
-            'address' => 'nullable|string|max:255',
-        ]);
 
         $customer = Customer::create($request->only(['name', 'phone', 'address']));
 
@@ -116,7 +109,6 @@ class CustomerController extends Controller
      */
     public function show(Customer $customer)
     {
-        abort_if(!auth()->user()->can('customer_view'), 403);
         //
     }
 
@@ -126,7 +118,6 @@ class CustomerController extends Controller
     public function edit($id)
     {
 
-        abort_if(!auth()->user()->can('customer_update'), 403);
         $customer = Customer::findOrFail($id);
         return view('backend.customers.edit', compact('customer'));
     }
@@ -134,17 +125,9 @@ class CustomerController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateCustomerRequest $request, $id)
     {
-
-        abort_if(!auth()->user()->can('customer_update'), 403);
         $customer = Customer::findOrFail($id);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:customers,phone,' . $customer->id, // Corrected syntax
-            'address' => 'nullable|string|max:255',
-        ]);
 
         $customer->update($request->only(['name', 'phone', 'address']));
 
@@ -159,7 +142,6 @@ class CustomerController extends Controller
     public function destroy($id)
     {
 
-        abort_if(!auth()->user()->can('customer_delete'), 403);
         $result = DB::transaction(function () use ($id) {
             $customer = Customer::whereKey($id)->lockForUpdate()->firstOrFail();
             if ($customer->name === 'Walking Customer') {
@@ -183,7 +165,6 @@ class CustomerController extends Controller
     }
     public function getCustomers(Request $request)
     {
-        abort_if(!auth()->user()->can('customer_view'), 403);
         if ($request->wantsJson()) {
             return response()->json(Customer::latest()->get());
         }
@@ -191,7 +172,6 @@ class CustomerController extends Controller
     //get orders by customer id
     public function orders($id)
     {
-        abort_if(!auth()->user()->can('customer_sales'), 403);
         $customer = Customer::findOrFail($id);
         $orders = $customer->orders()->paginate(100);
         return view('backend.orders.index', compact('orders'));

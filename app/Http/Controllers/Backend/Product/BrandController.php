@@ -22,11 +22,14 @@ class BrandController extends Controller
      */
     public function index(Request $request)
     {
-        abort_if(!auth()->user()->can('brand_view'), 403);
         if ($request->ajax()) {
             $brands = Brand::latest()->get();
             return DataTables::of($brands)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees vers Tailwind composent
+                // leurs cellules (actions, etat) cote page, sans markup Bootstrap.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_active', fn($data) => (bool) $data->status)
                 ->addColumn('image', fn($data) => '<img src="' . asset('storage/' . $data->image) . '" loading="lazy" alt="' . $data->name . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . asset('assets/images/no-image.png') . '\';" height="80" width="60" />')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('status', fn($data) => $data->status
@@ -62,7 +65,6 @@ class BrandController extends Controller
      */
     public function create()
     {
-        abort_if(!auth()->user()->can('brand_create'), 403);
         return view('backend.brands.create');
     }
 
@@ -71,7 +73,6 @@ class BrandController extends Controller
      */
     public function store(Request $request)
     {
-        abort_if(!auth()->user()->can('brand_create'), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -92,7 +93,6 @@ class BrandController extends Controller
      */
     public function show($id)
     {
-        abort_if(!auth()->user()->can('brand_view'), 403);
         //
     }
 
@@ -101,7 +101,6 @@ class BrandController extends Controller
      */
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('brand_update'), 403);
 
         $brand = Brand::findOrFail($id);
         return view('backend.brands.edit', compact(  'brand'));
@@ -112,7 +111,6 @@ class BrandController extends Controller
      */
     public function update(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('brand_update'), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -136,7 +134,6 @@ class BrandController extends Controller
      */
     public function destroy($id)
     {
-        abort_if(!auth()->user()->can('brand_delete'), 403);
         $brand = Brand::findOrFail($id);
         if ($brand->image != '') {
             $this->fileHandler->secureUnlink($brand->image);

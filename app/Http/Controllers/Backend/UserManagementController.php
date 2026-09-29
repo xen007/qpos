@@ -8,7 +8,8 @@ use App\Models\OrderTransaction;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use App\Rules\ValidImageType;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use Yajra\DataTables\DataTables;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
@@ -26,12 +27,16 @@ class UserManagementController extends Controller
     public function index(Request $request)
     {
 
-        abort_if(!auth()->user()->can('user_view'), 403);
         if ($request->ajax()) {
             $users = User::with('roles')->latest()->get();
 
             return DataTables::of($users)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs cellules
+                // (avatar, etat, actions) cote page, sans markup Bootstrap.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_suspended', fn($data) => (bool) $data->is_suspended)
+                ->addColumn('thumb_url', fn($data) => $data->pro_pic)
                 ->addColumn(
                     'thumb',
                     '<img class="img-fluid" src="{{ $pro_pic }}" width="50" alt="{{ $name }}">'
@@ -104,7 +109,6 @@ class UserManagementController extends Controller
 
     public function suspend($id, $status)
     {
-        abort_if(!auth()->user()->can('user_suspend'), 403);
         $user = User::findOrFail($id);
         if (demoUserCheck($user->email)) {
             return back()->with('error', __('Cannot update details of demo user'));
@@ -120,20 +124,9 @@ class UserManagementController extends Controller
         }
     }
 
-    public function create(Request $request)
+    public function create(StoreUserRequest $request)
     {
-        abort_if(!auth()->user()->can(
-            'user_create'
-        ), 403);
         if ($request->isMethod('post')) {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:users,email',
-                'role' => 'required|exists:roles,id',
-                'password' => 'required|string|min:8|max:255',
-                'profile_image' => ['file', new ValidImageType, 'max:2048']
-            ]);
-
             $newUser = new User();
             $newUser->name = $request->name;
             $newUser->email = $request->email;
@@ -155,9 +148,8 @@ class UserManagementController extends Controller
         }
     }
 
-    public function edit(Request $request, $id)
+    public function edit(UpdateUserRequest $request, $id)
     {
-        abort_if(!auth()->user()->can('user_update'), 403);
 
         $user = User::with('roles')->findOrFail($id);
 
@@ -165,14 +157,6 @@ class UserManagementController extends Controller
             if (demoUserCheck($user->email)) {
                 return back()->with('error', __('Cannot update details of demo user'));
             }
-
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:users,email,' . $id,
-                'role' => 'required|exists:roles,id',
-                'password' => 'nullable|string|min:8|max:255',
-                'profile_image' => ['file', new ValidImageType, 'max:2048']
-            ]);
 
             $change = DB::transaction(function () use ($request, $user) {
                 $adminRole = Role::where('name', 'Admin')->lockForUpdate()->first();
@@ -223,7 +207,6 @@ class UserManagementController extends Controller
 
     public function delete($id)
     {
-        abort_if(!auth()->user()->can('user_delete'), 403);
 
         if ($id == auth()->id()) {
             return back()->with('error', __('You cannot delete your own account.'));

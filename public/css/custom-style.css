@@ -55,27 +55,8 @@ body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-head
 
 /* ========= theme end ========== */
 
-:root {
-    color-scheme: light;
-    --qpos-page: #f3f5f9;
-    --qpos-surface: #ffffff;
-    --qpos-text: #182230;
-    --qpos-muted: #667085;
-    --qpos-border: #e3e8ef;
-    --qpos-sidebar: #f7f8fc;
-    --qpos-brand: #5268d8;
-}
-
-:root[data-theme="dark"] {
-    color-scheme: dark;
-    --qpos-page: #111827;
-    --qpos-surface: #1c2533;
-    --qpos-text: #e5eaf2;
-    --qpos-muted: #a5b0c0;
-    --qpos-border: #354153;
-    --qpos-sidebar: #17202d;
-    --qpos-brand: #9baaff;
-}
+/* Les jetons --qpos-* (clair, sombre et impression) sont definis dans
+   public/css/qpos-tokens.css, charge avant cette feuille par les deux layouts. */
 
 body {
     color: var(--qpos-text);
@@ -532,17 +513,7 @@ textarea {
 }
 
 @media print {
-    :root,
-    :root[data-theme="dark"] {
-        color-scheme: light;
-        --qpos-page: #ffffff;
-        --qpos-surface: #ffffff;
-        --qpos-text: #182230;
-        --qpos-muted: #667085;
-        --qpos-border: #e3e8ef;
-        --qpos-sidebar: #f7f8fc;
-        --qpos-brand: #5268d8;
-    }
+    /* Les jetons clairs de l'impression viennent de public/css/qpos-tokens.css. */
 
     body,
     .content-wrapper,
@@ -750,103 +721,10 @@ input:checked+.slider:before {
     border-radius: 50%;
 }
 
-.qpos-chart-container {
-    position: relative;
-    min-height: 18rem;
-    height: clamp(18rem, 34vw, 24rem);
-    width: 100%;
-}
-
-.qpos-dashboard .info-box,
-.qpos-dashboard .small-box,
-.qpos-dashboard .card {
-    color: var(--qpos-text);
-    background: var(--qpos-surface);
-    border: 1px solid var(--qpos-border);
-    border-radius: 0.9rem;
-    box-shadow: 0 0.35rem 1.1rem rgb(16 24 40 / 5%);
-}
-
-.qpos-dashboard .info-box {
-    min-height: 6rem;
-    padding: 0.85rem;
-}
-
-.qpos-dashboard .info-box-icon {
-    width: 3.5rem;
-    height: 3.5rem;
-    color: var(--qpos-brand);
-    background: color-mix(in srgb, var(--qpos-brand) 12%, var(--qpos-surface));
-    border-radius: 0.75rem;
-}
-
-.qpos-dashboard .info-box-text,
-.qpos-dashboard .small-box p {
-    color: var(--qpos-muted);
-    font-size: 0.82rem;
-    font-weight: 600;
-    letter-spacing: 0.015em;
-}
-
-.qpos-dashboard .info-box-number {
-    color: var(--qpos-text);
-    font-size: 1.2rem;
-    font-variant-numeric: tabular-nums;
-}
-
-.qpos-dashboard .small-box {
-    min-height: 9.5rem;
-    overflow: hidden;
-}
-
-.qpos-dashboard .small-box.bg-info,
-.qpos-dashboard .small-box.bg-success,
-.qpos-dashboard .small-box.bg-warning,
-.qpos-dashboard .small-box.bg-danger {
-    color: var(--qpos-text) !important;
-    background: var(--qpos-surface) !important;
-}
-
-.qpos-dashboard .small-box .inner {
-    padding: 1.1rem 1.15rem 0.75rem;
-}
-
-.qpos-dashboard .small-box h3 {
-    color: var(--qpos-text);
-    font-size: clamp(1.65rem, 2.4vw, 2.1rem);
-    font-variant-numeric: tabular-nums;
-}
-
-.qpos-dashboard .small-box .icon {
-    color: var(--qpos-brand);
-    opacity: 0.16;
-}
-
-.qpos-dashboard .small-box-footer {
-    color: var(--qpos-brand) !important;
-    background: color-mix(in srgb, var(--qpos-brand) 7%, var(--qpos-surface));
-    text-align: left;
-    padding: 0.55rem 1.15rem;
-}
-
-.qpos-dashboard .card-header {
-    color: var(--qpos-text);
-    background: transparent;
-    border-bottom-color: var(--qpos-border);
-}
-
-.qpos-dashboard .form-control {
-    color: var(--qpos-text);
-    background-color: var(--qpos-surface);
-    border-color: var(--qpos-border);
-    border-radius: 0.55rem;
-}
-
-@media (max-width: 575.98px) {
-    .qpos-chart-container {
-        height: 18rem;
-    }
-}
+/* Le tableau de bord est passe au layout Tailwind (backend.master-tailwind, avec
+   x-backend.card et x-backend.stat-card) : les regles .qpos-dashboard et
+   .qpos-chart-container ajoutees au Sprint 2 (L6a-g) n'avaient plus de cible et
+   ont ete supprimees. Les couleurs viennent des jetons de qpos-tokens.css. */
 
 /* ========= theme sombre : correctifs L6g (contrastes WCAG AA) ========== */
 

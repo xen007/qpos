@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreSupplierRequest;
+use App\Http\Requests\UpdateSupplierRequest;
 use App\Models\Supplier;
 use App\Models\Purchase;
 use Illuminate\Http\Request;
@@ -16,11 +18,14 @@ class SupplierController extends Controller
      */
     public function index(Request $request)
     {
-    abort_if(!auth()->user()->can('supplier_view'), 403);
         if ($request->ajax() && $request->has('draw')) {
             $suppliers = Supplier::query()->latest();
             return DataTables::of($suppliers)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs actions
+                // cote page, en respectant la regle du fournisseur interne.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_default', fn($data) => $data->name === 'Own Supplier')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('phone', fn($data) => $data->phone)
                 ->addColumn('address', fn($data) => $data->address)
@@ -60,33 +65,21 @@ class SupplierController extends Controller
      */
     public function create()
     {
-    abort_if(!auth()->user()->can('supplier_create'), 403);
         return view('backend.suppliers.create');
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreSupplierRequest $request)
     {
-
-    abort_if(!auth()->user()->can('supplier_create'), 403);
         if ($request->wantsJson()) {
-            $request->validate([
-                'name' => 'required|string',
-            ]);
-
             $supplier = Supplier::create([
                 'name' => $request->name,
             ]);
 
             return response()->json($supplier);
         }
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:suppliers,phone',
-            'address' => 'nullable|string|max:255',
-        ]);
 
         $supplier = Supplier::create($request->only(['name', 'phone', 'address']));
 
@@ -99,7 +92,6 @@ class SupplierController extends Controller
      */
     public function show(Supplier $supplier)
     {
-        abort_if(!auth()->user()->can('supplier_view'), 403);
         //
     }
 
@@ -108,7 +100,6 @@ class SupplierController extends Controller
      */
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('supplier_update'), 403);
         $supplier = Supplier::findOrFail($id);
         return view('backend.suppliers.edit', compact('supplier'));
     }
@@ -116,16 +107,9 @@ class SupplierController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateSupplierRequest $request, $id)
     {
-        abort_if(!auth()->user()->can('supplier_update'), 403);
         $supplier = Supplier::findOrFail($id);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:suppliers,phone,' . $supplier->id, // Corrected syntax
-            'address' => 'nullable|string|max:255',
-        ]);
 
         $supplier->update($request->only(['name', 'phone', 'address']));
 
@@ -139,7 +123,6 @@ class SupplierController extends Controller
      */
     public function destroy($id)
     {
-        abort_if(!auth()->user()->can('supplier_delete'), 403);
         $result = DB::transaction(function () use ($id) {
             $supplier = Supplier::whereKey($id)->lockForUpdate()->firstOrFail();
             if ($supplier->name === 'Own Supplier') {

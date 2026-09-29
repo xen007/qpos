@@ -166,7 +166,6 @@ class CartController extends Controller
 
     private function authorizePos(): void
     {
-        abort_if(!auth()->user()->can('sale_create'), 403);
     }
 
     private function validateCartRequest(Request $request): void

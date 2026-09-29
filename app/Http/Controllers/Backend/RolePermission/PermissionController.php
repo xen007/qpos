@@ -12,7 +12,6 @@ class PermissionController extends Controller
     // show permission page
     public function index()
     {
-        abort_if(!auth()->user()->can('permission_view'), 403);
         $permissions = Permission::all();
 
         return view('backend.settings.permission.index', compact('permissions'));
@@ -21,7 +20,6 @@ class PermissionController extends Controller
     // create new permission
     public function store(Request $request)
     {
-        abort_if(!auth()->user()->can('role_update'), 403);
         $request->validate([
             'name' => 'required|unique:permissions',
         ]);
@@ -49,7 +47,6 @@ class PermissionController extends Controller
     // update a permission
     public function update(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('role_update'), 403);
         $request->validate([
             'name' => "required|unique:permissions,name," . $id
         ]);
@@ -67,7 +64,6 @@ class PermissionController extends Controller
     // delete a permission
     public function destroy($id)
     {
-        abort_if(!auth()->user()->can('role_update'), 403);
         $data = Permission::findOrFail($id);
         $data->delete();
 

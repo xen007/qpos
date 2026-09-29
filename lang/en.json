@@ -447,5 +447,11 @@
     "Last 30 Days": "Last 30 days",
     "This Month": "This month",
     "Last Month": "Last month",
-    "Apply": "Apply"
+    "Apply": "Apply",
+    "Reset": "Reset",
+    "Breadcrumb": "Breadcrumb",
+    "Main navigation": "Main navigation",
+    "Open navigation menu": "Open navigation menu",
+    "Close navigation menu": "Close navigation menu",
+    "Toggle fullscreen": "Toggle fullscreen"
 }

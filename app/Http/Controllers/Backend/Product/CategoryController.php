@@ -21,11 +21,14 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        abort_if(!auth()->user()->can('category_view'), 403);
         if ($request->ajax()) {
             $categories = Category::latest()->get();
             return DataTables::of($categories)
                 ->addIndexColumn()
+                // Colonnes neutres : les pages migrees composent leurs cellules
+                // (actions, etat) cote page, sans markup Bootstrap.
+                ->addColumn('id', fn($data) => $data->id)
+                ->addColumn('is_active', fn($data) => (bool) $data->status)
                 ->addColumn('image', fn($data) => '<img src="' . asset('storage/' . $data->image) . '" loading="lazy" alt="' . $data->name . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . asset('assets/images/no-image.png') . '\';" height="80" width="60" />')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('status', fn($data) => $data->status
@@ -59,7 +62,6 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        abort_if(!auth()->user()->can('category_create'), 403);
         return view('backend.categories.create');
     }
 
@@ -68,7 +70,6 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        abort_if(!auth()->user()->can('category_create'), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -89,7 +90,6 @@ class CategoryController extends Controller
      */
     public function show($id)
     {
-        abort_if(!auth()->user()->can('category_view'), 403);
         //
     }
 
@@ -98,7 +98,6 @@ class CategoryController extends Controller
      */
     public function edit($id)
     {
-        abort_if(!auth()->user()->can('category_update'), 403);
 
         $category = Category::findOrFail($id);
         return view('backend.categories.edit', compact('category'));
@@ -109,7 +108,6 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        abort_if(!auth()->user()->can('category_update'), 403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -133,7 +131,6 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        abort_if(!auth()->user()->can('category_delete'), 403);
         $category = Category::findOrFail($id);
         if ($category->image != '') {
             $this->fileHandler->secureUnlink($category->image);

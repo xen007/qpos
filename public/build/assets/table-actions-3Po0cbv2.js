@@ -1,0 +1,8 @@
+(()=>{let e=e=>String(e).replace(/[&<>"']/g,e=>({"&":`&amp;`,"<":`&lt;`,">":`&gt;`,'"':`&quot;`,"'":`&#39;`})[e]),t=({csrf:t,items:n=[]})=>`<div class="flex items-center justify-end gap-2">${n.map(n=>{let r=e(n.label),i=`<i class="${e(n.icon)}" aria-hidden="true"></i>`,a=`flex h-9 w-9 items-center justify-center rounded-lg border border-qpos-line text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink ${n.disabled?`pointer-events-none opacity-50`:``}`,o=n.disabled?` aria-disabled="true" tabindex="-1"`:``;if(n.type===`form`){let o=n.confirm&&!n.disabled?` onsubmit="return confirm('${e(n.confirm)}')"`:``,s=n.method&&n.method!==`POST`?`<input type="hidden" name="_method" value="${e(n.method)}">`:``;return`
+                        <form action="${e(n.url)}" method="POST"${o}>
+                            <input type="hidden" name="_token" value="${e(t)}">
+                            ${s}
+                            <button type="submit" class="${a}" title="${r}"
+                                aria-label="${r}"${n.disabled?` disabled`:``}>${i}</button>
+                        </form>`}return`<a href="${e(n.url)}" class="${a}" title="${r}"
+                    aria-label="${r}"${o}>${i}</a>`}).join(``)}</div>`;window.qposTableActions={buttons:t,inline:({editUrl:e,destroyUrl:n,csrf:r,labels:i})=>t({csrf:r,items:[{type:`link`,url:e,label:i.edit,icon:`fas fa-edit`},{type:`form`,url:n,method:`DELETE`,label:i.delete,icon:`fas fa-trash`,confirm:i.confirm}]}),statusBadge:(t,n,r={})=>`<span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ${t?r.active??`bg-qpos-brand text-white`:r.inactive??`bg-qpos-page text-qpos-muted border border-qpos-line`}">${e(t?n.active:n.inactive)}</span>`,escapeHtml:e}})();
