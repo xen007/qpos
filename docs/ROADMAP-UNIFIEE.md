@@ -137,10 +137,10 @@ Les regroupements S4/S5 ci-dessous sont déduits des lots restants, conformémen
 
 ## 7. Journal de reprise
 
-- **Date :** 29/09/2026. `main` est alignée sur `origin/main` au commit `c43af5d` (`feat(ui): migration des pages vers master-tailwind`).
-- **État local :** nombreuses modifications non commitées et nouveaux fichiers, dont du code et les deux documents de référence ; ils sont préservés et hors de cette consolidation.
+- **Date :** 29/09/2026. `main` est alignée sur `origin/main` au commit `de10d5c` (`feat(sprint3): layout Tailwind, architecture, docs`).
+- **État local :** arbre de travail propre au moment de la reprise ; la consolidation documentaire est prête à être committée par le propriétaire.
 - **Écart résolu :** l’ancienne roadmap disait S3 « non commité » et Lot 1 « en cours » ; la clarification du propriétaire prévaut : S0–S3 sont terminés et poussés.
 - **Autres écarts à garder visibles :** ancienne roadmap et matrice plugins mentionnent encore une recette visuelle ; plusieurs décisions (fuseau, règles métier, cible d’hébergement) restent à confirmer.
-- **Prochaine reprise :** examiner le diff local séparément, puis cadrer S4 ; ne pas présumer que les changements locaux non committés sont déjà livrés.
+- **Prochaine reprise :** cadrer S4 à partir des lots 5–7 et confirmer les règles métier, les contrôles de sécurité prioritaires et les volumes à optimiser.
 
 Documents détaillés archivés dans `docs/archives/modernization-roadmap.md`. Les cartographies restent dans `docs/routes-permissions.md` et `docs/plugins-front-par-page.md`.
