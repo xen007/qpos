@@ -162,7 +162,6 @@ return [
         Barryvdh\DomPDF\ServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         Spatie\Permission\PermissionServiceProvider::class,
-        Collective\Html\HtmlServiceProvider::class,
 
         /*
          * Application Service Providers...
