@@ -8,6 +8,7 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -53,5 +54,21 @@ class User extends Authenticatable
     public function getProPicAttribute()
     {
         return imageRecover($this->profile_image);
+    }
+
+    public function pointOfSales(): BelongsToMany
+    {
+        return $this->belongsToMany(PointOfSale::class)
+            ->withPivot('is_active')
+            ->withTimestamps();
+    }
+
+    public function hasActivePointOfSale(int $pointOfSaleId): bool
+    {
+        return $this->pointOfSales()
+            ->where('points_of_sale.id', $pointOfSaleId)
+            ->where('points_of_sale.is_active', true)
+            ->where('point_of_sale_user.is_active', true)
+            ->exists();
     }
 }

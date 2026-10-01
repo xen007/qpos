@@ -371,6 +371,7 @@ Enveloppe indicative de 12–16 semaines à réviser après phase 1 selon dispon
 | 30/09/2026 | Version 4.2 consolidée dans la conversation : phases regroupées, décisions internes, récupération avant opérations, rétention/RPO/RTO | Préparation documentaire |
 | 01/10/2026 | Préparation de cette référence ; migration commitée sur main à e675093 ; anciens documents archivés et liens de redirection conservés ; commit documentaire demandé par le propriétaire | Présenter Phase 0 puis attendre son lancement |
 | 01/10/2026 | Phase 0 étapes 1–6 terminées ; sauvegarde restaurable vérifiée, contrôles techniques réussis, navigateur utilisateur et opérations métier sur copie consignés. B1 a passé une fois sur `localhost` ; D14 reste à robustifier. Vente, achat, import et stock réussis ; PDF non démontré. Aucun commit/push | Traiter les défauts selon les phases |
+| 01/10/2026 | Sous-lot 3 — migrations de boutiques/affectations, modèle, Policy et middleware de portée préparés ; MAIN idempotent sans affectation utilisateur ; tests isolés SQLite réussis. Aucune migration ni affectation exécutée sur les données courantes | Présenter la liste des utilisateurs avant toute affectation en base |
 
 **Phase 0 : étapes 1–6 exécutées.** Le rapport [phase0-report.md](phase0-report.md) distingue les résultats, limites et points non vérifiés. Les essais d'écriture ont été confinés à `qpos_test`, désormais supprimée.
 

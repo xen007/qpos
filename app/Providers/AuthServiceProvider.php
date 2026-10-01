@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -16,6 +16,7 @@ class AuthServiceProvider extends ServiceProvider
         \App\Models\Customer::class => \App\Policies\CustomerPolicy::class,
         \App\Models\Order::class => \App\Policies\OrderPolicy::class,
         \App\Models\Product::class => \App\Policies\ProductPolicy::class,
+        \App\Models\PointOfSale::class => \App\Policies\PointOfSalePolicy::class,
     ];
 
     /**
@@ -23,6 +24,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::policy(
+            \App\Models\PointOfSale::class,
+            \App\Policies\PointOfSalePolicy::class
+        );
     }
 }

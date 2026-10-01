@@ -158,6 +158,13 @@ Le parcours de caisse (`/get/products`, `/cart`, `/cart/increment`, `/cart/decre
 
 ### Points d'attention sur les routes sans permission
 
+Les fondations boutiques ajoutent les permissions Spatie point_of_sale_view et
+point_of_sale_access, ainsi que l'alias middleware point-of-sale. Aucun endpoint
+métier existant n'est encore affecté à ce middleware dans ce lot : ventes, achats et
+stocks seront raccordés dans leurs phases propriétaires. La carte des 142 routes
+ci-dessus est donc un instantané antérieur, et ne constitue pas une cartographie
+recalculée après le sous-lot boutiques.
+
 - Les bascules de langue (`language.update`) et la déconnexion (`logout`) sont ouvertes par nature ;
   l'authentification (`login`) aussi.
 - `products.show` est volontairement sans permission statique : `ProductController::show` ne

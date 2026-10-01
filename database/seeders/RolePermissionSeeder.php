@@ -100,6 +100,8 @@ class RolePermissionSeeder extends Seeder
             'notification_settings',
             'website_status_settings',
             'invoice_settings',
+            'point_of_sale_view',
+            'point_of_sale_access',
 
         ];
         $admin = Role::where('name', 'Admin')->first();
@@ -123,12 +125,16 @@ class RolePermissionSeeder extends Seeder
             'product_update',
             'product_delete',
             'product_import',
+            'point_of_sale_view',
+            'point_of_sale_access',
         ];
 
         $salesPermissions = [
             //sale
             'sale_create',
             'sale_view',
+            'point_of_sale_view',
+            'point_of_sale_access',
         ];
 
         foreach ($cashierPermissions as $permissionName) {

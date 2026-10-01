@@ -25,6 +25,7 @@ class StartUpSeeder extends Seeder
             UnitSeeder::class,
             CurrencySeeder::class,
             RolePermissionSeeder::class,
+            PointOfSaleSeeder::class,
         ]);
     }
 }
