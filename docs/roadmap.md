@@ -95,6 +95,31 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | D10 | À décider | Taxes incluses/ajoutées, précision et arrondis | Calculs et documents, phase 1 |
 | D11 | Validée | Français par défaut, anglais au choix, préférence conservée | Blade et React |
 | D12 | Validée | Soft Modern : bleu pétrole, vert sauge, Inter ; clair/sombre | Composants communs, phase 1 |
+| D13 | À décider | Fuseau métier : Asia/Dhaka actuellement ; Africa/Douala à confirmer (E04) | Phase 1 ; horaires, périodes de rapports et clôtures ; aucune correction en Phase 0 |
+| D14 | À robustifier en Phase 1 | B1 — 419 intermittent au login/logout ; ce passage a réussi avec `localhost` cohérent | Tester `SESSION_DOMAIN=localhost`, aligner `APP_URL`/`system.site_url` (E01), puis vérifier onglets et hôtes séparés avant de décider le réglage |
+| D15 | Corrigée, à revalider navigateur | B2 — agrégation dashboard, coût par vente et liste inventaire | Phase 0 ; SQL agrégé, `withSum`, pagination serveur et unité préchargée |
+| D16 | À corriger | Résidus visuels dans sidebar/header ; erreur console `copyright.js` sur élément absent pendant les parcours testés | Phase 1, shell et scripts partagés |
+| D17 | À corriger | Couleurs du thème nulles/non renseignées | Phase 1, clair/sombre et paramètres de thème |
+| D18 | À corriger | Boutons de retour manquants/incohérents | Phase 1, navigation et composants |
+| D19 | À corriger | Texte anglais restant au pied de facture | Phase 1, traductions et impression |
+| D20 | À corriger | Finitions UI/UX et responsive | Phase 1, composants et parcours |
+| D21 | À décider | La marque doit-elle être obligatoire à la création produit ? | Phase 2, règle catalogue et données historiques |
+| D22 | À décider | Contrat des prix de vente et d'achat séparés par produit/conditionnement | Phase 2, catalogue et consommation achats/ventes |
+| D23 | À décider | Rôle et distinction métier entre marque et fournisseur | Phase 2–3, catalogue et approvisionnement |
+| D24 | À corriger | Sélecteurs du formulaire d'achat ; Tempus Dominus 4 signale Moment.js absent sur la page testée | Phase 3, fournisseur/produits/unités et dépendances front |
+| D25 | À corriger | Quantité initiale à zéro dans le formulaire d'achat | Phase 3 ; imposer une quantité positive avant enregistrement |
+| D26 | À clarifier | Libellé et sens du prix d'achat dans les parcours produit/achat | Phase 3 ; distinguer coût de réception et référence produit |
+| D27 | Clarifié | Menu et bouton de liste mènent au même formulaire ; ce n'est pas un doublon métier | Phase 3 ; deux raccourcis conservés au besoin UX |
+| D28 | À corriger | Lecture du scanner USB/code-barres au POS | Phase 4, saisie et correspondance produit/conditionnement |
+| D29 | À corriger | Recherche de produits au POS | Phase 4, résultats réactifs et utiles |
+| D30 | À corriger | Recherche multicritère | Phase 4, champs et priorité à décider |
+| D31 | À corriger / à confirmer | Facture de vente répartie sur deux pages à l'impression ; le parcours actuel rend une page HTML imprimable, sans génération PDF vérifiée | Phase 4, gabarit, impression et décision sur le besoin PDF |
+| D32 | À corriger — priorité haute | Transactions depuis un client affichent la liste générique des ventes ; filtre client perdu | Phase 4 ; corriger la route/requête AJAX et vérifier l'isolation par client |
+| D33 | À investiguer | Certaines ventes affichent 0 article | Phase 4 ; comparer la vente à ses lignes `order_products` |
+| D34 | Limite documentée | Reçu de règlement distinct de la facture de vente ; une réimpression utilise le solde actuel | Phase 4 ; décider s'il faut figer le solde à la date du paiement |
+| D35 | À investiguer | Facture de règlement semblant afficher deux ventes | Phase 4 ; obtenir les IDs des ventes et l'URL du document |
+| D36 | Compris | `products.purchase_price` est un coût de référence ; un coût réel différent reste sur chaque achat | Phases 2–3 ; achat actuel ne met pas automatiquement à jour la référence produit |
+| D37 | À vérifier | Effet d'un changement du prix courant sur statistiques et marges historiques | Phase 5 ; contrôler chaque rapport et ses sources |
 
 Chaque décision ajoute sa date, sa raison et ses conséquences lorsqu'elle est tranchée. Statuts : proposée, à décider, validée, remplacée. Une proposition n'est pas une règle approuvée.
 
@@ -162,7 +187,40 @@ Objectif : vérifier le fonctionnement existant et disposer d'un point de récup
 6. Sur une copie dédiée, vérifier une vente existante, paiement, stock, achat, document généré et import représentatif.
 7. Consigner résultats, limites et défauts ; actualiser le journal.
 
-Aucune modification de code métier dans cette phase. Les défauts sont décrits et classés ; une correction exige un périmètre distinct. Critère : environnement utilisable, sauvegarde restaurable, contrôles essentiels réussis, aucun blocage critique de migration laissé sans résolution.
+Phase 0 reste une vérification, sauf correction explicitement autorisée par le propriétaire. Les défauts sont décrits et classés. Critère : environnement utilisable, sauvegarde restaurable, contrôles essentiels réussis, aucun blocage critique laissé sans résolution.
+
+#### Défauts relevés Phase 0
+
+Les observations viennent du test navigateur du propriétaire et d'une lecture ciblée du code. Les cas dépendant d'une vente précise restent à confirmer. Seuls B1 et B2 sont traités dans cette reprise ; les autres points sont affectés à leur phase dans le registre D16–D37.
+
+**B1 — Erreur 419 intermittente au login/logout ; robustification Phase 1 (D14)**
+
+- Attendu : cookie de session et jeton CSRF conservés entre l'affichage du formulaire et son POST.
+- Observé : l'erreur avait été intermittente sur login et logout ; le dernier passage a réussi avec `localhost` cohérent. `APP_KEY` est valide ; driver `file`, durée 120 minutes ; domaine cookie non défini ; `SameSite=lax`, chemin `/`. Le middleware CSRF est dans `web`, les deux formulaires incluent `@csrf`.
+- Impact : le mélange `localhost`/`127.0.0.1` peut empêcher l'envoi du cookie de session. Les sessions fichier partagées entre onglets peuvent également rencontrer des requêtes obsolètes après régénération au login/logout. L'incohérence de chemin `qpos`/`QPOS` (E01) peut produire des liens différents, mais le chemin de cookie `/` signifie que la casse seule n'explique pas le 419.
+- Suite Phase 1 : tester l'hypothèse `SESSION_DOMAIN=localhost`, aligner `APP_URL` et `system.site_url`, puis valider un onglet unique, plusieurs onglets et chaque hôte séparément. Ne pas appliquer le réglage avant ces essais ; garder CSRF actif.
+
+**B2 — Lenteur générale**
+
+- Attendu : dashboard agrégé en base et listes bornées, sans requête par ligne.
+- Observé : dashboard chargeait toutes les ventes avant d'agréger en PHP ; `Order::total_item` sommait les lignes pour chaque vente malgré `withSum` dans la liste ; inventaire matérialisait tous les produits actifs puis consultait l'unité pour chacun. Manifest/assets présents ; bundle dashboard environ 204 Ko. Aucun cache de configuration/route n'était présent, mais cela n'explique pas seul la lenteur.
+- Correction ciblée : totaux dashboard calculés par un agrégat SQL ; l'accessor lit désormais l'agrégat `item_quantity_sum` déjà chargé ; DataTables inventaire reçoit une requête paginable avec relation `unit` préchargée.
+- Vérification : `php -l` réussi sur les trois fichiers modifiés. Le gain visuel et la durée de réponse restent à mesurer au navigateur sur données représentatives.
+
+**Éléments consignés pour les phases suivantes et réponses fondées sur le code :**
+
+- **Phase 1, D16–D20** : résidus sidebar/header, couleurs nulles, boutons retour, pied de facture anglais, finitions UI/UX responsive. Attendu : navigation et composants cohérents, traductions FR/EN, clair/sombre et responsive. Impact : présentation incomplète ; pas de correction dans cette tranche.
+- **Phase 2, D21–D23** : caractère obligatoire de la marque, contrat des prix vente/achat, distinction marque/fournisseur. Attendu : règles décidées avant validation/conversion ; risque actuel d'ambiguïté de données.
+- **Phase 3, D24–D27** : sélecteurs achat, quantité initiale zéro, prix d'achat ambigu. Le menu fournit Purchase List et Purchase Create ; Add New dans la liste ouvre aussi `backend.admin.purchase.create`. Ce sont deux raccourcis vers le même formulaire, pas deux opérations distinctes (D27 clarifié).
+- **Phase 4, D28–D35** : scanner code-barres, recherche produits et multicritère, facture sur deux pages, transactions depuis client, ventes à 0 article, reçu d'encaissement, facture semblant montrer deux ventes. Les IDs des ventes sont nécessaires pour distinguer anomalie d'écran et données réelles.
+- **Transactions depuis Clients (D32, priorité haute)** : `CustomerController::orders()` passe les ventes filtrées du client à la vue générique, mais le tableau appelle `backend.admin.orders.index` en AJAX, qui retourne toutes les ventes. Le filtre client est perdu ; défaut de code confirmé à corriger en phase 4.
+- **Reçu d'encaissement (D34)** : preuve d'un règlement de dette ; distinct de la facture de vente complète et du ticket POS. Il correspond à une transaction. Le gabarit relit le solde courant ; réimprimer après d'autres paiements peut donc afficher un solde actualisé, pas celui au moment du règlement. Ajouter une décision en phase 4 sur la conservation d'un instantané du solde.
+- **Facture d'encaissement avec deux ventes (D35)** : le contrôleur ouvre un `OrderTransaction`, puis sa relation `order` ; ce chemin vise une vente. Deux ventes sur un document ne sont pas attendues. Enquêter en phase 4 avec les IDs et l'URL/page exacte.
+- **Vente affichant 0 article (D33)** : la liste calcule `SUM(order_products.quantity)`. Zéro signifie qu'aucune quantité liée n'est trouvée. Le checkout actuel refuse un panier vide ; investiguer en phase 4 avec l'ID et ses lignes.
+- **Prix d'achat (D26, D36)** : `products.purchase_price` est une valeur de référence saisie avec la fiche produit. Chaque achat conserve son propre `purchase_items.purchase_price` et ne met pas automatiquement à jour le produit. Le checkout copie le coût de référence dans la ligne de vente. Réponse acceptée ; prix d'achat par réception conservé.
+- **Changement de prix / statistiques (D37)** : les lignes `order_products` conservent prix de vente, coût, remise et total au checkout ; une modification ultérieure du produit ne réécrit pas ces instantanés. En phase 5, vérifier rapport par rapport que l'historique lit ces lignes et non les prix courants.
+
+**Résultat des opérations sur copie (étape 5)** : vente et paiement complets, décrémentation de stock, achat/réception et import CSV réussis sur `qpos_test`. La facture et le ticket sont des pages HTML imprimables ; aucune génération PDF n'a été trouvée sur ces parcours. Les variations de compteurs et le nettoyage de la copie sont détaillés dans [le rapport de Phase 0](phase0-report.md). `qpos_test` et le dossier de l'application isolée ont été supprimés ; l'empreinte du `.env` courant est restée identique.
 
 ### Phase 1 — Règles, composants communs et fondations
 
@@ -309,8 +367,9 @@ Enveloppe indicative de 12–16 semaines à réviser après phase 1 selon dispon
 |---|---|---|
 | 30/09/2026 | Version 4.2 consolidée dans la conversation : phases regroupées, décisions internes, récupération avant opérations, rétention/RPO/RTO | Préparation documentaire |
 | 01/10/2026 | Préparation de cette référence ; migration commitée sur main à e675093 ; anciens documents archivés et liens de redirection conservés ; commit documentaire demandé par le propriétaire | Présenter Phase 0 puis attendre son lancement |
+| 01/10/2026 | Phase 0 étapes 1–6 terminées ; sauvegarde restaurable vérifiée, contrôles techniques réussis, navigateur utilisateur et opérations métier sur copie consignés. B1 a passé une fois sur `localhost` ; D14 reste à robustifier. Vente, achat, import et stock réussis ; PDF non démontré. Aucun commit/push | Traiter les défauts selon les phases |
 
-**Phase 0 : préparée, non exécutée.** Comparaison Apache/CLI, nouvelle sauvegarde/restauration, vérifications navigateur et essais sur copie restent à réaliser. Les vérifications anciennes ne sont pas présentées comme des résultats de cette phase.
+**Phase 0 : étapes 1–6 exécutées.** Le rapport [phase0-report.md](phase0-report.md) distingue les résultats, limites et points non vérifiés. Les essais d'écriture ont été confinés à `qpos_test`, désormais supprimée.
 
 ## 12. Fiche d'exécution et Git — Phase 0
 
@@ -337,4 +396,4 @@ La migration est déjà commitée sur `main`. Ne pas répéter une fusion ni sup
 
 Avant commit : examiner le diff, ajouter seulement les fichiers du lot et vérifier l'index. Les noms de fichiers et messages sont adaptés au changement réel. Aucun `git add .`, reset ou écrasement de travail existant pour préparer un lot.
 
-La préparation documentaire a reçu une délégation de commit. La Phase 0 reste soumise à validation de son lancement ; ses sauvegardes et vérifications ne sont pas exécutées par la seule création de ce document.
+La préparation documentaire a reçu une délégation de commit. Le propriétaire a autorisé la Phase 0 ; ses étapes 1–6 sont exécutées et documentées. Aucun commit ni push de cette phase n'a été effectué.

@@ -18,16 +18,24 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = Order::get();
-        // Calculate totals
+        $orders = Order::query()
+            ->toBase()
+            ->selectRaw('COALESCE(SUM(sub_total), 0) as sub_total')
+            ->selectRaw('COALESCE(SUM(discount), 0) as discount')
+            ->selectRaw('COALESCE(SUM(total), 0) as total')
+            ->selectRaw('COALESCE(SUM(paid), 0) as paid')
+            ->selectRaw('COALESCE(SUM(due), 0) as due')
+            ->selectRaw('COUNT(*) as total_order')
+            ->first();
+
         $data = [
-            'sub_total' => $orders->sum('sub_total'),
-            'discount' => $orders->sum('discount'),
-            'total' => $orders->sum('total'),
-            'paid' => $orders->sum('paid'),
-            'due' => $orders->sum('due'),
+            'sub_total' => (float) $orders->sub_total,
+            'discount' => (float) $orders->discount,
+            'total' => (float) $orders->total,
+            'paid' => (float) $orders->paid,
+            'due' => (float) $orders->due,
             'total_customer' => Customer::count(),
-            'total_order' => $orders->count(),
+            'total_order' => (int) $orders->total_order,
             'total_product' => Product::count(),
             'total_sale_item' => OrderProduct::sum('quantity'),
         ];

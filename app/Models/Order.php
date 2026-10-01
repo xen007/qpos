@@ -26,6 +26,10 @@ class Order extends Model
     }
     public function getTotalItemAttribute()
     {
+        if (array_key_exists('item_quantity_sum', $this->attributes)) {
+            return (int) $this->attributes['item_quantity_sum'];
+        }
+
         return $this->products()->sum('quantity');
     }
    

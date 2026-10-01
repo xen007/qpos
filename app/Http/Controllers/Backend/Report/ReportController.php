@@ -71,7 +71,7 @@ class ReportController extends Controller
     {
 
         if ($request->ajax()) {
-            $products = Product::latest()->active()->get();
+            $products = Product::query()->with('unit')->latest()->active();
             return DataTables::of($products)
                 ->addIndexColumn()
                 // Colonnes neutres : la page migree compose le prix (avec le prix
