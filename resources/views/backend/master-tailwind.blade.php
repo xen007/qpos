@@ -11,16 +11,23 @@
     encore migrees.
 --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-palette="{{ \App\Support\SitePalette::current() }}">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script>
         (() => {
-            const savedTheme = localStorage.getItem('qpos-theme');
+            let savedTheme;
+            try {
+                savedTheme = localStorage.getItem('qpos-theme');
+            } catch (_) {
+                // Le theme reste utilisable si le stockage navigateur est bloque.
+            }
             const systemPrefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-            document.documentElement.dataset.theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            document.documentElement.dataset.theme = ['light', 'dark'].includes(savedTheme)
+                ? savedTheme
+                : (systemPrefersDark ? 'dark' : 'light');
         })();
     </script>
     <title>
@@ -38,6 +45,7 @@
 
     <!-- Jetons de design (clair/sombre) : source unique partagee avec AdminLTE -->
     <link rel="stylesheet" href="{{ asset('css/qpos-tokens.css') }}">
+    <link rel="preload" href="{{ asset('fonts/inter/InterVariable.woff2') }}" as="font" type="font/woff2" crossorigin>
     <!-- Icones -->
     <link rel="stylesheet" href="{{ asset('plugins/fontawesome-free/css/all.min.css') }}">
 
@@ -58,24 +66,24 @@
     @stack('style')
 </head>
 
-<body class="min-h-screen bg-qpos-page text-qpos-ink antialiased">
+<body class="qpos-shell min-h-screen bg-qpos-page font-sans text-qpos-ink antialiased">
 
     {{-- Notifications flash (Sonner) --}}
     <x-backend.flash-toasts />
 
     {{-- Voile du tiroir de navigation (mobile) --}}
-    <div data-qpos-drawer-overlay class="fixed inset-0 z-30 hidden bg-black/50 lg:hidden"></div>
+    <div data-qpos-drawer-overlay class="fixed inset-0 z-30 hidden bg-black/50 lg:hidden print:hidden" aria-hidden="true"></div>
 
     {{-- Navigation laterale --}}
     @include('backend.layouts.tailwind.sidebar')
 
-    <div class="flex min-h-screen flex-col lg:pl-72">
+    <div class="flex min-w-0 min-h-screen flex-col lg:pl-72 print:pl-0">
 
         {{-- Barre superieure --}}
         @include('backend.layouts.tailwind.topbar')
 
         <!-- Contenu de la page -->
-        <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8 print:p-0">
+        <main class="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 print:p-0">
             <div class="print:hidden">
                 <x-backend.breadcrumbs />
             </div>

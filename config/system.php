@@ -40,4 +40,5 @@
   'is_show_customer_invoice' => '1',
   'is_show_note_invoice' => '1',
   'receiptMaxwidth' => '300px',
+  'site_palette' => 'indigo',
 );

@@ -10,6 +10,7 @@ export default defineConfig({
                 "resources/js/app.jsx",
                 "resources/js/dashboard.js",
                 "resources/js/theme.js",
+                "resources/js/frontend.js",
                 "resources/js/shell.js",
                 "resources/js/table-actions.js",
                 "resources/js/backend-toast.jsx",

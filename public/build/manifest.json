@@ -18,7 +18,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-PvjdpgU5.css",
+    "file": "assets/app-D69ELZRV.css",
     "name": "app",
     "names": [
       "app.css"
@@ -27,7 +27,7 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-pnX7RjmE.js",
+    "file": "assets/app-DxX-wSrn.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -39,7 +39,7 @@
       "resources/js/components/Purchase/Purchase.jsx"
     ],
     "css": [
-      "assets/app-PvjdpgU5.css"
+      "assets/app-D69ELZRV.css"
     ]
   },
   "resources/js/backend-toast.jsx": {
@@ -87,6 +87,12 @@
     "src": "resources/js/dashboard.js",
     "isEntry": true
   },
+  "resources/js/frontend.js": {
+    "file": "assets/frontend-DGK2r0-Z.js",
+    "name": "frontend",
+    "src": "resources/js/frontend.js",
+    "isEntry": true
+  },
   "resources/js/shell.js": {
     "file": "assets/shell-C0U6ndT-.js",
     "name": "shell",
@@ -108,7 +114,7 @@
     "isEntry": true
   },
   "resources/js/theme.js": {
-    "file": "assets/theme-BdbjHLW-.js",
+    "file": "assets/theme-CjBbhCrZ.js",
     "name": "theme",
     "src": "resources/js/theme.js",
     "isEntry": true

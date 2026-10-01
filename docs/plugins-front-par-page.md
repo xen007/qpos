@@ -8,17 +8,42 @@ les dépendances front à déclarer lorsqu'elle est migrée vers `backend.master
 
 ## Pourquoi déclarer les plugins
 
+### Pages publiques — Lot A Phase 1, 01/10/2026
+
+Les quatre vues `frontend/authentication` et la 404 partagent désormais
+`frontend.authentication.layout` : tokens, Inter locale, CSS Tailwind, `theme.js`
+et `frontend.js` (affichage du mot de passe, confirmation, saisie/collage OTP).
+Aucun Bootstrap, tooltip, back-to-top, copyright.js ou police externe n'est
+chargé par ce layout. Les messages et erreurs restent visibles dans le formulaire.
+
+Les paramètres de style proposent trois palettes globales : `petrol`, `teal`,
+`indigo`. `App\Support\SitePalette` fournit la liste autorisée et le défaut
+Bleu pétrole si la valeur est absente/invalide. Les deux shells backend et le
+layout public lisent la même configuration `system.site_palette`, enregistrée
+uniquement lorsque le propriétaire soumet le formulaire protégé par
+`style_settings`. Le thème clair/sombre reste une préférence navigateur.
+La racine conserve sa redirection vers le login ; aucune vue welcome artificielle.
+
 Le layout historique `backend.master` charge globalement AdminLTE, Bootstrap, jQuery et
 tous les plugins (DataTables, select2, summernote, dropzone, moment, daterangepicker).
 Le layout `backend.master-tailwind` ne charge que :
 
 - les jetons de design (`public/css/qpos-tokens.css`) ;
+- Inter variable locale (`public/fonts/inter/InterVariable.woff2`, version 4.1,
+  licence SIL OFL dans le meme dossier), declaree dans les jetons et prechargee
+  par le shell Tailwind ; aucun CDN ni nouveau package ;
 - Font Awesome ;
 - Tailwind compilé (`resources/css/app.css`) ;
 - le thème (`resources/js/theme.js`), le shell (`resources/js/shell.js`) et, si besoin,
   les notifications Sonner.
 
 Chaque page migrée déclare donc ses propres plugins via les partiels ci-dessous.
+
+Lot A de Phase 1 (01/10/2026) : tokens Soft Modern clair/sombre, shell et bascule
+de theme actualises ensemble. Les deux layouts partagent les tokens et
+`theme.js` ; le shell Tailwind conserve les contrats `data-qpos-*` de `shell.js`.
+Les utilitaires de couleur disposent de valeurs de repli ; le choix du theme
+est valide et reste utilisable si le stockage navigateur est bloque.
 
 ## Déclaration dans une page
 

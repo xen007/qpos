@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-palette="{{ \App\Support\SitePalette::current() }}">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script>
         (() => {
-            const savedTheme = localStorage.getItem('qpos-theme');
+            let savedTheme;
+            try { savedTheme = localStorage.getItem('qpos-theme'); } catch (_) {}
             const systemPrefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-            document.documentElement.dataset.theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+            document.documentElement.dataset.theme = ['light', 'dark'].includes(savedTheme)
+                ? savedTheme : (systemPrefersDark ? 'dark' : 'light');
         })();
     </script>
     <title>

@@ -11,7 +11,8 @@
 
 @if ($item['type'] === \App\Support\BackendMenu::TYPE_HEADER)
 
-    <li class="px-3 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-qpos-muted">
+    <li class="flex items-center gap-2 px-3 pb-2 pt-6 text-xs font-semibold uppercase tracking-wider text-qpos-muted">
+        <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-qpos-accent" aria-hidden="true"></span>
         {{ $item['label'] }}
     </li>
 
@@ -20,7 +21,7 @@
     <li>
         <button type="button" data-qpos-nav-toggle
             aria-controls="{{ $panelId }}" aria-expanded="{{ $item['active'] ? 'true' : 'false' }}"
-            class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium transition hover:bg-qpos-page {{ $item['active'] ? 'text-qpos-ink' : 'text-qpos-muted' }}">
+            class="qpos-shell-control flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition hover:bg-qpos-brand-soft hover:text-qpos-brand-ink {{ $item['active'] ? 'bg-qpos-brand-soft text-qpos-brand-ink' : 'bg-transparent text-qpos-muted' }}">
             <i class="{{ $item['icon'] }} w-4 text-center" aria-hidden="true"></i>
             <span class="flex-1 truncate">{{ $item['label'] }}</span>
             <i class="fas fa-angle-left text-xs transition-transform {{ $item['active'] ? '-rotate-90' : '' }}"
@@ -28,7 +29,7 @@
         </button>
 
         <ul id="{{ $panelId }}" data-qpos-nav-panel
-            class="mt-1 space-y-1 border-l border-qpos-line pl-3 {{ $item['active'] ? '' : 'hidden' }}">
+            class="my-2 ml-5 space-y-1 border-l border-qpos-line pl-3 {{ $item['active'] ? '' : 'hidden' }}">
             @foreach ($item['children'] as $child)
                 <x-backend.tailwind.nav-item :item="$child" />
             @endforeach
@@ -39,7 +40,7 @@
 
     <li>
         <a href="{{ $item['url'] }}"
-            class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition {{ $item['active'] ? 'bg-qpos-brand text-white' : 'text-qpos-muted hover:bg-qpos-page hover:text-qpos-ink' }}"
+            class="qpos-shell-link flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {{ $item['active'] ? 'bg-qpos-brand text-white shadow-sm' : 'text-qpos-muted hover:bg-qpos-brand-soft hover:text-qpos-brand-ink' }}"
             @if ($item['active']) aria-current="page" @endif>
             <i class="{{ $item['icon'] }} w-4 text-center" aria-hidden="true"></i>
             <span class="truncate">{{ $item['label'] }}</span>

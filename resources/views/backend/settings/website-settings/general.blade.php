@@ -151,6 +151,27 @@
                             @csrf
 
                             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                                <fieldset class="lg:col-span-2 m-0 min-w-0 border-0 p-0">
+                                    <legend class="mb-2 text-sm font-semibold text-qpos-ink">{{ __('Site palette') }}</legend>
+                                    <p class="mb-4 text-sm text-qpos-muted">{{ __('The palette applies to the whole site. Light and dark mode remain personal.') }}</p>
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                        @foreach (\App\Support\SitePalette::options() as $key => $palette)
+                                            <label class="qpos-palette-option rounded-xl border border-qpos-line p-4 cursor-pointer">
+                                                <span class="flex items-center gap-2 text-sm font-semibold">
+                                                    <input type="radio" name="site_palette" value="{{ $key }}" required
+                                                        @checked(old('site_palette', \App\Support\SitePalette::current()) === $key)>
+                                                    {{ $palette['label'] }}
+                                                </span>
+                                                <span class="mt-3 flex gap-2" aria-hidden="true">
+                                                    <span class="h-8 flex-1 rounded-md" style="background: {{ $palette['color'] }}"></span>
+                                                    <span class="h-8 w-8 rounded-md" style="background: #88B04B"></span>
+                                                </span>
+                                                <span class="mt-2 block text-xs text-qpos-muted">{{ $palette['color'] }} + #88B04B</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    @error('site_palette') <p class="mt-2 text-sm text-red-600" role="alert">{{ $message }}</p> @enderror
+                                </fieldset>
                                 <div class="lg:col-span-2">
                                     <x-backend.image-field name="site_logo" field-id="siteLogo" :label="__('Site') . ' ' . __('Logo')"
                                         :current-image-url="assetImage(readconfig('site_logo'))" />

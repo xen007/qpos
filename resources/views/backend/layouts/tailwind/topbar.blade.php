@@ -4,17 +4,18 @@
     resources/js/shell.js, la bascule clair/sombre par resources/js/theme.js.
 --}}
 <header
-    class="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-qpos-line bg-qpos-surface px-4 sm:px-6 lg:px-8 print:hidden">
+    class="sticky top-0 z-20 flex h-20 items-center gap-2 border-b border-qpos-line bg-qpos-surface px-3 sm:gap-3 sm:px-6 lg:px-8 print:hidden">
     <button type="button" data-qpos-drawer-toggle aria-controls="qpos-sidebar" aria-expanded="false"
         aria-label="{{ __('Open navigation menu') }}"
-        class="flex h-10 w-10 items-center justify-center rounded-lg text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink lg:hidden">
+        class="qpos-shell-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-qpos-page text-qpos-muted transition hover:bg-qpos-brand-soft hover:text-qpos-brand-ink lg:hidden">
         <i class="fas fa-bars" aria-hidden="true"></i>
     </button>
 
-    <div class="flex flex-1 items-center justify-end gap-2 sm:gap-3">
+    <div class="flex min-w-0 flex-1 items-center justify-end gap-1 sm:gap-3">
         @can('sale_create')
             <a href="{{ route('backend.admin.cart.index') }}"
-                class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                aria-label="{{ __('POS') }}" title="{{ __('POS') }}"
+                class="qpos-shell-link inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-qpos-brand px-3 text-sm font-semibold text-white transition hover:bg-qpos-brand-hover">
                 <i class="fas fa-cart-plus" aria-hidden="true"></i>
                 <span class="hidden sm:inline">{{ __('POS') }}</span>
             </a>
@@ -24,21 +25,21 @@
 
         <button type="button" data-theme-toggle aria-pressed="false" aria-label="{{ __('Toggle color theme') }}"
             title="{{ __('Toggle color theme') }}"
-            class="flex h-10 w-10 items-center justify-center rounded-lg text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink">
+            class="qpos-shell-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-qpos-page text-qpos-muted transition hover:bg-qpos-brand-soft hover:text-qpos-brand-ink">
             <i class="fas fa-moon" data-theme-icon aria-hidden="true"></i>
         </button>
 
         <button type="button" data-qpos-fullscreen aria-label="{{ __('Toggle fullscreen') }}"
             title="{{ __('Toggle fullscreen') }}"
-            class="hidden h-10 w-10 items-center justify-center rounded-lg text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink sm:flex">
+            class="qpos-shell-control hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-qpos-page text-qpos-muted transition hover:bg-qpos-brand-soft hover:text-qpos-brand-ink sm:flex">
             <i class="fas fa-expand-arrows-alt" aria-hidden="true"></i>
         </button>
 
         <x-backend.dropdown>
-            <x-slot:trigger>
-                <i class="fas fa-user-circle text-lg" aria-hidden="true"></i>
-                <span class="hidden sm:inline">{{ auth()->user()->name }}</span>
-                <i class="fas fa-angle-down text-xs" aria-hidden="true"></i>
+            <x-slot:trigger aria-label="{{ __('Profile') }}" title="{{ auth()->user()->name }}">
+                <i class="fas fa-user-circle text-lg text-qpos-brand-ink" aria-hidden="true"></i>
+                <span class="hidden max-w-40 truncate sm:inline">{{ auth()->user()->name }}</span>
+                <i class="fas fa-angle-down hidden text-xs sm:inline" aria-hidden="true"></i>
             </x-slot:trigger>
 
             <a href="{{ route('backend.admin.profile') }}"

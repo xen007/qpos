@@ -7,6 +7,8 @@ use App\Rules\ValidImageType;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Artisan;
 use App\Trait\FileHandler;
+use App\Support\SitePalette;
+use Illuminate\Validation\Rule;
 
 class WebsiteSettingController extends Controller
 {
@@ -60,11 +62,13 @@ class WebsiteSettingController extends Controller
     public function websiteStyleSettingsUpdate(Request $request)
     {
         $request->validate([
+            'site_palette' => ['required', Rule::in(array_keys(SitePalette::options()))],
             'site_logo' => ['file', new ValidImageType, 'max:2048'],
             'favicon_icon' => ['file', new ValidImageType, 'max:2048'],
             'favicon_icon_apple' => ['file', new ValidImageType, 'max:2048'],
         ]);
 
+        writeConfig('site_palette', $request->input('site_palette'));
         writeConfig('newsletter_subscribe', $request->newsletter_subscribe);
 
         if ($request->hasFile("site_logo")) {

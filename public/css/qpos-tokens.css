@@ -4,43 +4,114 @@
    Ces variables alimentent le theme clair/sombre du back-office. Elles sont
    chargees par les deux layouts (backend.master pour les pages AdminLTE et
    backend.master-tailwind pour les pages migrees), avant toute autre feuille
-   de style. Les valeurs proviennent du Sprint 2 (L6a-g) et sont inchangees.
+   de style. Palette Soft Modern (D12), police locale sans dependance reseau.
    Ne pas redefinir ces variables ailleurs : ajouter ici.
    ========================================================================== */
 
+@font-face {
+    font-family: "Inter";
+    src: url("../fonts/inter/InterVariable.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
 :root {
     color-scheme: light;
-    --qpos-page: #f3f5f9;
+    --qpos-font: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    --qpos-page: #f4f7f8;
     --qpos-surface: #ffffff;
-    --qpos-text: #182230;
-    --qpos-muted: #667085;
-    --qpos-border: #e3e8ef;
-    --qpos-sidebar: #f7f8fc;
-    --qpos-brand: #5268d8;
+    --qpos-text: #1b2d36;
+    --qpos-muted: #5c6e78;
+    --qpos-border: #dce5e9;
+    --qpos-sidebar: #ffffff;
+    --qpos-brand: #1e5f74;
+    --qpos-brand-hover: #174d60;
+    --qpos-brand-ink: #1e5f74;
+    --qpos-brand-soft: #e8f1f4;
+    --qpos-accent: #88b04b;
+    --qpos-accent-ink: #426127;
+    --qpos-accent-soft: #f0f5e8;
+    --qpos-focus: #1e5f74;
+    --qpos-shadow: 0 8px 24px rgb(27 45 54 / 6%);
 }
 
 :root[data-theme="dark"] {
     color-scheme: dark;
-    --qpos-page: #111827;
-    --qpos-surface: #1c2533;
-    --qpos-text: #e5eaf2;
-    --qpos-muted: #a5b0c0;
-    --qpos-border: #354153;
-    --qpos-sidebar: #17202d;
-    --qpos-brand: #9baaff;
+    --qpos-page: #101a20;
+    --qpos-surface: #18262e;
+    --qpos-text: #e8eff2;
+    --qpos-muted: #a8b7c0;
+    --qpos-border: #31454f;
+    --qpos-sidebar: #15222a;
+    /* Contraste avec le texte blanc des surfaces de marque existantes. */
+    --qpos-brand: #34778b;
+    --qpos-brand-hover: #2b687b;
+    --qpos-brand-ink: #95c5d3;
+    --qpos-brand-soft: #213b47;
+    --qpos-accent: #88b04b;
+    --qpos-accent-ink: #b6d886;
+    --qpos-accent-soft: #2b3925;
+    --qpos-focus: #95c5d3;
+    --qpos-shadow: 0 8px 24px rgb(0 0 0 / 18%);
 }
 
-/* Impression : retour force au theme clair, quel que soit le theme choisi. */
+/* Variantes de marque : memes surfaces, composants et accent sauge. */
+:root[data-palette="teal"] {
+    --qpos-brand: #0f766e;
+    --qpos-brand-hover: #115e59;
+    --qpos-brand-ink: #0f766e;
+    --qpos-brand-soft: #e5f3f0;
+    --qpos-focus: #0f766e;
+    --qpos-print-brand: #0f766e;
+}
+
+:root[data-palette="teal"][data-theme="dark"] {
+    --qpos-brand: #0f766e;
+    --qpos-brand-hover: #115e59;
+    --qpos-brand-ink: #93d5c8;
+    --qpos-brand-soft: #193d39;
+    --qpos-focus: #93d5c8;
+}
+
+:root[data-palette="indigo"] {
+    --qpos-brand: #4338ca;
+    --qpos-brand-hover: #3730a3;
+    --qpos-brand-ink: #4338ca;
+    --qpos-brand-soft: #eeecfa;
+    --qpos-focus: #4338ca;
+    --qpos-print-brand: #4338ca;
+}
+
+:root[data-palette="indigo"][data-theme="dark"] {
+    --qpos-brand: #5146cc;
+    --qpos-brand-hover: #4338b5;
+    --qpos-brand-ink: #bbb4f5;
+    --qpos-brand-soft: #2d2a49;
+    --qpos-focus: #bbb4f5;
+}
+
+/* Impression : surfaces claires, palette choisie conservee. */
 @media print {
     :root,
-    :root[data-theme="dark"] {
+    :root[data-theme="dark"],
+    :root[data-palette],
+    :root[data-palette][data-theme] {
         color-scheme: light;
         --qpos-page: #ffffff;
         --qpos-surface: #ffffff;
-        --qpos-text: #182230;
-        --qpos-muted: #667085;
-        --qpos-border: #e3e8ef;
-        --qpos-sidebar: #f7f8fc;
-        --qpos-brand: #5268d8;
+        --qpos-text: #1b2d36;
+        --qpos-muted: #5c6e78;
+        --qpos-border: #dce5e9;
+        --qpos-sidebar: #ffffff;
+        --qpos-brand: var(--qpos-print-brand, #1e5f74);
+        --qpos-brand-hover: var(--qpos-print-brand, #174d60);
+        --qpos-brand-ink: var(--qpos-print-brand, #1e5f74);
+        --qpos-brand-soft: #e8f1f4;
+        --qpos-accent: #88b04b;
+        --qpos-accent-ink: #426127;
+        --qpos-accent-soft: #f0f5e8;
+        --qpos-focus: var(--qpos-print-brand, #1e5f74);
+        --qpos-shadow: none;
     }
 }
