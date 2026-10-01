@@ -84,18 +84,18 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | ID | Statut | Décision ou question | Conséquences / phase |
 |---|---|---|---|
 | D01 | Validée | Une entreprise, plusieurs boutiques, catalogue partagé | Isolation des données et droits, phases 1–2 |
-| D02 | À décider | Réserver le stock au panier ? Proposition initiale : non | Checkout, phase 1 |
-| D03 | À décider | Caisses physiques partagées entre caissiers ? | Sessions et responsabilités, phase 1 |
-| D04 | À décider | Méthode de valorisation des stocks | Coûts historiques et marges, phase 1 |
-| D05 | À décider | RPO : perte maximale de données acceptable | Fréquence des sauvegardes, phase 1 |
-| D06 | À décider | RTO : délai maximal de remise en service | Restauration, phase 1 |
-| D07 | À décider | Carte : terminal externe enregistré ou intégration réelle ? | Contrat décidé en phase 1, mise en œuvre en phase 4 |
-| D08 | À décider | Droits globaux ou propres à chaque boutique ? | Autorisations, phase 1 |
-| D09 | À décider | Priorité des tarifs et cumul des promotions | Moteur de prix, phase 1 |
-| D10 | À décider | Taxes incluses/ajoutées, précision et arrondis | Calculs et documents, phase 1 |
+| D02 | Validée — 01/10/2026 | Pas de réservation du stock au panier | Le panier ne modifie pas les soldes ; contrôle et verrouillage transactionnel au checkout. Évite les réservations expirées et convient au fonctionnement retenu. Phase 4 |
+| D03 | Validée — 01/10/2026 | Session de caisse individuelle par caissier | Chaque vente et opération de caisse est attribuable à une session et à son responsable ; prévoir une passation lors d'un changement de caissier. Phase 4 |
+| D04 | Validée — 01/10/2026 | FEFO pour les produits périssables, FIFO sinon | Prioriser l'expiration pour réduire les pertes ; utiliser l'ancienneté des réceptions pour les autres produits. Exige traçabilité des lots/coûts et allocations explicites. Phases 2–5 |
+| D05 | Validée — 01/10/2026 | RPO de 24 heures | Perte maximale retenue : une journée ; sauvegarde quotidienne en fin de journée, cohérente avec l'arrêt nocturne du serveur. Vérifier le succès et la restaurabilité. Phase 7 |
+| D06 | Validée — 01/10/2026 | RTO de 8 heures | Cible de remise en service le jour même, sans présumer de haute disponibilité ; nécessite des procédures et exercices de restauration chronométrés. Phase 7 |
+| D07 | Validée — 01/10/2026 | Paiement par carte sur terminal externe | QPOS enregistre le résultat et la référence autorisée, sans traiter ni conserver de données sensibles de carte ; réconciliation externe/manuelle. Phase 4 |
+| D08 | Validée — 01/10/2026 | Rôle global avec portée explicite par boutique | Les rôles définissent les capacités et l'affectation détermine le périmètre des données ; les contrôles serveur couvrent lectures, écritures, exports et accès directs. Phases 1–2 |
+| D09 | Validée — 01/10/2026 | Priorité tarifaire déterministe et une seule promotion appliquée | Évite les cumuls ambigus ; recalcul serveur et conservation des conditions appliquées dans l'historique de vente. Phase 4 |
+| D10 | Validée — 01/10/2026 | Prix TTC (taxes incluses) | Le prix annoncé correspond au total dû ; conserver taux, base et montant de taxe ainsi que les règles de précision/arrondi sur les opérations. Phases 1 et 4 |
 | D11 | Validée | Français par défaut, anglais au choix, préférence conservée | Blade et React |
 | D12 | Validée | Soft Modern : bleu pétrole, vert sauge, Inter ; clair/sombre | Composants communs, phase 1 |
-| D13 | À décider | Fuseau métier : Asia/Dhaka actuellement ; Africa/Douala à confirmer (E04) | Phase 1 ; horaires, périodes de rapports et clôtures ; aucune correction en Phase 0 |
+| D13 | Validée — 01/10/2026 | Fuseau métier `Africa/Douala` (E04) | Aligner le fuseau applicatif sur l'activité métier ; l'utiliser pour journées, rapports et clôtures, avec stockage cohérent des instants. Phase 1 |
 | D14 | À robustifier en Phase 1 | B1 — 419 intermittent au login/logout ; ce passage a réussi avec `localhost` cohérent | Tester `SESSION_DOMAIN=localhost`, aligner `APP_URL`/`system.site_url` (E01), puis vérifier onglets et hôtes séparés avant de décider le réglage |
 | D15 | Corrigée, à revalider navigateur | B2 — agrégation dashboard, coût par vente et liste inventaire | Phase 0 ; SQL agrégé, `withSum`, pagination serveur et unité préchargée |
 | D16 | À corriger | Résidus visuels dans sidebar/header ; erreur console `copyright.js` sur élément absent pendant les parcours testés | Phase 1, shell et scripts partagés |
@@ -120,8 +120,10 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | D35 | À investiguer | Facture de règlement semblant afficher deux ventes | Phase 4 ; obtenir les IDs des ventes et l'URL du document |
 | D36 | Compris | `products.purchase_price` est un coût de référence ; un coût réel différent reste sur chaque achat | Phases 2–3 ; achat actuel ne met pas automatiquement à jour la référence produit |
 | D37 | À vérifier | Effet d'un changement du prix courant sur statistiques et marges historiques | Phase 5 ; contrôler chaque rapport et ses sources |
+| D38 | Validée — 01/10/2026 | Sauvegarde quotidienne en fin de journée ; RPO de 24 heures | Le serveur étant éteint la nuit, cette fréquence borne la perte visée à une journée ; surveiller la réussite et vérifier la restaurabilité. Phase 7 |
+| D39 | Validée — 01/10/2026 | Aucune réservation panier ; contrôle et verrouillage du stock au checkout | Le panier ne bloque pas le stock ; revérifier la disponibilité et verrouiller les lignes concernées dans la transaction de vente pour prévenir la survente concurrente. Phase 4 |
 
-Chaque décision ajoute sa date, sa raison et ses conséquences lorsqu'elle est tranchée. Statuts : proposée, à décider, validée, remplacée. Une proposition n'est pas une règle approuvée.
+Les décisions D02–D10, D13, D38 et D39 ont été validées le 01/10/2026 ; leurs raisons et conséquences sont précisées dans le registre. Les décisions ajoutées ultérieurement suivent le même format. Statuts : proposée, à décider, validée, remplacée. Une proposition n'est pas une règle approuvée.
 
 ### 3.6 Retour arrière et échéances
 
@@ -147,11 +149,11 @@ Adapter `units`, `products.unit_id` et `order_products`, sans les recréer arbit
 
 Le journal trace réception, vente, retour, transfert, perte, inventaire et correction. `StockService` assure transactions, concurrence, traçabilité des lots et distinction entre disponible, transit et impropre à la vente.
 
-Les soldes utilisés pour accélérer les lectures sont mis à jour dans la même transaction que les mouvements et restent réconciliables. FEFO est la règle cible pour les périssables ; la valorisation financière est distincte. La réservation au panier reste une décision à prendre.
+Les soldes utilisés pour accélérer les lectures sont mis à jour dans la même transaction que les mouvements et restent réconciliables. Pour les périssables, les sorties suivent FEFO (expiration la plus proche) ; pour les autres produits, elles suivent FIFO (réception la plus ancienne). Les lots/réceptions portent les quantités et coûts nécessaires à la traçabilité et à la valorisation ; les sorties sont allouées explicitement. Les données historiques manquantes restent signalées, jamais inventées. Aucun stock n'est réservé au panier ; disponibilité revérifiée et verrouillée au checkout dans la transaction de vente.
 
 ### 4.4 Tarifs et promotions
 
-Définir avant le moteur : priorités client/quantité/conditionnement/boutique, promotions cumulables ou exclusives, permissions des remises manuelles, taxes, précision et arrondis. Les montants sont recalculés côté serveur et les conditions appliquées restent attachées à la vente. Les promotions couvrent pourcentage, montant fixe, offres de quantité et lots promotionnels selon les règles validées.
+La priorité tarifaire est déterministe ; une seule promotion s'applique à une ligne, selon les règles validées. Les remises manuelles restent contrôlées par permission. Les prix sont TTC : le total affiché au client inclut les taxes. Le taux, la base, le montant de taxe, la précision et les arrondis sont définis et conservés avec l'opération. Tous les montants sont recalculés côté serveur et les conditions appliquées restent attachées à la vente. Les promotions couvrent pourcentage, montant fixe, offres de quantité et lots promotionnels selon les règles validées.
 
 ### 4.5 Paiements, dettes et avoirs
 
@@ -165,13 +167,13 @@ Les produits endommagés/périmés ne reviennent pas au stock vendable. Document
 
 ### 4.7 Caisse, dépenses et synthèse quotidienne
 
-Une vente est liée à une session de caisse. Un règlement/remboursement ultérieur est lié à la session pendant laquelle il intervient. Seules les espèces affectent le comptage physique attendu. Les dépenses précisent leur moyen de règlement. Clôture : comptage humain et écart explicite.
+Une vente est liée à la session individuelle du caissier responsable. Un règlement/remboursement ultérieur est lié à la session pendant laquelle il intervient. Seules les espèces affectent le comptage physique attendu. Les dépenses précisent leur moyen de règlement. Clôture : comptage humain et écart explicite ; lors d'un changement de caissier, la passation doit laisser une responsabilité et un comptage traçables.
 
-La synthèse quotidienne est automatique ; elle ne remplace pas la clôture physique. Fuseau, sessions ouvertes, opérations tardives, verrouillage éventuel et reprise d'envoi sont définis. Le scheduler et les workers nécessitent un environnement actif.
+La synthèse quotidienne est automatique ; elle ne remplace pas la clôture physique. `Africa/Douala` est le fuseau métier pour les journées, horaires, rapports et clôtures. Sessions ouvertes, opérations tardives, verrouillage éventuel et reprise d'envoi sont définis. Le scheduler et les workers nécessitent un environnement actif.
 
 ### 4.8 Indicateurs et valorisation
 
-Séparer ventes nettes, coût des marchandises vendues (CMV), marge brute, charges, résultat de gestion et trésorerie. Le CMV se rattache aux ventes, pas à l'ensemble des achats de la période. La méthode et les informations historiques sont décidées avant les nouvelles opérations. Référence : [IAS 2 — Stocks](https://www.ifrs.org/issued-standards/list-of-standards/ias-2-inventories/). Les rapports de gestion ne constituent pas une intégration comptable réglementaire.
+Séparer ventes nettes, coût des marchandises vendues (CMV), marge brute, charges, résultat de gestion et trésorerie. Le CMV se rattache aux ventes, pas à l'ensemble des achats de la période ; les sorties valorisent les périssables selon FEFO et les autres produits selon FIFO. Les coûts/allocations historiques sont conservés ; les données manquantes restent explicites. Référence : [IAS 2 — Stocks](https://www.ifrs.org/issued-standards/list-of-standards/ias-2-inventories/). Les rapports de gestion ne constituent pas une intégration comptable réglementaire.
 
 ## 5. Phases et critères de fin
 
@@ -340,9 +342,9 @@ Offline/synchronisation, plusieurs entreprises indépendantes, prescriptions, af
 
 ### 10.1 Sauvegardes
 
-Politique initiale : **7 quotidiennes, 4 hebdomadaires, 12 mensuelles**, sous réserve de capacité et besoins de conservation. Il s'agit de points conservés, pas d'une garantie sur la perte maximale.
+Fréquence validée (D05/D38) : **une sauvegarde quotidienne en fin de journée**, le serveur étant éteint la nuit ; RPO retenu : 24 heures. Politique de conservation initiale : **7 quotidiennes, 4 hebdomadaires, 12 mensuelles**, sous réserve de capacité et besoins de conservation. Ces points conservés ne changent pas la fréquence de sauvegarde ni ne garantissent à eux seuls l'atteinte du RPO. Le RTO cible est de 8 heures (D06).
 
-RPO et RTO sont décidés en phase 1 ; aucune valeur d'exemple n'est approuvée implicitement. La fréquence répond au RPO. La politique commence avec les premières sauvegardes régulières ; l'externalisation est complétée en phase 7. Une sauvegarde avant conversion reste nécessaire indépendamment du calendrier.
+La fréquence quotidienne répond au RPO validé ; son exécution et son succès doivent être surveillés, et la restauration exercée par rapport au RTO. La politique commence avec les premières sauvegardes régulières ; l'externalisation est complétée en phase 7. Une sauvegarde avant conversion reste nécessaire indépendamment du calendrier.
 
 ### 10.2 Estimations provisoires
 
