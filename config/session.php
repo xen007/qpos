@@ -155,6 +155,8 @@ return [
     |
     */
 
+    // Keep the cookie host-only by default. Do not share it across localhost
+    // and 127.0.0.1; use one canonical hostname per browser session.
     'domain' => env('SESSION_DOMAIN'),
 
     /*

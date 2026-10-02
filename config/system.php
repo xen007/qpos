@@ -1,7 +1,7 @@
 <?php return array (
   'is_live' => '0',
   'close_msg' => 'Down for maintenance',
-  'site_url' => 'http://localhost/QPOS/public',
+  'site_url' => 'http://localhost/qpos/public',
   'site_name' => 'QPOS',
   'site_logo' => '/assets/images/logo/1725962670_66e019ae94ca7_default.png',
   'app_name' => 'QPOS',

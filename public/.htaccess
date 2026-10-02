@@ -12,6 +12,14 @@
 
     RewriteEngine On
 
+    # Keep historical Windows links working while standardizing generated URLs
+    # to the repository's lowercase project path. On Linux the URL must match
+    # the deployed directory's case before this public .htaccess can run.
+    # 308 preserves POST semantics.
+    RewriteCond %{SERVER_SOFTWARE} Win
+    RewriteCond %{REQUEST_URI} ^/QPOS/public(/.*)?$
+    RewriteRule ^(.*)$ /qpos/public/$1 [R=308,L,NE]
+
     # Vite hashes its filenames; a new build creates a new URL.
     RewriteRule ^build/assets/.+-[A-Za-z0-9_-]{8}\.(css|js|woff2|svg|png|jpg|webp|mp3)$ - [E=QPOS_IMMUTABLE_ASSET:1]
     <IfModule mod_headers.c>
