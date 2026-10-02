@@ -15,6 +15,10 @@ use App\Models\OrderProduct;
 use App\Models\PurchaseItem;
 use App\Models\Supplier;
 use App\Models\Unit;
+use App\Services\ProductUnitService;
+use Illuminate\Support\Str;
+use App\Support\CatalogueSchema;
+use Illuminate\Validation\ValidationException;
 use App\Trait\FileHandler;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -120,8 +124,9 @@ class ProductController extends Controller
 
         $brands = Brand::whereStatus(true)->get();
         $categories = Category::whereStatus(true)->get();
-        $units = Unit::all();
-        return view('backend.products.create', compact('brands', 'categories', 'units'));
+        $catalogueUnitsReady = CatalogueSchema::ready();
+        $units = Unit::query()->when($catalogueUnitsReady, fn ($q) => $q->where('is_active', true))->orderBy('title')->get();
+        return view('backend.products.create', compact('brands', 'categories', 'units', 'catalogueUnitsReady'));
     }
 
     /**
@@ -131,7 +136,36 @@ class ProductController extends Controller
     {
 
         $validated = $request->validated();
-        $product = Product::create($validated);
+        $validated['sku'] ??= 'P-'.Str::uuid();
+        foreach (['purchase_price', 'quantity', 'status'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] === null) {
+                unset($validated[$field]);
+            }
+        }
+        if (CatalogueSchema::ready()) {
+            $validated['allows_fractional'] ??= false;
+        }
+        $product = DB::transaction(function () use ($validated) {
+            if (!CatalogueSchema::ready()) {
+                return Product::create($validated);
+            }
+            if (empty($validated['unit_id'])) {
+                $product = Product::create($validated);
+                app(\App\Services\ReferencePricingService::class)->sync($product, $validated, true);
+                return $product;
+            }
+            $unit = Unit::whereKey($validated['unit_id'])->where('is_active', true)->lockForUpdate()->first();
+            if (!$unit) {
+                throw ValidationException::withMessages(['unit_id' => __('Select an active unit.')]);
+            }
+            $product = Product::create($validated);
+            app(ProductUnitService::class)->save($product, [
+                'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title,
+                'factor' => '1', 'is_active' => true,
+            ]);
+            app(\App\Services\ReferencePricingService::class)->sync($product, $validated, true);
+            return $product;
+        });
         if ($request->hasFile("product_image")) {
             $product->image = $this->fileHandler->fileUploadAndGetPath($request->file("product_image"), "/public/media/products");
             $product->save();
@@ -145,7 +179,9 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        //
+        $product = Product::with(['brand', 'category', 'unit'])->findOrFail($id);
+        $this->authorize('view', $product);
+        return view('backend.products.show', ['product' => $product, 'catalogueUnitsReady' => CatalogueSchema::ready()]);
     }
 
     /**
@@ -157,9 +193,11 @@ class ProductController extends Controller
 
         $product = Product::findOrFail($id);
         $brands = Brand::whereStatus(true)->get();
-        $categories = Category::whereStatus(true)->get();
-        $units = Unit::all();
-        return view('backend.products.edit', compact('brands', 'categories', 'units', 'product'));
+        $categories = Category::whereStatus(true)->orWhere('id', $product->category_id)->get();
+        $brands = Brand::whereStatus(true)->orWhere('id', $product->brand_id)->get();
+        $catalogueUnitsReady = CatalogueSchema::ready();
+        $units = Unit::query()->when($catalogueUnitsReady, fn ($q) => $q->where('is_active', true)->orWhere('id', $product->unit_id))->orderBy('title')->get();
+        return view('backend.products.edit', compact('brands', 'categories', 'units', 'product', 'catalogueUnitsReady'));
     }
 
     /**
@@ -169,9 +207,30 @@ class ProductController extends Controller
     {
 
         $validated = $request->validated();
-        $product = Product::findOrFail($id);
+        foreach (['sku', 'purchase_price', 'quantity', 'status'] as $field) {
+            if (array_key_exists($field, $validated) && $validated[$field] === null) {
+                unset($validated[$field]);
+            }
+        }
+        $product = DB::transaction(function () use ($id, $validated) {
+            $product = Product::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (!CatalogueSchema::ready()) {
+                $product->update($validated);
+                return $product;
+            }
+            $unitId = array_key_exists('unit_id', $validated) ? $validated['unit_id'] : $product->unit_id;
+            $unit = $unitId ? Unit::whereKey($unitId)->lockForUpdate()->firstOrFail() : null;
+            if ($unit && !$unit->is_active && (int) $unit->id !== (int) $product->unit_id) {
+                throw ValidationException::withMessages(['unit_id' => __('Select an active unit.')]);
+            }
+            if ((int) $product->unit_id !== (int) $unitId && $product->productUnits()->exists()) {
+                throw ValidationException::withMessages(['unit_id' => __('The base unit cannot change once packagings exist.')]);
+            }
+            $product->update($validated);
+            app(\App\Services\ReferencePricingService::class)->sync($product, $validated);
+            return $product;
+        });
         $oldImage = $product->image;
-        $product->update($validated);
         if ($request->hasFile("product_image")) {
             $product->image = $this->fileHandler->fileUploadAndGetPath($request->file("product_image"), "/public/media/products");
             $product->save();
@@ -193,11 +252,17 @@ class ProductController extends Controller
                 return ['blocked' => true];
             }
 
+            if (CatalogueSchema::ready() && $product->productUnits()->exists()) {
+                return ['packagings' => true];
+            }
             $image = $product->image;
             $product->delete();
             return ['blocked' => false, 'image' => $image];
         });
 
+        if (!empty($result['packagings'])) {
+            return back()->with('error', __('A product with packagings must be deactivated instead of deleted.'));
+        }
         if ($result['blocked']) {
             return redirect()->back()->with('error', __('Products with sales or purchase history cannot be deleted.'));
         }

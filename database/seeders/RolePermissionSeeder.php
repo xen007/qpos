@@ -102,6 +102,11 @@ class RolePermissionSeeder extends Seeder
             'invoice_settings',
             'point_of_sale_view',
             'point_of_sale_access',
+            'point_of_sale_create',
+            'point_of_sale_update',
+            'point_of_sale_delete',
+            'point_of_sale_assign',
+            'point_of_sale_manage_all',
 
         ];
         $admin = Role::where('name', 'Admin')->first();

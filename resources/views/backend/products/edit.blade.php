@@ -3,6 +3,11 @@
 @section('title', __('Update Product'))
 
 @section('content')
+    @if ($catalogueUnitsReady)
+        @can('update', $product)
+            <a class="qpos-button qpos-button-md qpos-button-secondary mb-4 inline-flex" href="{{ route('backend.admin.products.units.index', $product) }}">{{ __('Packagings and barcodes') }}</a>
+        @endcan
+    @endif
     @php
         // Le selecteur d'origine affichait la date au format Y-m-d : on alimente le
         // controle natif avec le meme format.
@@ -22,21 +27,28 @@
                     :placeholder="__('Enter title')" required />
 
                 <x-backend.input name="sku" :label="__('Sku')" :value="$product->sku"
-                    :placeholder="__('Enter sku')" required />
+                    :placeholder="__('Enter sku')" />
 
                 <x-backend.select name="brand_id" :label="__('Brand')" :options="$brands->pluck('name', 'id')->all()"
-                    :selected="$product->brand_id" :placeholder="__('Select Brand')" required />
+                    :selected="$product->brand_id" :placeholder="__('Select Brand')" />
 
                 <x-backend.select name="category_id" :label="__('Category')"
                     :options="$categories->pluck('name', 'id')->all()" :selected="$product->category_id"
-                    :placeholder="__('Select Category')" required />
+                    :placeholder="__('Select Category')" />
 
                 <x-backend.input name="price" type="number" step="0.01" min="0" :label="__('Price')"
                     :value="$product->price" :placeholder="__('Enter price')" required />
 
                 <x-backend.select name="unit_id" :label="__('Unit')"
                     :options="$units->mapWithKeys(fn ($unit) => [$unit->id => $unit->title . ' (' . $unit->short_name . ')'])->all()"
-                    :selected="$product->unit_id" :placeholder="__('Select Unit')" required />
+                    :selected="$product->unit_id" :placeholder="__('Select Unit')" />
+
+                @if ($catalogueUnitsReady)
+                    <x-backend.select name="allows_fractional" :label="__('Fractional quantities')"
+                        :options="[0 => __('No'), 1 => __('Yes')]"
+                        :selected="$product->allows_fractional === null ? null : (int) $product->allows_fractional"
+                        :placeholder="__('Choose the quantity rule')" />
+                @endif
 
                 <x-backend.select name="discount_type" :label="__('Discount Type')" :options="[
                     'fixed' => __('Fixed'),
@@ -46,7 +58,7 @@
 
                 <x-backend.input name="purchase_price" type="number" step="0.01" min="0"
                     :label="__('Purchase Price')" :value="$product->purchase_price"
-                    :placeholder="__('Enter purchase Price')" required />
+                    :placeholder="__('Enter purchase Price')" />
 
                 <x-backend.input name="discount" type="number" step="0.01" min="0" :label="__('Discount Amount')"
                     :value="$product->discount" :placeholder="__('Enter discount')" />

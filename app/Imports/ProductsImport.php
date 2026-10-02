@@ -8,6 +8,9 @@ use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Unit;
+use App\Services\ProductUnitService;
+use App\Support\CatalogueSchema;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Concerns\SkipsEmptyRows;
@@ -25,7 +28,19 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
 
     public function model(array $row)
     {
+        $row += ['brand' => null, 'category' => null, 'unit' => null, 'sku' => null,
+            'purchase_price' => 0, 'quantity' => 0, 'discount' => 0, 'discount_type' => 'fixed', 'status' => true];
+        foreach (['purchase_price', 'quantity', 'discount', 'discount_type', 'status'] as $field) {
+            if ($row[$field] === null || $row[$field] === '') {
+                $row[$field] = match ($field) { 'discount_type' => 'fixed', 'status' => true, default => 0 };
+            }
+        }
         $validator = Validator::make($row, [
+            'name' => ['required', 'string', 'max:255'],
+            'brand' => ['nullable', 'string', 'max:255'],
+            'category' => ['nullable', 'string', 'max:255'],
+            'unit' => ['nullable', 'string', 'max:255'],
+            'sku' => ['nullable', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
             'discount' => ['nullable', 'numeric', 'min:0'],
             'discount_type' => ['required', 'in:fixed,percentage'],
@@ -55,15 +70,32 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             throw new ValidationException($validator);
         }
 
-        $brand = Brand::firstOrCreate(['name' => trim($row['brand'])]);
-        $category = Category::firstOrCreate(['name' => trim($row['category'])]);
-        $unitName = trim($row['unit']);
-        $unit = Unit::firstOrCreate(
-            ['title' => $unitName],
-            ['short_name' => $unitName]
-        );
+        if (\App\Support\PricingSchema::ready()) {
+            foreach (['price', 'purchase_price', 'discount'] as $field) {
+                $row[$field] = (string) \App\Support\MoneyDecimal::parse((string) $row[$field], $field);
+            }
+            if ((int) $row['quantity'] > 0 && !\Brick\Math\BigDecimal::of($row['purchase_price'])->isEqualTo(\Brick\Math\BigDecimal::of($row['purchase_price'])->toScale(2, \Brick\Math\RoundingMode::HalfUp))) {
+                throw ValidationException::withMessages(['purchase_price' => __('Legacy purchase receipts support two decimals; use a reference cost with two decimals until Phase 3.')]);
+            }
+        }
 
-        $originalSku = trim($row['sku']);
+        $brandName = trim((string) $row['brand']);
+        $categoryName = trim((string) $row['category']);
+        $unitName = trim((string) $row['unit']);
+        $brand = $brandName !== '' ? Brand::firstOrCreate(['name' => $brandName]) : null;
+        $category = $categoryName !== '' ? Category::firstOrCreate(['name' => $categoryName]) : null;
+        $unit = null;
+        if ($unitName !== '') {
+            if (Unit::where('title', $unitName)->count() > 1) {
+                throw ValidationException::withMessages(['unit' => __('The unit name is ambiguous; select an existing unit explicitly.')]);
+            }
+            $unit = Unit::firstOrCreate(['title' => $unitName], ['short_name' => $unitName]);
+            if (CatalogueSchema::ready() && !$unit->is_active) {
+                throw ValidationException::withMessages(['unit' => __('Select an active unit.')]);
+            }
+        }
+
+        $originalSku = trim((string) $row['sku']) ?: 'P-'.Str::uuid();
         $sku = $originalSku;
         $counter = 1;
         while (Product::where('sku', $sku)->exists()) {
@@ -74,9 +106,9 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'name' => trim($row['name']),
             'sku' => $sku,
             'description' => $row['description'] ?? null,
-            'category_id' => $category->id,
-            'brand_id' => $brand->id,
-            'unit_id' => $unit->id,
+            'category_id' => $category?->id,
+            'brand_id' => $brand?->id,
+            'unit_id' => $unit?->id,
             'price' => round((float) $row['price'], 2),
             'discount' => round((float) ($row['discount'] ?? 0), 2),
             'discount_type' => $row['discount_type'],
@@ -86,6 +118,19 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'status' => (bool) $row['status'],
         ]);
 
+        if (CatalogueSchema::ready()) {
+            $product->update(['allows_fractional' => false]);
+            if ($unit) {
+                app(ProductUnitService::class)->save($product, [
+                    'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title, 'factor' => '1', 'is_active' => true,
+                ]);
+            }
+        }
+        app(\App\Services\ReferencePricingService::class)->sync($product, [
+            'price' => (string) $row['price'], 'purchase_price' => (string) $row['purchase_price'],
+            'discount' => (string) $row['discount'], 'discount_type' => $row['discount_type'],
+        ], true);
+        if ((int) $row['quantity'] === 0) { return null; }
         $lineTotal = round((float) $row['purchase_price'] * (int) $row['quantity'], 2);
         $purchase = Purchase::create([
             'supplier_id' => $this->supplierId,
@@ -113,18 +158,18 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
     {
         return [
             '*.name' => ['required', 'string', 'max:255'],
-            '*.sku' => ['required', 'string', 'max:255'],
+            '*.sku' => ['nullable', 'string', 'max:255'],
             '*.description' => ['nullable', 'string', 'max:5000'],
-            '*.brand' => ['required', 'string', 'max:255'],
-            '*.category' => ['required', 'string', 'max:255'],
-            '*.unit' => ['required', 'string', 'max:255'],
+            '*.brand' => ['nullable', 'string', 'max:255'],
+            '*.category' => ['nullable', 'string', 'max:255'],
+            '*.unit' => ['nullable', 'string', 'max:255'],
             '*.price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             '*.discount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
-            '*.discount_type' => ['required', 'in:fixed,percentage'],
-            '*.purchase_price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
-            '*.quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
+            '*.discount_type' => ['nullable', 'in:fixed,percentage'],
+            '*.purchase_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            '*.quantity' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             '*.expire_date' => ['nullable', 'date'],
-            '*.status' => ['required', 'boolean'],
+            '*.status' => ['nullable', 'boolean'],
         ];
     }
 }

@@ -19,6 +19,7 @@ class Product extends Model
         'category_id',
         'brand_id',
         'unit_id',
+        'allows_fractional',
         'price',
         'discount',
         'discount_type',
@@ -28,6 +29,12 @@ class Product extends Model
         'status',
     ];
     protected $appends = ['discounted_price'];
+    protected $casts = ['allows_fractional' => 'boolean', 'catalogue_price_ttc' => 'decimal:6', 'catalogue_reference_cost' => 'decimal:6'];
+
+    public function productUnits(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductUnit::class);
+    }
 
     public function setNameAttribute($value)
     {

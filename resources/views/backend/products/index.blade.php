@@ -38,11 +38,19 @@
                 'ajax' => route('backend.admin.products.index'),
                 'csrf' => csrf_token(),
                 'fallbackImage' => asset('assets/images/no-image.png'),
+                'permissions' => [
+                    'view' => auth()->user()->can('product_view'),
+                    'update' => auth()->user()->can('product_update'),
+                    'delete' => auth()->user()->can('product_delete'),
+                    'purchase' => auth()->user()->can('purchase_create'),
+                ],
                 'routes' => [
+                    'show' => route('backend.admin.products.show', ':id'),
                     'edit' => route('backend.admin.products.edit', ':id'),
                     'destroy' => route('backend.admin.products.destroy', ':id'),
                 ],
                 'labels' => [
+                    'view' => __('View'),
                     'edit' => __('Edit'),
                     'delete' => __('Delete'),
                     'purchase' => __('Purchase'),
@@ -122,13 +130,23 @@
                         className: 'text-right',
                         render: (value, type, row) => window.qposTableActions.buttons({
                             csrf: config.csrf,
-                            items: [{
+                            items: [
+                                {
+                                    enabled: config.permissions.view,
+                                    type: 'link',
+                                    url: withId(config.routes.show, row.id),
+                                    label: config.labels.view,
+                                    icon: 'fas fa-eye',
+                                },
+                                {
+                                    enabled: config.permissions.update,
                                     type: 'link',
                                     url: withId(config.routes.edit, row.id),
                                     label: config.labels.edit,
                                     icon: 'fas fa-edit',
                                 },
                                 {
+                                    enabled: config.permissions.delete,
                                     type: 'form',
                                     url: withId(config.routes.destroy, row.id),
                                     method: 'DELETE',
@@ -137,12 +155,13 @@
                                     confirm: config.labels.confirm,
                                 },
                                 {
+                                    enabled: config.permissions.purchase,
                                     type: 'link',
                                     url: row.purchase_url,
                                     label: config.labels.purchase,
                                     icon: 'fas fa-cart-plus',
                                 },
-                            ],
+                            ].filter((item) => item.enabled),
                         }),
                     },
                 ]

@@ -105,10 +105,29 @@ Après interruption : détecter les journées/envois manqués et reprendre selon
 
 Durées pour payloads, tentatives et synthèses : **à proposer**, coordonnées avec l'audit et la protection des données. Avant activation : simuler transaction annulée, double traitement, destinataire révoqué, prestataire indisponible, rattrapage après arrêt et opérations tardives. Ce sont des scénarios futurs ; aucun test automatisé ni envoi exécuté ici.
 
-## 4. Paramètres encore à proposer
+## 4. Contrat unités et conditionnements — validé le 02/10/2026
+
+- Quantités et facteurs : `DECIMAL(20,6)`, six décimales maximum, calculs décimaux exacts sans passage par les flottants.
+- Facteurs strictement positifs ; exactement un conditionnement de référence par produit configuré avec une unité de base, de facteur 1 et rattaché à `products.unit_id` conservé. Un produit sans unité reste à configurer, conformément à D21.
+- Une saisie ou un résultat de conversion dépassant six décimales est refusé avec un message explicite ; aucun arrondi silencieux.
+- Les produits non fractionnaires exigent des quantités entières, y compris dans l'unité de base après conversion.
+- Les quantités/facteurs hors capacité `DECIMAL(20,6)` sont refusés. D24–D25 valident les montants en DECIMAL(20,6) et les remises HALF_UP à six décimales. Taxes et arrondis finaux des paiements/factures selon devise restent en Phase 4 (FCFA : zéro décimale).
+
+## 5. Contrat catalogue et prix — D21–D23 validées le 02/10/2026
+
+- Nom et prix de vente obligatoires ; marque, catégorie et autres renseignements facultatifs, y compris à l'import. Une unité manquante n'est pas remplacée par une unité fictive : le produit reste à configurer avant les opérations avec conditionnement.
+- Référence SKU automatique possible pour une nouvelle création sans SKU ; un SKU existant n'est pas remplacé pendant une simple modification.
+- Prix de vente TTC et coût de référence d'achat distincts par conditionnement. Le coût réel appartient à chaque réception ; une réception ne remplace pas automatiquement la référence.
+- Mise à jour manuelle du coût de référence réservée à l'administrateur.
+- Marque et fournisseur sont des référentiels distincts ; leur lien est facultatif.
+- Catalogue partagé. L'administration globale des boutiques exige la capacité explicite `point_of_sale_manage_all` ; elle ne donne pas le droit d'opérer dans une boutique sans affectation active.
+- Le sélecteur conserve une préférence sans accorder de droit. Chaque opération doit porter `operation_point_of_sale_id`, contrôlé côté serveur, pour conserver son contexte en présence de plusieurs onglets. Le raccordement des écritures de stock et des ventes appartient aux Phases 3–4.
+
+## 6. Paramètres encore à proposer
 
 | Paramètre | Validation attendue avant mise en service |
 |---|---|
+| Paiements et factures (Phase 4) | Arrondi final selon devise (FCFA : zéro décimale), taxes et répartition des remises |
 | Taxes et précision | Taux/exemptions, précision par devise, arrondi ligne/document et répartition des remises |
 | Audit | Durées, archivage/purge, accès, collecte technique éventuelle |
 | Sauvegardes | Heure/responsable, outil, support/capacité, copie externe, chiffrement, durées, exercices et monitoring |

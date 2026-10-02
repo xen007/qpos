@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Backend\Product;
 
 use App\Http\Controllers\Controller;
 use App\Models\Brand;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 use App\Trait\FileHandler;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -23,14 +25,14 @@ class BrandController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $brands = Brand::latest()->get();
+            $brands = Brand::query()->latest();
             return DataTables::of($brands)
                 ->addIndexColumn()
                 // Colonnes neutres : les pages migrees vers Tailwind composent
                 // leurs cellules (actions, etat) cote page, sans markup Bootstrap.
                 ->addColumn('id', fn($data) => $data->id)
                 ->addColumn('is_active', fn($data) => (bool) $data->status)
-                ->addColumn('image', fn($data) => '<img src="' . asset('storage/' . $data->image) . '" loading="lazy" alt="' . $data->name . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . asset('assets/images/no-image.png') . '\';" height="80" width="60" />')
+                ->addColumn('image', fn($data) => '<img src="' . e(asset('storage/' . $data->image)) . '" loading="lazy" alt="' . e($data->name) . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . asset('assets/images/no-image.png') . '\';" height="80" width="60" />')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('status', fn($data) => $data->status
                     ? '<span class="badge bg-primary">' . e(__('Active')) . '</span>'
@@ -79,7 +81,7 @@ class BrandController extends Controller
             'brand_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|boolean',
         ]);
-        $brand = Brand::create($request->except('brand_image'));
+        $brand = Brand::create(collect($validated)->except('brand_image')->all());
         if ($request->hasFile("brand_image")) {
             $brand->image = $this->fileHandler->fileUploadAndGetPath($request->file("brand_image"), "/public/media/brands");
             $brand->save();
@@ -119,7 +121,7 @@ class BrandController extends Controller
         ]);
         $brand = Brand::findOrFail($id);
         $oldImage = $brand->image;
-        $brand->update($request->except('brand_image'));
+        $brand->update(collect($validated)->except('brand_image')->all());
         if ($request->hasFile("brand_image")) {
             $brand->image = $this->fileHandler->fileUploadAndGetPath($request->file("brand_image"), "/public/media/brands");
             $brand->save();
@@ -134,11 +136,21 @@ class BrandController extends Controller
      */
     public function destroy($id)
     {
-        $brand = Brand::findOrFail($id);
-        if ($brand->image != '') {
-            $this->fileHandler->secureUnlink($brand->image);
+        $result = DB::transaction(function () use ($id) {
+            $brand = Brand::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (Product::where('brand_id', $id)->exists()) {
+                return ['blocked' => true];
+            }
+            $image = $brand->image;
+            $brand->delete();
+            return ['blocked' => false, 'image' => $image];
+        });
+        if ($result['blocked']) {
+            return back()->with('error', __('A brand or category used by products must be deactivated instead of deleted.'));
         }
-        $brand->delete();
+        if ($result['image']) {
+            $this->fileHandler->secureUnlink($result['image']);
+        }
         return redirect()->back()->with('success', __('Brand Deleted Successfully'));
     }
 }

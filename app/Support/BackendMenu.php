@@ -67,6 +67,17 @@ class BackendMenu
                 : null,
         ]);
 
+        if ($user->can('point_of_sale_view') && PointOfSaleContext::ready()) {
+            $items[] = self::item('Stores', 'fas fa-store', 'backend.admin.shops.index', ['backend.admin.shops.*']);
+        }
+
+        if ($user->can('pricing_view') && PricingSchema::ready()) {
+            $items[] = self::item('Prices and promotions', 'fas fa-tags', 'backend.admin.pricing.index', ['backend.admin.pricing.*']);
+            if ($user->can('point_of_sale_manage_all')) {
+                $items[] = self::item('Catalogue conversion', 'fas fa-list', 'backend.admin.catalogue-conversion.index');
+            }
+        }
+
         // --- Produits -------------------------------------------------------
         $items[] = self::group('Product', 'fas fa-box', [
             $user->hasAnyPermission([

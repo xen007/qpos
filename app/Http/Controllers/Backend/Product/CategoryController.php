@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Backend\Product;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 use App\Trait\FileHandler;
 use Illuminate\Http\Request;
 use Yajra\DataTables\DataTables;
@@ -22,14 +24,14 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $categories = Category::latest()->get();
+            $categories = Category::query()->latest();
             return DataTables::of($categories)
                 ->addIndexColumn()
                 // Colonnes neutres : les pages migrees composent leurs cellules
                 // (actions, etat) cote page, sans markup Bootstrap.
                 ->addColumn('id', fn($data) => $data->id)
                 ->addColumn('is_active', fn($data) => (bool) $data->status)
-                ->addColumn('image', fn($data) => '<img src="' . asset('storage/' . $data->image) . '" loading="lazy" alt="' . $data->name . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . asset('assets/images/no-image.png') . '\';" height="80" width="60" />')
+                ->addColumn('image', fn($data) => '<img src="' . e(asset('storage/' . $data->image)) . '" loading="lazy" alt="' . e($data->name) . '" class="img-thumb img-fluid" onerror="this.onerror=null; this.src=\'' . asset('assets/images/no-image.png') . '\';" height="80" width="60" />')
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('status', fn($data) => $data->status
                     ? '<span class="badge bg-primary">' . e(__('Active')) . '</span>'
@@ -76,7 +78,7 @@ class CategoryController extends Controller
             'category_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|boolean',
         ]);
-        $category = Category::create($request->except('category_image'));
+        $category = Category::create(collect($validated)->except('category_image')->all());
         if ($request->hasFile("category_image")) {
             $category->image = $this->fileHandler->fileUploadAndGetPath($request->file("category_image"), "/public/media/categories");
             $category->save();
@@ -116,7 +118,7 @@ class CategoryController extends Controller
         ]);
         $category = Category::findOrFail($id);
         $oldImage = $category->image;
-        $category->update($request->except('category_image'));
+        $category->update(collect($validated)->except('category_image')->all());
         if ($request->hasFile("category_image")) {
             $category->image = $this->fileHandler->fileUploadAndGetPath($request->file("category_image"), "/public/media/categories");
             $category->save();
@@ -131,11 +133,21 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        $category = Category::findOrFail($id);
-        if ($category->image != '') {
-            $this->fileHandler->secureUnlink($category->image);
+        $result = DB::transaction(function () use ($id) {
+            $category = Category::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (Product::where('category_id', $id)->exists()) {
+                return ['blocked' => true];
+            }
+            $image = $category->image;
+            $category->delete();
+            return ['blocked' => false, 'image' => $image];
+        });
+        if ($result['blocked']) {
+            return back()->with('error', __('A brand or category used by products must be deactivated instead of deleted.'));
         }
-        $category->delete();
+        if ($result['image']) {
+            $this->fileHandler->secureUnlink($result['image']);
+        }
         return redirect()->back()->with('success', __('Category Deleted Successfully'));
     }
 }

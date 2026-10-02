@@ -18,9 +18,12 @@ use App\Http\Controllers\Backend\Product\BrandController;
 use App\Http\Controllers\Backend\Product\PurchaseController;
 use App\Http\Controllers\Backend\RolePermission\RoleController;
 use App\Http\Controllers\Backend\Product\UnitController;
+use App\Http\Controllers\Backend\Product\ProductUnitController;
 use App\Http\Controllers\Backend\UserManagementController;
 use App\Http\Controllers\Backend\WebsiteSettingController;
 use App\Support\PermissionRoutes;
+use App\Http\Controllers\Backend\PointOfSaleController;
+use App\Http\Middleware\SetPointOfSaleContext;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,7 +64,7 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 
 // ====================== BACKEND =======================
 
-Route::prefix('admin')->as('backend.admin.')->middleware(['admin'])->group(function () {
+Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('permission:dashboard_view');
     PermissionRoutes::resource('brands', BrandController::class, 'brand');
     PermissionRoutes::resource('orders', OrderController::class, [
@@ -90,13 +93,29 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin'])->group(funct
         'index' => 'product_view',
         'create' => 'product_create',
         'store' => 'product_create',
-        // Aucune verification dans ProductController::show : comportement conserve.
-        'show' => null,
+        'show' => 'product_view',
         'edit' => 'product_update',
         'update' => 'product_update',
         'destroy' => 'product_delete',
     ]);
     PermissionRoutes::resource('units', UnitController::class, 'unit');
+    Route::post('shops/select', [PointOfSaleController::class, 'select'])->name('shops.select')->middleware('permission:point_of_sale_access');
+    PermissionRoutes::resource('shops', PointOfSaleController::class, 'point_of_sale');
+    Route::middleware('permission:product_update')->prefix('products/{product}/units')->name('products.units.')->group(function () {
+        Route::get('/', [ProductUnitController::class, 'index'])->name('index');
+        Route::post('/', [ProductUnitController::class, 'store'])->name('store');
+        Route::put('/{productUnit}', [ProductUnitController::class, 'update'])->whereNumber('productUnit')->name('update');
+        Route::post('/{productUnit}/convert', [ProductUnitController::class, 'convert'])->whereNumber('productUnit')->name('convert');
+        Route::post('/{productUnit}/barcodes', [ProductUnitController::class, 'barcode'])->whereNumber('productUnit')->name('barcodes.store');
+        Route::put('/{productUnit}/barcodes/{barcode}', [ProductUnitController::class, 'barcodeStatus'])->whereNumber(['productUnit', 'barcode'])->name('barcodes.update');
+    });
+    Route::get('catalogue-conversion', [\App\Http\Controllers\Backend\CatalogueConversionController::class, 'index'])->name('catalogue-conversion.index')->middleware(['permission:pricing_view', 'permission:point_of_sale_manage_all']);
+    Route::get('catalogue-pricing', [\App\Http\Controllers\Backend\PricingController::class, 'index'])->name('pricing.index')->middleware('permission:pricing_view');
+    Route::post('catalogue-pricing/quote', [\App\Http\Controllers\Backend\PricingController::class, 'quote'])->name('pricing.quote')->middleware('permission:pricing_view');
+    Route::put('catalogue-pricing/packaging/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'packaging'])->whereNumber('id')->name('pricing.packaging')->middleware('permission:pricing_update');
+    Route::post('catalogue-pricing/{entity}', [\App\Http\Controllers\Backend\PricingController::class, 'store'])->whereIn('entity', ['rules', 'promotions'])->name('pricing.store')->middleware('permission:pricing_create');
+    Route::put('catalogue-pricing/{entity}/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'update'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.update')->middleware('permission:pricing_update');
+    Route::delete('catalogue-pricing/{entity}/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'destroy'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.destroy')->middleware('permission:pricing_delete');
     PermissionRoutes::resource('currencies', CurrencyController::class, 'currency');
     Route::match(['get', 'post'], 'import/products', [ProductController::class,'import'])->name('products.import')->middleware('permission:product_import');
     Route::post('currencies/default/{id}', [CurrencyController::class, 'setDefault'])->name('currencies.setDefault')->middleware('permission:currency_set_default');

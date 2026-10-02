@@ -21,6 +21,7 @@
                         <th data-orderable="false" class="px-3 py-3">#</th>
                         <th class="px-3 py-3">{{ __('Title') }}</th>
                         <th class="px-3 py-3">{{ __('Short Name') }}</th>
+                        <th data-orderable="false" class="px-3 py-3">{{ __('Status') }}</th>
                         <th data-orderable="false" class="px-3 py-3 text-right">{{ __('Action') }}</th>
                     </tr>
                 </thead>
@@ -33,14 +34,16 @@
             [
                 'ajax' => route('backend.admin.units.index'),
                 'csrf' => csrf_token(),
+                'canEdit' => auth()->user()->can('unit_update'),
+                'canDeactivate' => $catalogueUnitsReady && auth()->user()->can('unit_delete'),
                 'routes' => [
                     'edit' => route('backend.admin.units.edit', ':id'),
                     'destroy' => route('backend.admin.units.destroy', ':id'),
                 ],
                 'labels' => [
                     'edit' => __('Edit'),
-                    'delete' => __('Delete'),
-                    'confirm' => __('Are you sure you want to delete this item?'),
+                    'delete' => __('Deactivate'),
+                    'confirm' => __('Deactivate this unit? Existing references will be preserved.'),
                 ],
             ],
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
@@ -82,16 +85,23 @@
                         name: 'short_name'
                     },
                     {
+                        data: 'state_label',
+                        name: 'is_active',
+                        orderable: false,
+                        searchable: false,
+                    },
+                    {
                         data: 'action',
                         name: 'action',
                         orderable: false,
                         searchable: false,
                         className: 'text-right',
-                        render: (value, type, row) => window.qposTableActions.inline({
-                            editUrl: withId(config.routes.edit, row.id),
-                            destroyUrl: withId(config.routes.destroy, row.id),
+                        render: (value, type, row) => window.qposTableActions.buttons({
                             csrf: config.csrf,
-                            labels: config.labels,
+                            items: [
+                                ...(config.canEdit ? [{type: 'link', url: withId(config.routes.edit, row.id), label: config.labels.edit, icon: 'fas fa-edit'}] : []),
+                                ...(config.canDeactivate ? [{type: 'form', method: 'DELETE', url: withId(config.routes.destroy, row.id), label: config.labels.delete, icon: 'fas fa-ban', confirm: config.labels.confirm}] : []),
+                            ],
                         }),
                     },
                 ]

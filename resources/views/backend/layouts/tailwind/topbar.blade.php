@@ -61,3 +61,8 @@
         </x-backend.dropdown>
     </div>
 </header>
+@if (($pointOfSaleContextReady ?? false))
+    <div class="border-b border-qpos-line bg-qpos-surface px-3 py-2 sm:px-6 lg:px-8 print:hidden">
+        @include('backend.shops.selector')
+    </div>
+@endif
