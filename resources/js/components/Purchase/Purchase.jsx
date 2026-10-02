@@ -2,20 +2,15 @@ import React, { useCallback, useEffect, useState } from "react";
 import Suppliers from "./Suppliers";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { toast, Toaster } from "sonner";
-import DatePicker, { registerLocale } from "react-datepicker";
-import { enUS } from "date-fns/locale/en-US";
-import { fr } from "date-fns/locale/fr";
-import "react-datepicker/dist/react-datepicker.css";
+import { toast } from "sonner";
 import translate from "../../utils/translate";
-import useDocumentTheme from "../../utils/useDocumentTheme";
-import { Search } from "lucide-react";
 
-registerLocale("fr", fr);
-registerLocale("en", enUS);
+import { Search, Package, Plus, Trash2, Check } from "lucide-react";
+import { Field, EmptyState, WorkspaceToaster } from "../WorkspaceUI";
+
 
 export default function Purchase() {
-    const theme = useDocumentTheme();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [barcode, setBarcode] = useState("");
     const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -256,7 +251,7 @@ export default function Purchase() {
                     });
                     setProducts([]);
                     toast.success(res?.data?.message);
-                    window.location.href = "/admin/purchase";
+                    window.location.href = window.qposPurchaseIndex;
                 } catch (err) {
                     toast.error(
                         err.response?.data?.message || translate("An error occurred")
@@ -268,6 +263,11 @@ export default function Purchase() {
 
     // product search
     useEffect(() => {
+        const controller = new AbortController();
+        if (!searchTerm.trim()) {
+            setSearchResults([]);
+            return;
+        }
         // Define the asynchronous function
         async function getProducts() {
             if (!searchTerm.trim()) {
@@ -278,16 +278,19 @@ export default function Purchase() {
             try {
                 const res = await axios.get("/admin/products", {
                     params: { search: searchTerm },
+                    signal: controller.signal,
                 });
 
                 const productsData = res.data;
                 setSearchResults(productsData?.data || []);
             } catch (error) {
+                if (axios.isCancel(error)) return;
                 console.error("Error fetching products:", error);
             }
         }
         // Call the async function inside useEffect
-        getProducts();
+        const timer = setTimeout(getProducts, 250);
+        return () => { clearTimeout(timer); controller.abort(); };
     }, [searchTerm]);
     // Handle adding selected product to the products list
     // Handle adding selected product to the products list
@@ -325,298 +328,27 @@ export default function Purchase() {
         setSearchResults([]);
     };
     return (
-        <>
-            <div className="container-fluid qpos-purchase">
-                <div className="card">
-                    <div className="card-body">
-                        <div className="row">
-                            <div className="mb-3 col-md-6">
-                                <label htmlFor="date" className="form-label">
-                                    {translate("Purchase Date")}
-                                    <span className="text-danger">*</span>
-                                </label>
-                                <div>
-                                    <DatePicker
-                                        name="date"
-                                        className="form-control"
-                                        placeholderText={translate("Enter purchase date")}
-                                        selected={date ? new Date(`${date}T00:00:00`) : null}
-                                        dateFormat="yyyy-MM-dd"
-                                        locale={window.qposLocale === "fr" ? "fr" : "en"}
-                                        onChange={(date) => {
-                                            const formattedDate = date
-                                                ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-                                                : null;
-                                            setDate(formattedDate);
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="mb-3 col-md-6">
-                                <label
-                                    htmlFor="supplier"
-                                    className="form-label"
-                                >
-                                    {translate("Supplier")}
-                                    <span className="text-danger">*</span>
-                                </label>
-                                <Suppliers
-                                    setSupplierId={setSupplierId}
-                                    oldSupplier={selectedSupplier}
-                                />
-                            </div>
-                        </div>
-                    </div>
+        <div className="qpos-purchase-workspace">
+            <section className="qpos-card">
+                <header className="qpos-workspace-heading"><h2>{translate(purchaseId ? "Edit Purchase" : "Purchase Create")}</h2><Package size={24} aria-hidden="true" /></header>
+                <div className="qpos-workspace-body qpos-search-grid">
+                    <Field label={translate("Purchase Date")}><input id="date" type="date" className="qpos-control" required value={date || ''} onChange={e => setDate(e.target.value || null)} /></Field>
+                    <div><label className="qpos-field-label" htmlFor="purchase-supplier">{translate("Supplier")}</label><Suppliers setSupplierId={setSupplierId} oldSupplier={selectedSupplier} /></div>
                 </div>
-                <div className="card">
-                    <div className="card-body">
-                        <div className="row mb-2">
-                            <div className="input-group col-6">
-                                <div className="input-group-prepend">
-                                    <span className="input-group-text">
-                                        <Search size={18} aria-hidden="true" />
-                                    </span>
-                                </div>
-                                <input
-                                    type="search"
-                                    className="form-control form-control-lg"
-                                    value={searchTerm}
-                                    onChange={(e) =>
-                                        setSearchTerm(e.target.value)
-                                    }
-                                    placeholder={translate("Enter product barcode/name")}
-                                />
-                                <button
-                                    className="btn bg-gradient-primary ml-2"
-                                    onClick={handleSearchAdd}
-                                >
-                                    {translate("Add Product")}
-                                </button>
-                            </div>
-                        </div>
-                        {/* Display search results below the input */}
-                        {searchResults.length > 0 && (
-                            <div className="row mb-2">
-                                <div
-                                    className="col-6"
-                                    style={{
-                                        maxHeight: "200px",
-                                        overflowY: "auto",
-                                    }}
-                                >
-                                    <ul className="list-group">
-                                        {searchResults.map((product) => (
-                                            <li
-                                                key={product.id}
-                                                className="list-group-item"
-                                                onClick={() =>
-                                                    handleProductSelect(product)
-                                                }
-                                                style={{ cursor: "pointer" }}
-                                            >
-                                                {product.name} - $
-                                                {product.price}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        )}
-                        <div className="row">
-                            <div className="col-12">
-                                <table className="table table-sm table-bordered text-center">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>{translate("Product Name")}</th>
-                                            <th>{translate("Purchase Price")}</th>
-                                            <th>{translate("Current Stock")}</th>
-                                            <th>{translate("Qty")}</th>
-                                            <th>{translate("Sub Total")}</th>
-                                            <th>{translate("Action")}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {products.map((product, index) => (
-                                        <tr key={product.id}>
-                                                <td>{index + 1}</td>
-                                                <td>{product.name}</td>
-                                                <td className="d-flex align-items-center justify-content-center">
-                                                    <input
-                                                        type="number"
-                                                        min="0"
-                                                        className="form-control w-50"
-                                                        value={
-                                                            product.purchase_price
-                                                        }
-                                                        onChange={(e) =>
-                                                            handlePriceChange(
-                                                                product.id,
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                    />
-                                                </td>
-                                                <td>{product.stock}</td>
-                                                <td className="d-flex align-items-center justify-content-center">
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        className="form-control w-50"
-                                                        value={product.qty}
-                                                        onChange={(e) =>
-                                                            handleQtyChange(
-                                                                product.id,
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                    />
-                                                </td>
-                                                <td>
-                                                    {product.subTotal.toFixed(
-                                                        2
-                                                    )}
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        className="btn btn-danger btn-sm"
-                                                        onClick={() =>
-                                                            handleDelete(
-                                                                product.id
-                                                            )
-                                                        }
-                                                    >
-                                                        {translate("Delete")}
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div className="row">
-                            <div className="col-6"></div>
-                            <div className="col-6">
-                                <div className="table-responsive">
-                                    <table className="table table-sm">
-                                        <tbody>
-                                            <tr>
-                                                <th>{translate("Subtotal:")}</th>
-                                                <td className="text-right">
-                                                    {totals.subTotal.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>{translate("Tax:")}</th>
-                                                <td className="text-right">
-                                                    {totals.tax.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>{translate("Discount:")}</th>
-                                                <td className="text-right">
-                                                    {totals.discount.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>{translate("Shipping:")}</th>
-                                                <td className="text-right">
-                                                    {totals.shipping.toFixed(2)}
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <th>{translate("Grand Total:")}</th>
-                                                <td className="text-right">
-                                                    {totals.grandTotal.toFixed(
-                                                        2
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+            </section>
+            <section className="qpos-card">
+                <header className="qpos-workspace-heading"><h2>{translate("Purchase items")}</h2><span className="qpos-badge qpos-badge-info">{products.length}</span></header>
+                <div className="qpos-workspace-body">
+                    <form className="qpos-purchase-search" onSubmit={e => { e.preventDefault(); handleSearchAdd(); }}><Field label={translate("Search products")}><span className="qpos-input-icon"><Search size={18} aria-hidden="true" /><input type="search" className="qpos-control" placeholder={translate("Enter product barcode/name")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></span></Field><button className="qpos-button qpos-button-md qpos-button-primary" type="submit"><Plus size={18} aria-hidden="true" />{translate("Add Product")}</button></form>
+                    {!!searchResults.length && <ul className="qpos-search-results" aria-label={translate("Search products")}>{searchResults.map(product => <li key={product.id}><button type="button" onClick={() => handleProductSelect(product)}><span>{product.name}</span><strong>{product.price}</strong></button></li>)}</ul>}
                 </div>
-                <div className="card">
-                    <div className="card-body">
-                        <div className="row">
-                            <div className="mb-3 col-md-4">
-                                <label htmlFor="tax" className="form-label">
-                                    {translate("Tax")}
-                                </label>
-                                <input
-                                    type="number"
-                                    className="form-control"
-                                    value={tax}
-                                    min="0"
-                                    onChange={(e) =>
-                                        setTax(parseFloat(e.target.value) || 0)
-                                    }
-                                    placeholder={translate("Enter tax")}
-                                    name="tax"
-                                    required
-                                />
-                            </div>
-                            <div className="mb-3 col-md-4">
-                                <label
-                                    htmlFor="discount"
-                                    className="form-label"
-                                >
-                                    {translate("Discount")}
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    className="form-control"
-                                    value={discount}
-                                    onChange={(e) =>
-                                        setDiscount(
-                                            parseFloat(e.target.value) || 0
-                                        )
-                                    }
-                                    placeholder={translate("Enter discount")}
-                                    name="discount"
-                                    required
-                                />
-                            </div>
-                            <div className="mb-3 col-md-4">
-                                <label
-                                    htmlFor="shipping"
-                                    className="form-label"
-                                >
-                                    {translate("Shipping Charge")}
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    className="form-control"
-                                    value={shipping}
-                                    onChange={(e) =>
-                                        setShipping(
-                                            parseFloat(e.target.value) || 0
-                                        )
-                                    }
-                                    placeholder={translate("Enter shipping")}
-                                    name="shipping"
-                                    required
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button
-                    type="submit"
-                    className="btn btn-md bg-gradient-primary"
-                    onClick={handleSubmit}
-                >
-                    {translate(purchaseId ? "Update" : "Create")}
-                </button>
+                {!products.length ? <EmptyState title={translate("Add products to your purchase")} description={translate("Enter product barcode/name")} /> : <div className="qpos-table-scroll" tabIndex="0" role="region" aria-label={translate("Purchase items")}><table className="qpos-table qpos-purchase-table"><thead><tr><th>#</th><th>{translate("Product Name")}</th><th>{translate("Purchase Price")}</th><th>{translate("Current Stock")}</th><th>{translate("Qty")}</th><th>{translate("Sub Total")}</th><th>{translate("Action")}</th></tr></thead><tbody>{products.map((product,index) => <tr key={product.id}><td>{index+1}</td><td data-label={translate("Product Name")}><strong>{product.name}</strong></td><td data-label={translate("Purchase Price")}><input type="number" min="0" className="qpos-control" aria-label={translate("Purchase Price") + ': ' + product.name} value={product.purchase_price} onChange={e => handlePriceChange(product.id,e.target.value)} /></td><td data-label={translate("Current Stock")}>{product.stock}</td><td data-label={translate("Qty")}><input type="number" min="1" className="qpos-control" aria-label={translate("Qty") + ': ' + product.name} value={product.qty} onChange={e => handleQtyChange(product.id,e.target.value)} /></td><td data-label={translate("Sub Total")}>{product.subTotal.toFixed(2)}</td><td><button type="button" className="qpos-icon-button qpos-icon-button-danger" aria-label={translate("Delete") + ': ' + product.name} onClick={() => handleDelete(product.id)}><Trash2 size={18} aria-hidden="true" /></button></td></tr>)}</tbody></table></div>}
+            </section>
+            <div className="qpos-search-grid">
+                <section className="qpos-card"><header className="qpos-workspace-heading"><h2>{translate("Information")}</h2></header><div className="qpos-workspace-body qpos-field-stack"><Field label={translate("Tax")}><input type="number" className="qpos-control" min="0" value={tax} onChange={e => setTax(parseFloat(e.target.value)||0)} /></Field><Field label={translate("Discount")}><input type="number" className="qpos-control" min="0" value={discount} onChange={e => setDiscount(parseFloat(e.target.value)||0)} /></Field><Field label={translate("Shipping")}><input type="number" className="qpos-control" min="0" value={shipping} onChange={e => setShipping(parseFloat(e.target.value)||0)} /></Field></div></section>
+                <section className="qpos-card"><header className="qpos-workspace-heading"><h2>{translate("Order summary")}</h2></header><div className="qpos-totals">{[['Subtotal:',totals.subTotal],['Tax:',totals.tax],['Discount:',totals.discount],['Shipping:',totals.shipping]].map(([label,value]) => <div key={label}><span>{translate(label)}</span><strong>{value.toFixed(2)}</strong></div>)}<div className="qpos-total-highlight"><span>{translate("Grand Total:")}</span><strong>{totals.grandTotal.toFixed(2)}</strong></div></div><div className="qpos-workspace-footer"><button type="button" className="qpos-button qpos-button-lg qpos-button-primary" disabled={totals.grandTotal<=0} onClick={handleSubmit}><Check size={20} aria-hidden="true" />{translate(purchaseId ? "Update" : "Create")}</button></div></section>
             </div>
-
-            <Toaster position="top-right" richColors closeButton theme={theme} />
-        </>
+            <WorkspaceToaster />
+        </div>
     );
 }

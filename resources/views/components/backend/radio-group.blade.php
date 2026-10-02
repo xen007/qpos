@@ -11,9 +11,9 @@
     $current = (string) old($name, $selected);
 @endphp
 
-<div>
+<fieldset class="qpos-radio-group">
     @if ($label)
-        <span class="block text-sm font-medium text-qpos-ink">{{ $label }}</span>
+        <legend class="block text-sm font-medium text-qpos-ink">{{ $label }}</legend>
     @endif
 
     <div class="mt-1 flex flex-wrap items-center gap-6">
@@ -30,6 +30,6 @@
     </div>
 
     @if (isset($errors) && $errors->has($name))
-        <p class="mt-1 text-xs text-red-600">{{ $errors->first($name) }}</p>
+        <p class="mt-1 text-xs text-qpos-danger">{{ $errors->first($name) }}</p>
     @endif
-</div>
+</fieldset>

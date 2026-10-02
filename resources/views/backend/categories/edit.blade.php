@@ -28,7 +28,7 @@
 
             <div class="mt-6">
                 <button type="submit"
-                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    class="qpos-button qpos-button-md qpos-button-primary rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
                     {{ __('Update') }}
                 </button>
             </div>

@@ -5,8 +5,8 @@
 @section('page-actions')
     @can('role_create')
         <button type="button" data-qpos-modal-open="#roleModal"
-            class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-            <i class="fas fa-plus-circle" aria-hidden="true"></i>
+            class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            <x-backend.icon name="fas fa-plus-circle" />
             {{ __('Add New') }}
         </button>
     @endcan
@@ -18,7 +18,7 @@
     @endphp
 
     <x-backend.card :padded="false">
-        <div class="overflow-x-auto p-4 sm:p-6">
+        <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table class="w-full border-collapse text-sm">
                 <thead>
                     <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
@@ -35,14 +35,14 @@
                                     <a href="{{ route('backend.admin.roles.show', $role->id) }}"
                                         title="{{ __('Permission Setup') }}" aria-label="{{ __('Permission Setup') }}"
                                         class="{{ $iconButton }}">
-                                        <i class="fas fa-cog" aria-hidden="true"></i>
+                                        <x-backend.icon name="fas fa-cog" />
                                     </a>
 
                                     @if ($role->name !== 'Admin')
                                         <button type="button" data-qpos-modal-open="#editRole-{{ $role->id }}"
                                             title="{{ __('Edit Role') }}" aria-label="{{ __('Edit Role') }}"
                                             class="{{ $iconButton }}">
-                                            <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                                            <x-backend.icon name="fas fa-pencil-alt" />
                                         </button>
 
                                         <form action="{{ route('backend.admin.roles.delete', $role->id) }}"
@@ -52,7 +52,7 @@
                                             @method('DELETE')
                                             <button type="submit" title="{{ __('Delete Role') }}"
                                                 aria-label="{{ __('Delete Role') }}" class="{{ $iconButton }}">
-                                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                                <x-backend.icon name="fas fa-trash-alt" />
                                             </button>
                                         </form>
                                     @endif
@@ -72,7 +72,7 @@
                 <label for="role-name" class="block text-sm font-medium text-qpos-ink">{{ __('Name') }}</label>
                 <input id="role-name" type="text" name="name" value="{{ old('name') }}" required
                     placeholder="{{ __('Role Name') }}"
-                    class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                    class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
             </div>
         </x-backend.modal>
     @endcan

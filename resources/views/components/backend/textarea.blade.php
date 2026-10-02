@@ -16,11 +16,12 @@
     <textarea name="{{ $name }}" id="{{ $name }}" rows="{{ $rows }}"
         @if ($required) required @endif
         @if ($placeholder) placeholder="{{ $placeholder }}" @endif
+        @if (isset($errors) && $errors->has($name)) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
         {{ $attributes->merge([
-            'class' => 'mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none',
+            'class' => 'qpos-control mt-1 w-full',
         ]) }}>{{ old($name, $value) }}</textarea>
 
     @if (isset($errors) && $errors->has($name))
-        <p class="mt-1 text-xs text-red-600">{{ $errors->first($name) }}</p>
+        <p id="{{ $name }}-error" class="mt-1 text-xs text-qpos-danger" role="alert">{{ $errors->first($name) }}</p>
     @endif
 </div>

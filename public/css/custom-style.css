@@ -1,59 +1,4 @@
-/* ========= theme ========== */
-.sidebar-dark-lightblue .nav-sidebar>.nav-item>.nav-link.active,
-.sidebar-light-lightblue .nav-sidebar>.nav-item>.nav-link.active {
-    background-color: #8b9ee9 !important;
-}
-
-.text-lightblue {
-    color: #6982e6 !important;
-}
-
-.bg-gradient-primary {
-    background: #4a6aeb linear-gradient(180deg, #8b9ee9, #778ee9) repeat-x !important;
-}
-
-.bg-gradient-primary.btn:hover {
-    background: #2a3b81 linear-gradient(180deg, #6a78b1, #48568d) repeat-x !important;
-    border-color: #6a78b1 !important;
-}
-
-.bg-primary {
-    background: #8b9ee9 !important;
-}
-
-.btn-lightblue {
-    color: #8b9ee9 !important;
-}
-
-a {
-    color: #162c83;
-}
-
-.btn-lightblue:hover {
-    background: #2a3b81 linear-gradient(180deg, #6a78b1, #48568d) repeat-x !important;
-    border-color: #070808 !important;
-}
-
-.sidebar-light-lightblue {
-    background-color: #b9c6fb !important;
-    box-shadow: none !important;
-}
-
-body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .content-wrapper,
-body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-footer,
-body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-header {
-    background-color: aliceblue !important;
-}
-
-.elevation-3 {
-    background: aliceblue !important;
-}
-
-.preloader {
-    background-color: aliceblue !important;
-}
-
-/* ========= theme end ========== */
+/* Theme historique raccorde aux tokens Soft Modern en fin de fichier. */
 
 /* Les jetons --qpos-* (clair, sombre et impression) sont definis dans
    public/css/qpos-tokens.css, charge avant cette feuille par les deux layouts. */
@@ -201,11 +146,11 @@ textarea {
 .form-control:focus,
 .custom-select:focus {
     border-color: var(--qpos-brand);
-    box-shadow: 0 0 0 0.2rem rgb(82 104 216 / 15%);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--qpos-brand) 15%, transparent);
 }
 
 :focus-visible {
-    outline: 3px solid rgb(82 104 216 / 55%);
+    outline: 3px solid color-mix(in srgb, var(--qpos-focus) 55%, transparent);
     outline-offset: 2px;
 }
 
@@ -246,11 +191,11 @@ textarea {
 }
 
 :root[data-theme="dark"] a:not(.btn):not(.nav-link) {
-    color: #a9b8ff;
+    color: var(--qpos-brand-ink);
 }
 
 :root[data-theme="dark"] a:not(.btn):not(.nav-link):hover {
-    color: #c7d1ff;
+    color: var(--qpos-brand-ink);
 }
 
 :root[data-theme="dark"] .swal2-popup {
@@ -803,3 +748,28 @@ input:checked+.slider:before {
 :root[data-theme="dark"] .os-theme-light > .os-scrollbar > .os-scrollbar-track > .os-scrollbar-handle.active {
     background: var(--qpos-muted);
 }
+/* Phase 1 : raccordement final du shell historique aux memes palettes. */
+:root .main-sidebar.sidebar-light-lightblue { color: var(--qpos-nav-ink); background: var(--qpos-sidebar) !important; }
+:root .main-sidebar .brand-link, :root .main-sidebar .brand-link .brand-text { color: var(--qpos-nav-ink) !important; border-bottom-color: var(--qpos-nav-line); }
+:root .main-sidebar .nav-sidebar .nav-header { color: var(--qpos-nav-muted); }
+:root .main-sidebar .nav-sidebar .nav-item > .nav-link { color: var(--qpos-nav-muted); border-radius: .65rem; }
+:root .main-sidebar .nav-sidebar .nav-item > .nav-link:hover { color: white; background: var(--qpos-nav-hover); }
+:root .main-sidebar .nav-sidebar .nav-item > .nav-link.active { color: var(--qpos-print-brand, #1e5f74) !important; background: white !important; box-shadow: inset -4px 0 var(--qpos-accent); }
+:root body:not(.sidebar-mini-md):not(.sidebar-mini-xs):not(.layout-top-nav) .main-header { background: var(--qpos-header) !important; border-bottom-color: var(--qpos-header-line); }
+:root .main-header .navbar-nav .nav-link:not(.btn) { color: var(--qpos-brand-ink); }
+:root[data-palette] .btn-primary, :root[data-palette] .bg-primary, :root[data-palette] .badge-primary, :root[data-palette] .bg-gradient-primary { background: var(--qpos-brand) !important; border-color: var(--qpos-brand) !important; color: white !important; }
+:root[data-palette] .btn-primary:hover, :root[data-palette] .bg-gradient-primary.btn:hover { background: var(--qpos-brand-hover) !important; border-color: var(--qpos-brand-hover) !important; }
+:root .btn-lightblue, :root .text-lightblue { color: var(--qpos-brand-ink) !important; }
+:root .btn-lightblue:hover { background: var(--qpos-brand-soft); }
+:root .card-header { background: color-mix(in srgb, var(--qpos-brand) 4%, var(--qpos-surface)); }
+:root .table thead th { background: var(--qpos-brand-soft); color: var(--qpos-brand-ink); }
+:root .main-sidebar :focus-visible { outline-color: white; }
+:root .preloader { background: var(--qpos-page); }
+@media print { :root .table thead th { background: white; color: #1b2d36; } }
+
+/* Aligne le gabarit AdminLTE conserve sur les entrees du shell Tailwind. */
+:root .main-sidebar .nav-sidebar { padding-left: .75rem; padding-right: .75rem; }
+:root .main-sidebar .nav-sidebar > .nav-item > .nav-link { min-height: 44px; margin: .25rem 0; padding: .625rem .75rem; border-radius: .75rem; }
+:root .main-sidebar .nav-sidebar .nav-header { padding: 1.5rem .75rem .5rem; }
+:root .main-sidebar .nav-treeview { padding-left: .5rem; }
+:root .main-sidebar .nav-treeview > .nav-item > .nav-link { min-height: 40px; border-radius: .65rem; }

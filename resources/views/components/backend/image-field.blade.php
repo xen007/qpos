@@ -29,8 +29,8 @@
         <label for="{{ $inputId }}" class="block text-sm font-medium text-qpos-ink">{{ $label }}</label>
     @endif
 
-    <div id="{{ $containerId }}" data-qpos-image-field
-        class="mt-1 flex h-52 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-qpos-brand/50 bg-qpos-page">
+    <div id="{{ $containerId }}" data-qpos-image-field role="button" tabindex="0" aria-label="{{ $label ?: __('Upload Image') }}"
+        class="mt-1 flex h-52 w-full cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-qpos-brand/50 bg-qpos-brand-soft">
         <input type="file" name="{{ $name }}" id="{{ $inputId }}" accept="image/*" class="hidden">
 
         <div id="{{ $previewContainerId }}"
@@ -40,7 +40,7 @@
                 @if ($hasImage) onerror="this.onerror=null; this.src='{{ asset('assets/images/no-image.png') }}';" @endif>
 
             <span class="upload-text {{ $hasImage ? 'd-none hidden' : '' }} flex-col items-center gap-1 text-qpos-brand">
-                <i class="fas fa-plus-circle text-2xl" aria-hidden="true"></i>
+                <x-backend.icon name="circle-plus" />
                 <span class="text-sm">{{ __('Upload Image') }}</span>
             </span>
         </div>

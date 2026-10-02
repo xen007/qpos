@@ -37,7 +37,7 @@
 
             <div class="mt-6">
                 <button type="submit"
-                    class="w-full rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90 lg:w-auto">
+                    class="qpos-button qpos-button-md qpos-button-primary w-full rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90 lg:w-auto">
                     {{ __('Update') }}
                 </button>
             </div>

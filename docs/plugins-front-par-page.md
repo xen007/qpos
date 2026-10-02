@@ -1,5 +1,7 @@
 # QPOS — Plugins front par page (migration vers le layout Tailwind)
 
+> **Mise à jour — 02/10/2026 :** tous les écrans métier existants utilisent le shell Tailwind commun. Les îles React POS/achat sont montées par ce shell ; `backend.master` est un alias. Bootstrap/AdminLTE/Font Awesome et les plugins globaux historiques ne sont plus chargés par ces écrans. Achat : date native, React Select ; POS : React Select/SweetAlert/Sonner. Les listes gardent leurs plugins DataTables locaux. Les paragraphes historiques ci-dessous décrivant ces deux pages en legacy sont remplacés par cette note et le [bilan de refonte](refonte-ui-complete.md).
+
 Document de travail du Sprint 3 (lot A5). Il indique, pour chaque page du back-office,
 les dépendances front à déclarer lorsqu'elle est migrée vers `backend.master-tailwind`.
 
@@ -7,6 +9,14 @@ les dépendances front à déclarer lorsqu'elle est migrée vers `backend.master
 > permissions, Partie B) et `docs/modernization-roadmap.md` (feuille de route générale).
 
 ## Pourquoi déclarer les plugins
+
+Finition regroupée du sous-lot 4 (01/10/2026) : voir
+[ui-composants.md](ui-composants.md) pour les paramètres compatibles, nouveaux
+composants, clavier, responsive et limites de vérification. Les icônes migrées
+utilisent le sprite local `public/icons/lucide/sprite.svg`, dérivé du paquet
+Lucide déjà installé ; les autres conservent Font Awesome. Sonner suit les
+couleurs sémantiques partagées. Le raccordement des styles du shell AdminLTE
+préserve ses plugins et les routes actuelles.
 
 ### Pages publiques — Lot A Phase 1, 01/10/2026
 

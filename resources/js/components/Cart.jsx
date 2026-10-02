@@ -7,6 +7,7 @@ import WarningSound from "../sounds/beep-02.mp3";
 import getErrorMessage from "../utils/getErrorMessage";
 import playSound from "../utils/playSound";
 import translate from "../utils/translate";
+import { EmptyState } from "./WorkspaceUI";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
 export default function Cart({ carts, setCartUpdated, cartUpdated }) {
@@ -16,7 +17,7 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                 id: id,
             })
             .then((res) => {
-                setCartUpdated(!cartUpdated);
+                setCartUpdated(previous => !previous);
                 playSound(SuccessSound);
                 toast.success(res?.data?.message);
             })
@@ -31,7 +32,7 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                 id: id,
             })
             .then((res) => {
-                setCartUpdated(!cartUpdated);
+                setCartUpdated(previous => !previous);
                 playSound(SuccessSound);
                 toast.success(res?.data?.message);
             })
@@ -59,7 +60,7 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
                         id: id,
                     })
                     .then((res) => {
-                        setCartUpdated(!cartUpdated);
+                        setCartUpdated(previous => !previous);
                         playSound(SuccessSound);
                         toast.success(res?.data?.message);
                     })
@@ -72,94 +73,22 @@ export default function Cart({ carts, setCartUpdated, cartUpdated }) {
         });
     }
     return (
-        <>
-            <div className="user-cart">
-                <div className="card">
-                    <div className="card-body">
-                        <div className="responsive-table">
-                            <table className="table table-striped">
-                                <thead>
-                                    <tr className="text-center">
-                                        <th>{translate("Name")}</th>
-                                        <th>{translate("Quantity")}</th>
-                                        <th></th>
-                                        <th>{translate("Price")}</th>
-                                        <th>{translate("Total")}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {carts.map((item) => (
-                                        <tr key={item.id}>
-                                            <td>{item.product.name}</td>
-                                            <td className="d-flex align-items-center">
-                                                <button
-                                                    className="btn btn-warning btn-sm"
-                                                    aria-label={translate(
-                                                        "Decrease quantity"
-                                                    )}
-                                                    onClick={() =>
-                                                        decrement(item.id)
-                                                    }
-                                                >
-                                                    <Minus size={14} aria-hidden="true" />
-                                                </button>
-                                                <input
-                                                    type="number"
-                                                    className="form-control form-control-sm qty ml-1 mr-1"
-                                                    value={item.quantity}
-                                                    disabled
-                                                />
-                                                <button
-                                                    className="btn btn-success btn-sm"
-                                                    aria-label={translate(
-                                                        "Increase quantity"
-                                                    )}
-                                                    onClick={() =>
-                                                        increment(item.id)
-                                                    }
-                                                >
-                                                    <Plus size={14} aria-hidden="true" />
-                                                </button>
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="btn btn-danger btn-sm mr-3"
-                                                    aria-label={translate(
-                                                        "Remove item"
-                                                    )}
-                                                    onClick={() =>
-                                                        destroy(item.id)
-                                                    }
-                                                >
-                                                    <Trash2 size={14} aria-hidden="true" />
-                                                </button>
-                                            </td>
-                                            <td className="text-right">
-                                                {item?.product?.discounted_price}
-                                                {item?.product?.price >
-                                                item?.product
-                                                    ?.discounted_price ? (
-                                                    <>
-                                                        <br />
-                                                        <del>
-                                                            {item?.product?.price}
-                                                        </del>
-                                                    </>
-                                                ) : (
-                                                    ""
-                                                )}
-                                            </td>
-                                            <td className="text-right">
-                                                {item?.row_total}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+        <section className="qpos-cart-items" aria-label={translate("Cart")}>
+            {!carts.length && <EmptyState title={translate("Cart is empty")} description={translate("Select products to start")} />}
+            {carts.map(item => <article className="qpos-cart-item" key={item.id}>
+                <div className="qpos-cart-item-heading"><strong>{item.product.name}</strong>
+                    <button type="button" className="qpos-icon-button qpos-icon-button-danger" aria-label={translate("Remove item") + ': ' + item.product.name} onClick={() => destroy(item.id)}><Trash2 size={18} aria-hidden="true" /></button>
                 </div>
-            </div>
-        </>
+                <div className="qpos-cart-item-bottom">
+                    <div className="qpos-stepper">
+                        <button type="button" aria-label={translate("Decrease quantity")} onClick={() => decrement(item.id)}><Minus size={16} aria-hidden="true" /></button>
+                        <output aria-label={translate("Quantity")}>{item.quantity}</output>
+                        <button type="button" aria-label={translate("Increase quantity")} onClick={() => increment(item.id)}><Plus size={16} aria-hidden="true" /></button>
+                    </div>
+                    <span className="qpos-muted">{item.product.discounted_price}{item.product.price > item.product.discounted_price && <del>{item.product.price}</del>}</span>
+                    <strong>{item.row_total}</strong>
+                </div>
+            </article>)}
+        </section>
     );
 }

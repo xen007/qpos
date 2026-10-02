@@ -1,0 +1,31 @@
+<?php
+
+// Compatibility names used by existing views; every icon is rendered from Lucide.
+return [
+    'fa-tachometer-alt' => 'layout-dashboard', 'fa-box' => 'package',
+    'fa-cart-plus' => 'shopping-cart', 'fa-shopping-cart' => 'shopping-cart',
+    'fa-chart-bar' => 'chart-no-axes-combined', 'fa-chart-pie' => 'chart-pie',
+    'fa-cog' => 'settings', 'fa-coins' => 'coins', 'fa-shopping-bag' => 'shopping-bag',
+    'fa-tags' => 'tags', 'fa-user-circle' => 'circle-user-round', 'fa-circle' => 'circle',
+    'fa-chevron-circle-right' => 'circle-chevron-right', 'fa-plus-circle' => 'circle-plus',
+    'fa-plus' => 'plus', 'fa-arrow-left' => 'arrow-left', 'fa-reply' => 'save',
+    'fa-times' => 'x', 'fa-bars' => 'menu', 'fa-angle-left' => 'chevron-left',
+    'fa-angle-right' => 'chevron-right', 'fa-angle-down' => 'chevron-down',
+    'fa-expand-arrows-alt' => 'maximize', 'fa-address-card' => 'contact-round',
+    'fa-sign-out-alt' => 'log-out', 'fa-arrow-circle-right' => 'arrow-right',
+    'fa-pencil-alt' => 'pencil', 'fa-edit' => 'pencil', 'fa-trash' => 'trash-2',
+    'fa-trash-alt' => 'trash-2', 'fa-check' => 'check', 'fa-ban' => 'ban',
+    'fa-exclamation-triangle' => 'triangle-alert', 'fa-info-circle' => 'info',
+    'fa-spinner' => 'loader-circle', 'fa-search' => 'search', 'fa-user' => 'user-round',
+    'fa-users' => 'users-round', 'fa-user-plus' => 'user-round-plus',
+    'fa-thumbs-up' => 'badge-percent', 'fa-file-invoice' => 'file-text',
+    'fa-receipt' => 'receipt-text', 'fa-print' => 'printer',
+    'fa-exchange-alt' => 'arrow-left-right', 'fa-download' => 'download',
+    'fa-eye' => 'eye', 'fa-star' => 'star', 'fa-ruler-vertical' => 'ruler',
+    'fa-address-book' => 'contact-round', 'fa-code' => 'code', 'fa-desktop' => 'monitor',
+    'fa-envelope' => 'mail', 'fa-power-off' => 'power', 'fa-question-circle' => 'circle-help',
+    'fa-share-alt' => 'share-2', 'fa-swatchbook' => 'palette',
+    'fa-facebook' => 'share-2', 'fa-instagram' => 'camera', 'fa-linkedin' => 'share-2',
+    'fa-pinterest' => 'share-2', 'fa-snapchat' => 'share-2', 'fa-tumblr' => 'share-2',
+    'fa-twitter' => 'share-2', 'fa-whatsapp' => 'message-circle', 'fa-youtube' => 'video',
+];

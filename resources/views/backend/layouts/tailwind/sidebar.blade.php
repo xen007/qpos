@@ -6,9 +6,9 @@
 
 {{-- Tiroir sur mobile, fixe a partir du breakpoint lg (voir lg:pl-72 du contenu). --}}
 <aside id="qpos-sidebar" data-qpos-drawer aria-label="{{ __('Main navigation') }}"
-    class="fixed inset-y-0 left-0 z-40 flex w-72 max-w-[calc(100vw-1.5rem)] -translate-x-full flex-col border-r border-qpos-line bg-qpos-sidebar shadow-qpos transition-transform duration-200 lg:translate-x-0 lg:shadow-none print:hidden">
+    class="qpos-sidebar fixed inset-y-0 left-0 z-40 flex w-72 max-w-[calc(100vw-1.5rem)] -translate-x-full flex-col border-r border-qpos-line bg-qpos-sidebar shadow-qpos transition-transform duration-200 lg:translate-x-0 lg:shadow-none print:hidden">
 
-    <div class="flex h-20 shrink-0 items-center justify-between gap-2 border-b border-qpos-line px-5">
+    <div class="flex h-20 shrink-0 items-center justify-between gap-2 border-b border-qpos-line px-5 qpos-sidebar-brand">
         <a href="{{ route('frontend.home') }}" class="qpos-shell-link flex min-w-0 items-center gap-3 rounded-xl">
             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-qpos-brand-soft text-qpos-brand-ink">
                 @if ($siteLogo)
@@ -17,12 +17,12 @@
                     <span class="text-lg font-bold" aria-hidden="true">{{ mb_substr($siteName, 0, 1) }}</span>
                 @endif
             </span>
-            <span class="truncate text-base font-bold tracking-tight text-qpos-ink">{{ $siteName }}</span>
+            <span class="truncate text-base font-bold tracking-tight text-qpos-nav-ink">{{ $siteName }}</span>
         </a>
         <button type="button" data-qpos-drawer-toggle aria-controls="qpos-sidebar" aria-expanded="false"
             aria-label="{{ __('Close') }}"
-            class="qpos-shell-control flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-qpos-page text-qpos-muted transition hover:bg-qpos-brand-soft hover:text-qpos-brand-ink lg:hidden">
-            <i class="fas fa-times" aria-hidden="true"></i>
+            class="qpos-sidebar-close qpos-shell-control flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-qpos-page text-qpos-muted transition hover:bg-qpos-brand-soft hover:text-qpos-brand-ink lg:hidden">
+            <x-backend.icon name="x" />
         </button>
     </div>
 
@@ -33,4 +33,5 @@
             @endforeach
         </ul>
     </nav>
+    <div class="qpos-sidebar-footer"><span class="qpos-sidebar-footer-dot" aria-hidden="true"></span>{{ __('Your daily workspace') }}</div>
 </aside>

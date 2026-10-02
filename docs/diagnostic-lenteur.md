@@ -60,3 +60,76 @@ Le propriétaire a autorisé les trois palettes dans les paramètres du site. Le
 Contrôles du lot : build Vite réussi ; syntaxe PHP/JS et compilation des dix vues touchées réussies ; GET login et forget-password 200 avec le layout partagé ; URL inexistante 404 avec le layout ; reset et new-password redirigent vers forget-password sans session de réinitialisation, conformément aux gardes existantes. Aucun POST de connexion, réinitialisation ou sauvegarde des paramètres exécuté. Le rendu visuel final reste à contrôler : le navigateur intégré a expiré pendant navigation, inspection et capture. Les anciennes maquettes ont été contrôlées visuellement, mais ne prouvent pas le rendu des nouvelles vues.
 
 Ces contrôles HTTP ne constituent pas une mesure de gain comparable aux observations initiales. La lenteur PHP reste à traiter dans le périmètre proposé plus haut.
+
+## Mise à jour — diagnostic avant choix de palette (02/10/2026)
+
+### Requêtes SQL, sessions et permissions
+
+La mesure Debugbar déjà relevée sur GET login indiquait zéro requête SQL. Le contrôleur ne lit l'utilisateur qu'après soumission du formulaire ; la page login invitée n'exécute donc pas de requête de chargement du profil ou de permissions. `session.driver` et `cache.default` sont tous deux configurés sur `file`, ce qui ne fait pas appel à MariaDB au démarrage. Les lectures SQL user/permissions sont attendues sur une session authentifiée et doivent être mesurées sur une page concernée avant toute modification ; aucune suppression ou mise en cache manuelle n'est appliquée sans mesure.
+
+### Réglage debug et packages de diagnostic
+
+Initialement `APP_DEBUG=true`. `fruitcake/laravel-debugbar` et `spatie/laravel-ignition` sont installés comme dépendances de développement ; `laravel/telescope` est absent. Avec debug activé en environnement `local`, Debugbar pouvait s'attacher et injecter sa barre/outillage dans les réponses HTML. Après passage de `.env` à `APP_DEBUG=false` et `php artisan config:clear`, GET `/login` a répondu HTTP 200 en 6 272 ms (7 815 octets, contre 27 916 octets avec debug actif lors de la mesure précédente). La baisse est compatible avec une surcharge significative de Debugbar, sans prouver qu'elle soit la seule cause. Debugbar est désormais neutralisée par `APP_DEBUG=false` ; Ignition reste disponible pour le traitement des erreurs. Le réglage effectif `app.debug=false` a été vérifié.
+
+`php artisan config:cache` avait réussi ; les pilotes effectifs sont `file` pour le cache et la session. Les requêtes invitées ne vont pas lire user/permissions et n'ont pas d'appel SQL mesuré. Aucun changement SQL/session n'est donc justifié pour le login.
+
+### Vite et assets
+
+Le shell ne charge la feuille métier qu'une fois ; les fichiers Vite sont hachés, et une règle de cache immutable limitée à `public/build/assets/` est vérifiée en HTTP. La feuille publique d'authentification pèse 9,86 Ko, contre 54,58 Ko pour l'ancienne feuille frontend généraliste. Le GET HTML reste lent alors que le navigateur télécharge ses CSS/JS après réception de la réponse : ce poids ne peut expliquer le temps d'attente avant le premier octet. Aucun réglage global de compression Apache n'est entrepris dans ce lot.
+
+### Mesures séquentielles demandées
+
+| Étape | Commande/réglage | Temps de l'étape | GET login après l'étape |
+|---|---|---:|---:|
+| a | `.env APP_DEBUG=false`, `config:clear` | — | 6 272 ms |
+| c | `php artisan package:discover --ansi` | 4 202 ms | 4 064 ms |
+| d | `php artisan optimize` | 29 944 ms, dont ~21 s pour les vues | 10 054 ms |
+| e | `composer dump-autoload -o` | 385 443 ms, 9 528 classes optimisées | 16 908 ms |
+
+f) `php -m` ne montre pas Xdebug en CLI ; l'état du module Apache n'a pas été vérifié. `package:discover`, `optimize` et Composer réussissent, mais les lectures HTTP après chaque opération ne démontrent aucun gain stable. L'autoloader Composer et les caches ne corrigent pas les attentes de plusieurs secondes. La génération optimisée de l'autoloader a pris 6 min 25 s, anomalie compatible avec un coût I/O/environnement à examiner, sans exclusion antivirus automatique. La Debugbar neutralisée est la correction la mieux étayée : la première réponse après `APP_DEBUG=false` passe de 27,9 à 7,8 Ko et le délai de 33,2 à 6,3 s. Les lectures suivantes à 4,1, 10,1 et 16,9 s montrent une forte variabilité ; la dernière mesure HTTP 200 est 16,9 s. Aucun changement au schéma, aux dépendances suivies ou aux données.
+
+## Mise à jour — Apache, stockage et palette (02/10/2026)
+
+### OPcache et nouvelle mesure login
+
+Une sonde PHP temporaire, limitée aux requêtes loopback et supprimée après lecture, confirme que l'Apache actif est `apache2handler`, charge `C:\xampp\php\php.ini`, et avait OPcache désactivé ; Xdebug était absent côté Apache comme en CLI. Le DLL `C:\xampp\php\ext\php_opcache.dll` existe. Dans `php.ini`, les directives de chargement OPcache et `opcache.enable=1` étaient commentées. Une copie de sauvegarde a été créée à `C:\xampp\php\php.ini.codex-backup-20261002`, puis les deux directives ont été activées.
+
+Au premier redémarrage, Apache a journalisé répétitivement `VirtualProtect() failed [87]`. Le runtime révélait `opcache.jit=tracing` avec un tampon JIT à zéro. Le [bug PHP 79751](https://bugs.php.net/bug.php?id=79751) décrit ce symptôme Windows et le contournement `opcache.jit=off`. Ce réglage ciblé a été ajouté, puis Apache XAMPP a été redémarré. La sonde confirme maintenant OPcache actif, JIT désactivé, 767 scripts en cache, Xdebug absent. Aucune nouvelle erreur `VirtualProtect` n'apparaît dans le journal après ce redémarrage.
+
+GET login répond maintenant HTTP 200 en 1 479 ms et 2 589 ms avec OPcache activé, puis 2 802 ms après la désactivation JIT. La dernière lecture, après échauffement du cache, est 2 426 ms. Avant OPcache, les mesures successives variaient de 4 à 33 secondes ; la baisse est nette, mais ces essais n'étaient pas un benchmark contrôlé. `APP_DEBUG=false` reste la correction qui empêche Debugbar de s'attacher au login. Aucun SQL n'est ajouté au login invité.
+
+### Defender et disque
+
+Windows Defender est actif. La lecture de `Get-MpPreference.ExclusionPath` est refusée sans administrateur ; aucune exclusion existante n'a pu être confirmée et aucune n'a été ajoutée. Le disque système identifié est un WDC WD5000LPLX, SATA HDD, état `Healthy`. La lecture d'un fichier PHP Laravel de 47 Ko a pris 428 ms lors de la première mesure, 574 ms lors d'un autre accès initial, puis 15–16 ms sur les accès chauds. Ce différentiel et les 385 s de `composer dump-autoload -o` rendent les accès froids sur HDD, potentiellement aggravés par l'analyse temps réel Defender, plausibles ; ils ne prouvent pas à eux seuls la cause exacte du temps Composer. Si l'administrateur choisit de tester des exclusions, candidates limitées à QPOS : `C:\xampp\htdocs\qpos\vendor`, `C:\xampp\htdocs\qpos\bootstrap\cache` et `C:\xampp\htdocs\qpos\storage\framework\views`. Ne pas exclure tout `C:\xampp\`, les uploads, ni les dossiers publics. Comparer les mêmes commandes avant/après et retirer l'exclusion si le gain est négligeable.
+
+### État du sélecteur de palette
+
+Le sélecteur existe déjà sous Paramètres du site → Style, dans la vue générale. La section et sa route POST sont réservées à `style_settings`. Trois choix radio sont validés contre `petrol` (#1E5F74), `teal` (#0F766E) et `indigo` (#4338CA), tous avec l'accent #88B04B. Le choix est enregistré de façon persistante dans `config/system.php` (`site_palette`) et la configuration est rechargée ; c'est une préférence globale au site, pas une préférence par utilisateur/session. Le thème clair/sombre reste une préférence du navigateur dans `localStorage` (`qpos-theme`).
+
+Le shell expose `data-palette` depuis `SitePalette::current()`. Les tokens font varier marque, surfaces de navigation/sidebar, header, contrôles, boutons, tableaux et focus selon la palette et le thème. Le réglage actuellement enregistré est `indigo`. Le code de l'affichage, de l'autorisation, de la validation, de la persistance et des tokens a été vérifié ; aucune soumission réelle du formulaire ni revue visuelle authentifiée n'a été faite dans cette vérification.
+
+## Complément — shell et assets Vite (01/10/2026)
+
+Le contrôle des layouts confirme que deux écrans métier conservent `backend.master` / AdminLTE : le POS (`backend/cart/index`) et la création d'achat (`backend/purchase/create`). Les autres écrans migrés utilisent `backend.master-tailwind`. La sidebar AdminLTE garde donc sa structure native, mais ses couleurs, l'état actif, l'espacement et la hauteur des entrées sont maintenant raccordés au shell Tailwind. Les deux pages métier ne sont pas migrées dans ce lot.
+
+La page d'authentification utilisait aussi `resources/css/app.css`, construit à partir de toutes les vues et scripts du back-office. Une entrée CSS Vite dédiée limite maintenant les sources Tailwind aux vues publiques et composants associés. Mesure du build après séparation : `auth.css` 41,08 Ko brut / 8,06 Ko gzip ; `app.css` back-office inchangé à 54,58 Ko / 10,37 Ko gzip. Le HEAD HTTP sur auth.css confirmait auparavant 41 087 octets sans compression, ni Cache-Control, uniquement ETag. `mod_headers` est chargé sous Apache, tandis que `mod_deflate` et `mod_expires` ne le sont pas.
+
+Un `.htaccess` sous `public/build/` fixe donc un cache immutable d'un an seulement aux assets Vite dont le nom contient un hash de 8 caractères. Les réponses HTML et assets historiques ne sont pas concernés. La compression HTTP demeure désactivée par la configuration Apache et requiert un lot environnement séparé.
+
+Le build Vite a réussi après séparation. Aucun benchmark avant/après du temps de rendu navigateur n'a été possible dans cette vérification ; la lenteur observée du GET HTML dynamique (1,68 s Debugbar dans une lecture précédente, jusqu'à environ 10 s lors d'autres GET) relève principalement du démarrage PHP et demeure distincte du poids CSS.
+
+
+## Mise à jour — refonte intégrée du 02/10/2026
+
+Le complément précédent décrivait encore deux consommateurs AdminLTE. Ils sont maintenant migrés au shell commun : leurs plugins globaux historiques ne sont plus chargés. Le CSS public limite réellement les sources Tailwind avec `source(none)` et inclut ses règles mobiles : environ 9,9 Ko brut, contre 54,6 Ko pour l’ancienne feuille généraliste. Le CSS métier est chargé une fois dans le shell, sans réimport depuis le montage React. Le calendrier React de l’achat est remplacé par une date native ; le chunk achat propre passe d’environ 173,4 à 9,7 Ko (dépendances partagées React exclues de ces chiffres).
+
+Le cache long des fichiers Vite hachés est installé dans `public/.htaccess`, sous une règle limitée à `build/assets`, afin de survivre aux builds. HEAD CSS public : 200 et cache immutable ; tokens non hachés : 200 sans cache immutable. GET récupération : 200 ; URL inconnue : 404, sans CSS legacy et avec HTML privé. Un GET login a dépassé 30 secondes pendant les contrôles ; une nouvelle lecture après le build répond en HTTP 200 en 9 526 ms, avec CSS publique et HTML privé. La lenteur serveur reste une priorité à isoler dans son lot autorisé. Aucun gain de temps serveur n’est déduit de la réduction des assets. Voir [le bilan complet](refonte-ui-complete.md).
+
+
+## Mise à jour finale du diagnostic Apache — 02/10/2026
+
+`php.ini` Apache était celui de `C:\xampp\php\php.ini`; OPcache n'était pas chargé, Xdebug était absent côté Apache. OPcache a été activé et JIT désactivé après l'erreur Windows `VirtualProtect() failed [87]` causée par le JIT `tracing` avec tampon 0. Le backup est `C:\xampp\php\php.ini.codex-backup-20261002`. Après redémarrage, Apache confirme OPcache actif, 767 scripts en cache, JIT désactivé, Xdebug absent ; aucune nouvelle erreur VirtualProtect dans son journal. Les deux dernières mesures de login sont 2 802 ms et 2 426 ms, HTTP 200.
+
+Le disque WDC WD5000LPLX est un HDD SATA en état Healthy. Lecture d'un fichier PHP de 47 Ko : 428–574 ms aux accès initiaux, puis 15–16 ms quand le contenu est chaud. Cela rend les scans de fichiers froids sur HDD plausibles comme contribution aux 385 s de Composer. Defender est actif ; l'accès administrateur requis a empêché la lecture de sa liste d'exclusions. Aucune exclusion n'a été ajoutée. Candidates limitées : `C:\xampp\htdocs\qpos\vendor`, `C:\xampp\htdocs\qpos\bootstrap\cache`, `C:\xampp\htdocs\qpos\storage\framework\views`.
+
+Le sélecteur de palette existe. Les trois valeurs et tokens clair/sombre sont reliés ; la palette est partagée au niveau du site dans `config/system.php` (valeur actuelle `indigo`). La préférence clair/sombre reste dans `localStorage`. La visibilité et la persistance sont conditionnées par `style_settings`. Le contrôle interactif authentifié n'a pas été soumis.

@@ -9,11 +9,11 @@
 <div>
     <input type="hidden" name="{{ $name }}" value="0">
 
-    <label for="{{ $name }}" class="inline-flex items-center gap-3">
+    <label for="{{ $name }}" class="qpos-switch inline-flex items-center gap-3">
         <input type="checkbox" name="{{ $name }}" id="{{ $name }}" value="1"
             @checked((string) old($name, $checked ? '1' : '0') === '1')
             {{ $attributes->merge([
-                'class' => 'h-5 w-5 rounded border-qpos-line accent-qpos-brand focus:outline-none focus:ring-2 focus:ring-qpos-brand/40',
+                'class' => 'qpos-switch-input',
             ]) }}>
         @if ($label)
             <span class="text-sm text-qpos-ink">{{ $label }}</span>
@@ -21,6 +21,6 @@
     </label>
 
     @if (isset($errors) && $errors->has($name))
-        <p class="mt-1 text-xs text-red-600">{{ $errors->first($name) }}</p>
+        <p class="mt-1 text-xs text-qpos-danger">{{ $errors->first($name) }}</p>
     @endif
 </div>

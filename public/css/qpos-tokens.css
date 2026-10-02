@@ -19,12 +19,28 @@
 :root {
     color-scheme: light;
     --qpos-font: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-    --qpos-page: #f4f7f8;
+    --qpos-page: color-mix(in srgb, var(--qpos-brand) 6%, #ffffff);
     --qpos-surface: #ffffff;
     --qpos-text: #1b2d36;
     --qpos-muted: #5c6e78;
-    --qpos-border: #dce5e9;
-    --qpos-sidebar: #ffffff;
+    --qpos-border: color-mix(in srgb, var(--qpos-brand) 16%, var(--qpos-surface));
+    --qpos-control-border: color-mix(in srgb, var(--qpos-brand) 70%, var(--qpos-surface));
+    --qpos-sidebar: color-mix(in srgb, var(--qpos-brand) 75%, #101b2c);
+    --qpos-nav-ink: #ffffff;
+    --qpos-nav-muted: #dde7f2;
+    --qpos-nav-hover: rgb(255 255 255 / 10%);
+    --qpos-nav-active: #ffffff;
+    --qpos-nav-line: rgb(255 255 255 / 15%);
+    --qpos-header: color-mix(in srgb, var(--qpos-brand) 9%, var(--qpos-surface));
+    --qpos-header-line: color-mix(in srgb, var(--qpos-brand) 20%, var(--qpos-surface));
+    --qpos-success: #426127;
+    --qpos-success-soft: #f0f5e8;
+    --qpos-danger: #b42318;
+    --qpos-danger-soft: #fff0ee;
+    --qpos-warning: #805300;
+    --qpos-warning-soft: #fff4dd;
+    --qpos-info: #075985;
+    --qpos-info-soft: #e9f4fb;
     --qpos-brand: #1e5f74;
     --qpos-brand-hover: #174d60;
     --qpos-brand-ink: #1e5f74;
@@ -38,12 +54,23 @@
 
 :root[data-theme="dark"] {
     color-scheme: dark;
-    --qpos-page: #101a20;
+    --qpos-page: color-mix(in srgb, var(--qpos-brand) 12%, #0c1420);
     --qpos-surface: #18262e;
     --qpos-text: #e8eff2;
     --qpos-muted: #a8b7c0;
-    --qpos-border: #31454f;
-    --qpos-sidebar: #15222a;
+    --qpos-border: color-mix(in srgb, var(--qpos-brand) 30%, var(--qpos-surface));
+    --qpos-control-border: color-mix(in srgb, var(--qpos-brand-ink) 60%, var(--qpos-surface));
+    --qpos-sidebar: color-mix(in srgb, var(--qpos-brand) 55%, #0c1420);
+    --qpos-header: color-mix(in srgb, var(--qpos-brand) 22%, var(--qpos-surface));
+    --qpos-header-line: color-mix(in srgb, var(--qpos-brand) 35%, var(--qpos-surface));
+    --qpos-success: #b6d886;
+    --qpos-success-soft: #2b3925;
+    --qpos-danger: #ffb4aa;
+    --qpos-danger-soft: #472a2c;
+    --qpos-warning: #ffd58a;
+    --qpos-warning-soft: #3f3321;
+    --qpos-info: #9ddaf8;
+    --qpos-info-soft: #213746;
     /* Contraste avec le texte blanc des surfaces de marque existantes. */
     --qpos-brand: #34778b;
     --qpos-brand-hover: #2b687b;
@@ -104,6 +131,9 @@
         --qpos-muted: #5c6e78;
         --qpos-border: #dce5e9;
         --qpos-sidebar: #ffffff;
+        --qpos-header: #ffffff;
+        --qpos-nav-ink: #1b2d36;
+        --qpos-nav-muted: #5c6e78;
         --qpos-brand: var(--qpos-print-brand, #1e5f74);
         --qpos-brand-hover: var(--qpos-print-brand, #174d60);
         --qpos-brand-ink: var(--qpos-print-brand, #1e5f74);

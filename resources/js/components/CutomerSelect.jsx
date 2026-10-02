@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import getErrorMessage from "../utils/getErrorMessage";
 import translate from "../utils/translate";
 
+import { selectStyles } from "./WorkspaceUI";
+
 const CustomerSelect = ({ setCustomerId }) => {
     const [customers, setCustomers] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState({
@@ -49,6 +51,9 @@ const CustomerSelect = ({ setCustomerId }) => {
 
     return (
         <CreatableSelect
+            inputId="pos-customer"
+            styles={selectStyles}
+            classNamePrefix="qpos-select"
             isClearable
             options={customers}
             onChange={handleChange}

@@ -11,14 +11,14 @@
 @endphp
 
 @if ($variant === 'tailwind')
-    <div class="flex items-center gap-1 rounded-lg border border-qpos-line bg-qpos-surface p-0.5" role="group"
+    <div class="qpos-language-switcher flex items-center gap-1 rounded-lg border border-qpos-line bg-qpos-surface p-0.5" role="group"
         aria-label="{{ __('Language') }}">
         @foreach ($locales as $locale => $label)
             <form action="{{ route('language.update') }}" method="post">
                 @csrf
                 <input type="hidden" name="locale" value="{{ $locale }}">
                 <button type="submit"
-                    class="rounded-md px-2 py-1 text-xs font-semibold transition {{ app()->getLocale() === $locale ? 'bg-qpos-brand text-white' : 'text-qpos-muted hover:bg-qpos-page' }}"
+                    class="rounded-md px-2 py-1 text-xs font-semibold transition {{ app()->getLocale() === $locale ? 'bg-qpos-brand text-white' : 'text-qpos-brand-ink hover:bg-qpos-page' }}"
                     aria-label="{{ $label }}"
                     aria-pressed="{{ app()->getLocale() === $locale ? 'true' : 'false' }}"
                     title="{{ $label }}">{{ strtoupper($locale) }}</button>

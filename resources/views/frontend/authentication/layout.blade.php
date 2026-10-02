@@ -16,7 +16,7 @@
     <link rel="icon" href="{{ assetImage(readConfig('favicon_icon')) }}">
     <link rel="preload" href="{{ asset('fonts/inter/InterVariable.woff2') }}" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="{{ asset('css/qpos-tokens.css') }}">
-    @vite(['resources/css/app.css', 'resources/js/theme.js', 'resources/js/frontend.js'])
+    @vite(['resources/css/auth.css', 'resources/js/theme.js', 'resources/js/frontend.js'])
 </head>
 <body class="qpos-public">
     <header class="qpos-public-header">
@@ -26,8 +26,8 @@
         </a>
         <div class="qpos-public-tools">
             <x-language-switcher variant="tailwind" />
-            <button type="button" class="qpos-public-theme" data-theme-toggle aria-pressed="false" aria-label="{{ __('Toggle theme') }}" title="{{ __('Toggle theme') }}">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z" /></svg>
+            <button type="button" class="qpos-public-theme" data-theme-toggle aria-pressed="false" aria-label="{{ __('Toggle color theme') }}" title="{{ __('Toggle theme') }}">
+                <span class="qpos-theme-glyph" aria-hidden="true"><x-backend.icon name="moon" class="qpos-theme-moon" /><x-backend.icon name="sun" class="qpos-theme-sun" /></span>
             </button>
         </div>
     </header>

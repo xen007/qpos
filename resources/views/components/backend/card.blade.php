@@ -4,9 +4,9 @@
 --}}
 @props(['title' => null, 'subtitle' => null, 'padded' => true])
 
-<section {{ $attributes->merge(['class' => 'rounded-xl border border-qpos-line bg-qpos-surface shadow-sm']) }}>
+<section {{ $attributes->merge(['class' => 'qpos-card']) }}>
     @if ($title)
-        <header class="flex flex-wrap items-center justify-between gap-3 border-b border-qpos-line px-6 py-4">
+        <header class="qpos-card-header flex flex-wrap items-center justify-between gap-3 px-6 py-4">
             <div>
                 <h2 class="text-base font-semibold text-qpos-ink">{{ $title }}</h2>
                 @if ($subtitle)
@@ -25,6 +25,6 @@
     </div>
 
     @isset($footer)
-        <footer class="border-t border-qpos-line px-6 py-4">{{ $footer }}</footer>
+        <footer class="qpos-card-footer px-6 py-4">{{ $footer }}</footer>
     @endisset
 </section>

@@ -24,7 +24,7 @@
                 @can($tab['permission'])
                     <button type="button" role="tab" data-qpos-tab="{{ $tab['key'] }}" aria-selected="false"
                         class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-qpos-muted transition hover:bg-qpos-page">
-                        <i class="{{ $tab['icon'] }}" aria-hidden="true"></i>
+                        <x-backend.icon :name="$tab['icon']" />
                         {{ $tab['label'] }}
                     </button>
                 @endcan
@@ -176,7 +176,7 @@
                                     <x-backend.image-field name="site_logo" field-id="siteLogo" :label="__('Site') . ' ' . __('Logo')"
                                         :current-image-url="assetImage(readconfig('site_logo'))" />
                                     <p class="mt-2 text-xs text-qpos-muted">
-                                        <i class="far fa-question-circle" aria-hidden="true"></i>
+                                        <x-backend.icon name="far fa-question-circle" />
                                         {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '260x60']) }}
                                     </p>
                                 </div>
@@ -185,7 +185,7 @@
                                     <x-backend.image-field name="favicon_icon" field-id="faviconIcon" :label="__('Favicon')"
                                         :current-image-url="assetImage(readconfig('favicon_icon'))" />
                                     <p class="mt-2 text-xs text-qpos-muted">
-                                        <i class="far fa-question-circle" aria-hidden="true"></i>
+                                        <x-backend.icon name="far fa-question-circle" />
                                         {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '32x32']) }}
                                     </p>
                                 </div>
@@ -195,7 +195,7 @@
                                         :label="__('Apple Icon')"
                                         :current-image-url="assetImage(readconfig('favicon_icon_apple'))" />
                                     <p class="mt-2 text-xs text-qpos-muted">
-                                        <i class="far fa-question-circle" aria-hidden="true"></i>
+                                        <x-backend.icon name="far fa-question-circle" />
                                         {{ __('( :size px ) - Extensions: .png, .jpg, .jpeg, .gif, .bmp, .webp', ['size' => '180x180']) }}
                                     </p>
                                 </div>

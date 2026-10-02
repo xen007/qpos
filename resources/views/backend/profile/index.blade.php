@@ -36,25 +36,25 @@
                     <label for="password" class="block text-sm font-medium text-qpos-ink">{{ __('Current password') }}</label>
                     <input type="password" id="password" name="current_password" autocomplete="new-password"
                         placeholder="{{ __('Enter your password') }}"
-                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                        class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
 
                 <div>
                     <label for="new_password" class="block text-sm font-medium text-qpos-ink">{{ __('New password') }}</label>
                     <input type="password" id="new_password" name="new_password" placeholder="{{ __('New password') }}"
-                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                        class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
 
                 <div>
                     <label for="confirmPassword" class="block text-sm font-medium text-qpos-ink">{{ __('Confirm password') }}</label>
                     <input type="password" id="confirmPassword" name="new_password_confirmation"
                         placeholder="{{ __('Confirm password') }}"
-                        class="mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
+                        class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
 
                 <div class="lg:col-span-2">
                     <button type="submit"
-                        class="w-full rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                        class="qpos-button qpos-button-md qpos-button-primary w-full rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
                         {{ __('Update') }}
                     </button>
                 </div>

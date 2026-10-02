@@ -19,19 +19,27 @@
     const drawer = document.querySelector("[data-qpos-drawer]");
     const overlay = document.querySelector("[data-qpos-drawer-overlay]");
     const drawerToggles = document.querySelectorAll("[data-qpos-drawer-toggle]");
+    const content = document.querySelector("[data-qpos-shell-content]");
+    let drawerFocus;
 
     const setDrawer = (open) => {
         if (!drawer) {
             return;
         }
 
+        const mobileOpen = open && !desktopQuery.matches;
+        if (mobileOpen) drawerFocus = document.activeElement;
+        drawer.inert = !open && !desktopQuery.matches;
+        if (content) content.inert = mobileOpen;
         drawer.classList.toggle("-translate-x-full", !open);
         drawer.classList.toggle("translate-x-0", open);
         overlay?.classList.toggle("hidden", !open);
-        document.body.classList.toggle("overflow-hidden", open);
+        document.body.classList.toggle("overflow-hidden", mobileOpen);
         drawerToggles.forEach((toggle) =>
             toggle.setAttribute("aria-expanded", String(open))
         );
+        if (mobileOpen) drawer.querySelector("[data-qpos-drawer-toggle]")?.focus();
+        else if (drawerFocus) { drawerFocus.focus(); drawerFocus = null; }
     };
 
     if (drawer) {
@@ -47,9 +55,16 @@
 
         // Retour a l'etat ferme quand on repasse en dessous du breakpoint.
         desktopQuery.addEventListener("change", (event) => {
-            if (!event.matches) {
-                setDrawer(false);
-            }
+            setDrawer(false);
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "Tab" || desktopQuery.matches || drawer.classList.contains("-translate-x-full")) return;
+            const focusable = [...drawer.querySelectorAll('a[href], button:not(:disabled), [tabindex="0"]')]
+                .filter((element) => element.getClientRects().length);
+            const first = focusable[0];
+            const last = focusable.at(-1);
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         });
     }
 
@@ -116,7 +131,9 @@
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+            const open = dropdowns.find((dropdown) => !dropdown.querySelector("[data-qpos-dropdown-panel]")?.classList.contains("hidden"));
             closeDropdowns();
+            open?.querySelector("[data-qpos-dropdown-toggle]")?.focus();
             setDrawer(false);
         }
     });
@@ -141,7 +158,8 @@
 
         // Clic sur le fond : la cible est le <dialog> lui-meme.
         dialog.addEventListener("click", (event) => {
-            if (event.target === dialog) {
+            const rect = dialog.getBoundingClientRect();
+            if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) {
                 dialog.close();
             }
         });
@@ -166,6 +184,7 @@
                 trigger.classList.toggle("text-white", isActive);
                 trigger.classList.toggle("text-qpos-muted", !isActive);
                 trigger.setAttribute("aria-selected", String(isActive));
+                trigger.tabIndex = isActive ? 0 : -1;
             });
 
             panels.forEach((panel) =>
@@ -182,6 +201,19 @@
                 activate(trigger.dataset.qposTab);
             })
         );
+        triggers.forEach((trigger, index) => {
+            trigger.addEventListener("keydown", (event) => {
+                const directions = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+                let next;
+                if (event.key in directions) next = (index + directions[event.key] + triggers.length) % triggers.length;
+                else if (event.key === "Home") next = 0;
+                else if (event.key === "End") next = triggers.length - 1;
+                else return;
+                event.preventDefault();
+                activate(triggers[next].dataset.qposTab);
+                triggers[next].focus();
+            });
+        });
 
         // Onglet initial : celui demande par l'URL (?active-tab=...), sinon le premier.
         const requested = new URLSearchParams(window.location.search).get(

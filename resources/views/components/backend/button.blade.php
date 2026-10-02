@@ -3,21 +3,23 @@
     Memes classes que les boutons ecrits a la main dans les pages deja migrees,
     pour un rendu identique.
 --}}
-@props(['type' => 'submit', 'variant' => 'primary', 'size' => 'md', 'icon' => null, 'href' => null])
+@props(['type' => 'submit', 'variant' => 'primary', 'size' => 'md', 'icon' => null, 'href' => null, 'loading' => false])
 
 @php
     $variants = [
-        'primary' => 'bg-qpos-brand text-white hover:opacity-90',
-        'ghost' => 'border border-qpos-line text-qpos-muted hover:bg-qpos-page',
+        'primary' => 'qpos-button-primary',
+        'secondary' => 'qpos-button-secondary',
+        'ghost' => 'qpos-button-ghost',
+        'danger' => 'qpos-button-danger',
     ];
 
     $sizes = [
-        'sm' => 'px-3 py-1.5 text-xs',
-        'md' => 'px-4 py-2 text-sm',
-        'lg' => 'px-6 py-2 text-sm',
+        'sm' => 'qpos-button-sm',
+        'md' => 'qpos-button-md',
+        'lg' => 'qpos-button-lg',
     ];
 
-    $classes = 'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition '
+    $classes = 'qpos-button '
         . ($sizes[$size] ?? $sizes['md'])
         . ' '
         . ($variants[$variant] ?? $variants['primary']);
@@ -26,14 +28,16 @@
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
         @if ($icon)
-            <i class="{{ $icon }}" aria-hidden="true"></i>
+            <x-backend.icon :name="$icon" />
         @endif
         {{ $slot }}
     </a>
 @else
-    <button type="{{ $type }}" {{ $attributes->merge(['class' => $classes]) }}>
-        @if ($icon)
-            <i class="{{ $icon }}" aria-hidden="true"></i>
+    <button type="{{ $type }}" @if ($loading) disabled aria-busy="true" @endif {{ $attributes->merge(['class' => $classes]) }}>
+        @if ($loading)
+            <x-backend.icon name="loader-circle" class="qpos-spin" />
+        @elseif ($icon)
+            <x-backend.icon :name="$icon" />
         @endif
         {{ $slot }}
     </button>

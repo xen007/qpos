@@ -1,24 +1,25 @@
 {
-  "_jsx-runtime-F9qg0_Rr.js": {
-    "file": "assets/jsx-runtime-F9qg0_Rr.js",
+  "_jsx-runtime-CMlM1iwe.js": {
+    "file": "assets/jsx-runtime-CMlM1iwe.js",
     "name": "jsx-runtime"
   },
-  "_useDocumentTheme-p9Jep90U.js": {
-    "file": "assets/useDocumentTheme-p9Jep90U.js",
+  "_useDocumentTheme-BKEELw4g.js": {
+    "file": "assets/useDocumentTheme-BKEELw4g.js",
     "name": "useDocumentTheme",
     "imports": [
-      "_jsx-runtime-F9qg0_Rr.js"
+      "_jsx-runtime-CMlM1iwe.js"
     ]
   },
-  "_useStateManager-7e1e8489.esm-BSHU-xFd.js": {
-    "file": "assets/useStateManager-7e1e8489.esm-BSHU-xFd.js",
+  "_useStateManager-7e1e8489.esm-BYU6m3zv.js": {
+    "file": "assets/useStateManager-7e1e8489.esm-BYU6m3zv.js",
     "name": "useStateManager-7e1e8489.esm",
     "imports": [
-      "_jsx-runtime-F9qg0_Rr.js"
+      "_jsx-runtime-CMlM1iwe.js",
+      "_useDocumentTheme-BKEELw4g.js"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-D69ELZRV.css",
+    "file": "assets/app-B0HVlcmw.css",
     "name": "app",
     "names": [
       "app.css"
@@ -26,41 +27,48 @@
     "src": "resources/css/app.css",
     "isEntry": true
   },
+  "resources/css/auth.css": {
+    "file": "assets/auth-Bb21y7Ru.css",
+    "name": "auth",
+    "names": [
+      "auth.css"
+    ],
+    "src": "resources/css/auth.css",
+    "isEntry": true
+  },
   "resources/js/app.jsx": {
-    "file": "assets/app-DxX-wSrn.js",
+    "file": "assets/app-CSZH48R5.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "imports": [
-      "_jsx-runtime-F9qg0_Rr.js"
+      "_jsx-runtime-CMlM1iwe.js"
     ],
     "dynamicImports": [
       "resources/js/components/Pos.jsx",
       "resources/js/components/Purchase/Purchase.jsx"
-    ],
-    "css": [
-      "assets/app-D69ELZRV.css"
     ]
   },
   "resources/js/backend-toast.jsx": {
-    "file": "assets/backend-toast-pkJiPLtp.js",
+    "file": "assets/backend-toast-CHdx4Fkd.js",
     "name": "backend-toast",
     "src": "resources/js/backend-toast.jsx",
     "isEntry": true,
     "imports": [
-      "_jsx-runtime-F9qg0_Rr.js",
-      "_useDocumentTheme-p9Jep90U.js"
+      "_jsx-runtime-CMlM1iwe.js",
+      "_useDocumentTheme-BKEELw4g.js"
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-DDEuT-Zl.js",
+    "file": "assets/Pos-DjXQpeZp.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_jsx-runtime-F9qg0_Rr.js",
-      "_useDocumentTheme-p9Jep90U.js",
-      "_useStateManager-7e1e8489.esm-BSHU-xFd.js"
+      "_jsx-runtime-CMlM1iwe.js",
+      "resources/js/app.jsx",
+      "_useDocumentTheme-BKEELw4g.js",
+      "_useStateManager-7e1e8489.esm-BYU6m3zv.js"
     ],
     "assets": [
       "assets/beep-07a-BpTYY3WP.mp3",
@@ -68,21 +76,19 @@
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-BW0oTrkB.js",
+    "file": "assets/Purchase-zdgWQ9ZM.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_jsx-runtime-F9qg0_Rr.js",
-      "_useDocumentTheme-p9Jep90U.js",
-      "_useStateManager-7e1e8489.esm-BSHU-xFd.js"
-    ],
-    "css": [
-      "assets/Purchase-Wk3Ob2xl.css"
+      "_jsx-runtime-CMlM1iwe.js",
+      "resources/js/app.jsx",
+      "_useDocumentTheme-BKEELw4g.js",
+      "_useStateManager-7e1e8489.esm-BYU6m3zv.js"
     ]
   },
   "resources/js/dashboard.js": {
-    "file": "assets/dashboard-N_HGjRiZ.js",
+    "file": "assets/dashboard-bunpBbrW.js",
     "name": "dashboard",
     "src": "resources/js/dashboard.js",
     "isEntry": true
@@ -94,7 +100,7 @@
     "isEntry": true
   },
   "resources/js/shell.js": {
-    "file": "assets/shell-C0U6ndT-.js",
+    "file": "assets/shell-BjKr2Eun.js",
     "name": "shell",
     "src": "resources/js/shell.js",
     "isEntry": true
@@ -108,7 +114,7 @@
     "src": "resources/js/sounds/beep-07a.mp3"
   },
   "resources/js/table-actions.js": {
-    "file": "assets/table-actions-3Po0cbv2.js",
+    "file": "assets/table-actions-CW_z3FQr.js",
     "name": "table-actions",
     "src": "resources/js/table-actions.js",
     "isEntry": true

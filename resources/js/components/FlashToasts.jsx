@@ -26,7 +26,10 @@ export default function FlashToasts({ messages = [] }) {
         });
     }, [messages]);
 
+    if (document.getElementById('cart') || document.getElementById('purchase')) return null;
+
     return (
-        <Toaster position="top-right" richColors closeButton theme={theme} />
+        <Toaster position="top-right" richColors closeButton theme={theme}
+            toastOptions={{ className: "qpos-flash-toast" }} />
     );
 }

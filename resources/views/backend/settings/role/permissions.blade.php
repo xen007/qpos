@@ -5,8 +5,8 @@
 @section('page-actions')
     @can('role_view')
         <a href="{{ route('backend.admin.roles') }}"
-            class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-            <i class="fas fa-ruler-vertical" aria-hidden="true"></i>
+            class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            <x-backend.icon name="fas fa-ruler-vertical" />
             {{ __('Roles') }}
         </a>
     @endcan
@@ -46,7 +46,7 @@
 
             <div class="mt-6 flex justify-end">
                 <button type="submit"
-                    class="rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+                    class="qpos-button qpos-button-md qpos-button-primary rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
                     {{ __('Submit') }}
                 </button>
             </div>

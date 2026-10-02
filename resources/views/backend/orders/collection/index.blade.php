@@ -6,7 +6,7 @@
     {{-- Les lignes sont rendues par le serveur : cette page n'a besoin d'aucun
          plugin (l'ancienne table portait un id "datatables" sans initialisation). --}}
     <x-backend.card :padded="false">
-        <div class="overflow-x-auto p-4 sm:p-6">
+        <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table class="w-full border-collapse text-sm">
                 <thead>
                     <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
@@ -32,7 +32,7 @@
                                 <div class="flex justify-end">
                                     <a href="{{ route('backend.admin.collectionInvoice', $transaction->id) }}"
                                         class="inline-flex items-center gap-2 rounded-lg border border-qpos-line px-3 py-2 text-sm font-medium text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink">
-                                        <i class="fas fa-file-invoice" aria-hidden="true"></i>
+                                        <x-backend.icon name="fas fa-file-invoice" />
                                         {{ __('Invoice') }}
                                     </a>
                                 </div>

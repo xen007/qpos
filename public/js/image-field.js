@@ -25,6 +25,13 @@
             }
         });
 
+        container.addEventListener('keydown', (event) => {
+            if (event.target === container && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                inputFile.click();
+            }
+        });
+
         inputFile.addEventListener('change', () => {
             const reader = new FileReader();
 

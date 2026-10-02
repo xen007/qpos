@@ -1,5 +1,8 @@
 import Chart from "chart.js/auto";
 
+Chart.defaults.font.family = 'Inter, "Segoe UI", sans-serif';
+Chart.defaults.font.size = 12;
+
 const payload = document.getElementById("qpos-dashboard-chart-data");
 
 if (payload) {
@@ -18,7 +21,7 @@ if (payload) {
     function palette() {
         const styles = getComputedStyle(document.documentElement);
         return {
-            brand: styles.getPropertyValue("--qpos-brand").trim() || "#5268d8",
+            brand: styles.getPropertyValue("--qpos-brand").trim() || "#1e5f74",
             text: styles.getPropertyValue("--qpos-text").trim() || "#182230",
             border:
                 styles.getPropertyValue("--qpos-border").trim() || "#e3e8ef",
@@ -106,6 +109,6 @@ if (payload) {
         });
     }).observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ["data-theme"],
+        attributeFilter: ["data-theme", "data-palette"],
     });
 }

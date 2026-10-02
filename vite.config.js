@@ -15,6 +15,7 @@ export default defineConfig({
                 "resources/js/table-actions.js",
                 "resources/js/backend-toast.jsx",
                 "resources/css/app.css",
+                "resources/css/auth.css",
             ],
             refresh: true,
         }),

@@ -5,8 +5,8 @@
 @section('page-actions')
     @can('category_create')
         <a href="{{ route('backend.admin.categories.create') }}"
-            class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-            <i class="fas fa-plus-circle" aria-hidden="true"></i>
+            class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            <x-backend.icon name="fas fa-plus-circle" />
             {{ __('Add New') }}
         </a>
     @endcan
@@ -14,7 +14,7 @@
 
 @section('content')
     <x-backend.card :padded="false">
-        <div class="overflow-x-auto p-4 sm:p-6">
+        <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table id="datatables" class="w-full border-collapse text-sm">
                 <thead>
                     <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">

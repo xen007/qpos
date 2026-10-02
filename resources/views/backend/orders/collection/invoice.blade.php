@@ -48,8 +48,8 @@
 
         <div class="mt-6 text-right">
             <button type="button" onclick="window.print()"
-                class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 print:hidden">
-                <i class="fas fa-print" aria-hidden="true"></i>
+                class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 print:hidden">
+                <x-backend.icon name="fas fa-print" />
                 {{ __('Print') }}
             </button>
         </div>

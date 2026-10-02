@@ -1,8 +1,8 @@
-import React, {useEffect, useState, useCallback } from "react";
+import React, {useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import Cart from "./Cart";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import CustomerSelect from "./CutomerSelect";
 
 import SuccessSound from "../sounds/beep-07a.mp3";
@@ -10,12 +10,14 @@ import WarningSound from "../sounds/beep-02.mp3";
 import getErrorMessage from "../utils/getErrorMessage";
 import playSound from "../utils/playSound";
 import translate from "../utils/translate";
-import useDocumentTheme from "../utils/useDocumentTheme";
-import { Barcode } from "lucide-react";
+
+import { Barcode, Search, Package, ShoppingCart, Trash2, Check } from "lucide-react";
+import { Field, EmptyState, WorkspaceToaster } from "./WorkspaceUI";
 
 export default function Pos() {
-    const theme = useDocumentTheme();
+
     const [products, setProducts] = useState([]);
+    const [activePanel, setActivePanel] = useState('catalogue');
     const [carts, setCarts] = useState([]);
     const [orderDiscount, setOrderDiscount] = useState(0);
     const [paid, setPaid] = useState(0);
@@ -28,48 +30,39 @@ export default function Pos() {
     const [productUpdated, setProductUpdated] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchBarcode, setSearchBarcode] = useState("");
-    const { protocol, hostname, port } = window.location;
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const fullDomainWithPort = `${protocol}//${hostname}${
-        port ? `:${port}` : ""
-    }`;
+    const [loading, setLoading] = useState(true);
+    const productRequest = useRef(0);
     const getProducts = useCallback(
         async (search = "", page = 1, barcode = "") => {
+            const requestId = ++productRequest.current;
             setLoading(true);
             try {
                 const res = await axios.get('/admin/get/products', {
                     params: { search, page, barcode },
                 });
                 const productsData = res.data;
-                setProducts((prev) => [...prev, ...productsData.data]); // Append new products
+                if (requestId !== productRequest.current) return;
+                setProducts(prev => page === 1 ? productsData.data : [...prev, ...productsData.data]);
+                setCurrentPage(page);
                 if (productsData.data.length === 1 && barcode != "") {
                     addProductToCart(productsData.data[0].id);
-                    getCarts();
                 }
                 setTotalPages(productsData.meta.last_page); // Get total pages
             } catch (error) {
-                console.error("Error fetching products:", error);
+                if (requestId === productRequest.current) toast.error(getErrorMessage(error));
             } finally {
-                setLoading(false); // Set loading to false
+                if (requestId === productRequest.current) setLoading(false);
             }
         },
         []
     );
-    const getUpdatedProducts = useCallback(async () => {
-        try {
-            const res = await axios.get('/admin/get/products');
-            const productsData = res.data;
-            setProducts(productsData.data);
-            setTotalPages(productsData.meta.last_page); // Get total pages
-        } catch (error) {
-            console.error("Error fetching products:", error);
-        }
-    }, []);
     useEffect(() => {
-        getUpdatedProducts();
-    }, [productUpdated]);
+        ++productRequest.current;
+        const timer = setTimeout(() => getProducts(searchQuery, 1), 250);
+        return () => clearTimeout(timer);
+    }, [searchQuery, productUpdated, getProducts]);
 
     const getCarts = async () => {
         try {
@@ -82,10 +75,6 @@ export default function Pos() {
             console.error("Error fetching carts:", error);
         }
     };
-
-    useEffect(() => {
-        getCarts();
-    }, []);
 
     useEffect(() => {
         getCarts();
@@ -107,46 +96,11 @@ export default function Pos() {
         setDue((balance > 0 ? balance : 0).toFixed(2));
         setChange((balance < 0 ? -balance : 0).toFixed(2));
     }, [orderDiscount, paid, total]);
-    useEffect(() => {
-        if (searchQuery) {
-            setProducts([]);
-            getProducts(searchQuery, currentPage, "");
-        }
-        setSearchBarcode("");
-    }, [currentPage, searchQuery]);
-
-    useEffect(() => {
-        if (searchBarcode) {
-            setProducts([]);
-           getProducts("", currentPage, searchBarcode);
-        }
-    }, [searchBarcode]);
-
-    // Infinite scroll logic
-    useEffect(() => {
-        const handleScroll = () => {
-            if (
-                window.innerHeight + document.documentElement.scrollTop >=
-                document.documentElement.offsetHeight
-            ) {
-                // Load next page if not on the last page
-                if (currentPage < totalPages) {
-                    setCurrentPage((prev) => prev + 1);
-                }
-            }
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-        };
-    }, [currentPage, totalPages]);
-
     function addProductToCart(id) {
         axios
             .post("/admin/cart", { id })
             .then((res) => {
-                setCartUpdated(!cartUpdated);
+                setCartUpdated(previous => !previous);
                 playSound(SuccessSound);
                 toast.success(res?.data?.message);
             })
@@ -175,7 +129,7 @@ export default function Pos() {
                 axios
                     .put("/admin/cart/empty")
                     .then((res) => {
-                        setCartUpdated(!cartUpdated);
+                        setCartUpdated(previous => !previous);
                         playSound(SuccessSound);
                         toast.success(res?.data?.message);
                     })
@@ -220,8 +174,8 @@ export default function Pos() {
                         paid: parseFloat(paid) || 0,
                     })
                     .then((res) => {
-                        setCartUpdated(!cartUpdated);
-                        setProductUpdated(!productUpdated);
+                        setCartUpdated(previous => !previous);
+                        setProductUpdated(previous => !previous);
                         toast.success(res?.data?.message);
                         // window.location.href = `orders/invoice/${res?.data?.order?.id}`;
                         window.location.href = `orders/pos-invoice/${res?.data?.order?.id}`;
@@ -236,276 +190,50 @@ export default function Pos() {
         });
     }
     return (
-        <>
-            <div className="card">
-                {/* <div class="mt-n5 mb-3 d-flex justify-content-end">
-                    <a
-                        href="/admin"
-                        className="btn bg-gradient-primary mr-2"
-                    >
-                        Dashboard
-                    </a>
-                    <a
-                        href="/admin/ordersma"
-                        className="btn bg-gradient-primary"
-                    >
-                        Orders
-                    </a>
-                </div> */}
-
-                <div className="card-body p-2 p-md-4 pt-0">
-                    <div className="row">
-                        <div className="col-md-6 col-lg-5 mb-2">
-                            <div className="row mb-2">
-                                <div className="col-12">
-                                    <CustomerSelect
-                                        setCustomerId={setCustomerId}
-                                    />
-                                </div>
-                                {/* <div className="col-6">
-                                <form className="form">
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder={translate("Enter barcode")}
-                                        value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
-                                    />
-                                </form>
-                            </div> */}
-                            </div>
-                            <Cart
-                                carts={carts}
-                                setCartUpdated={setCartUpdated}
-                                cartUpdated={cartUpdated}
-                            />
-                            <div className="card">
-                                <div className="card-body">
-                                    <div className="row text-bold mb-1">
-                                        <div className="col">
-                                            {translate("Sub Total:")}
-                                        </div>
-                                        <div className="col text-right mr-2">
-                                            {total}
-                                        </div>
-                                    </div>
-                                    <div className="row text-bold mb-1">
-                                        <div className="col">
-                                            {translate("Discount:")}
-                                        </div>
-                                        <div className="col text-right mr-2">
-                                            <input
-                                                type="number"
-                                                className="form-control form-control-sm"
-                                                placeholder={translate(
-                                                    "Enter discount"
-                                                )}
-                                                min={0}
-                                                disabled={total <= 0}
-                                                value={orderDiscount}
-                                                onChange={(e) => {
-                                                    const value =
-                                                        e.target.value;
-                                                    if (
-                                                        parseFloat(value) >
-                                                            total ||
-                                                        parseFloat(value) < 0
-                                                    ) {
-                                                        return;
-                                                    }
-                                                    setOrderDiscount(value);
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="row text-bold mb-1">
-                                        <div className="col">
-                                            {translate(
-                                                "Apply Fractional Discount:"
-                                            )}
-                                        </div>
-                                        <div className="col text-right mr-2">
-                                            <input
-                                                type="checkbox"
-                                                className="form-control-sm"
-                                                disabled={total <= 0}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        const fractionalPart =
-                                                            total % 1;
-                                                        setOrderDiscount(
-                                                            fractionalPart?.toFixed(
-                                                                2
-                                                            )
-                                                        );
-                                                    } else {
-                                                        setOrderDiscount(0);
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="row text-bold mb-1">
-                                        <div className="col">
-                                            {translate("Total:")}
-                                        </div>
-                                        <div className="col text-right mr-2">
-                                            {updateTotal}
-                                        </div>
-                                    </div>
-                                    <div className="row text-bold mb-1">
-                                        <div className="col">
-                                            {translate("Paid:")}
-                                        </div>
-                                        <div className="col text-right mr-2">
-                                            <input
-                                                type="number"
-                                                className="form-control form-control-sm"
-                                                placeholder={translate(
-                                                    "Enter paid"
-                                                )}
-                                                min={0}
-                                                disabled={total <= 0}
-                                                value={paid}
-                                                onChange={(e) => {
-                                                    const value =
-                                                        e.target.value;
-                                                    // Accept any non-negative
-                                                    // amount the customer tenders;
-                                                    // overpayment is shown as change.
-                                                    if (parseFloat(value) < 0) {
-                                                        return;
-                                                    }
-                                                    setPaid(value);
-                                                }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="row text-bold">
-                                        <div className="col">
-                                            {translate("Due")}
-                                        </div>
-                                        <div className="col text-right mr-2">
-                                            {due}
-                                        </div>
-                                    </div>
-                                    {parseFloat(change) > 0 && (
-                                        <div className="row text-bold text-success mt-1">
-                                            <div className="col">
-                                                {translate("Change:")}
-                                            </div>
-                                            <div className="col text-right mr-2">
-                                                {change}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="row">
-                                <div className="col">
-                                    <button
-                                        onClick={() => cartEmpty()}
-                                        type="button"
-                                        className="btn bg-gradient-danger btn-block text-white text-bold"
-                                    >
-                                        {translate("Clear Cart")}
-                                    </button>
-                                </div>
-                                <div className="col">
-                                    <button
-                                        onClick={() => {
-                                            orderCreate();
-                                        }}
-                                        type="button"
-                                        className="btn bg-gradient-primary btn-block text-white text-bold"
-                                    >
-                                        {translate("Checkout")}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-6 col-lg-7">
-                            <div className="row">
-                                <div className="input-group mb-2 col-md-6">
-                                    <div className="input-group-prepend">
-                                        <span className="input-group-text">
-                                            <Barcode size={18} aria-hidden="true" />
-                                        </span>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder={translate("Enter Product Barcode")}
-                                        value={searchBarcode}
-                                        autoFocus
-                                        onChange={(e) =>
-                                            setSearchBarcode(e.target.value)
-                                        }
-                                    />
-                                </div>
-                                <div className="mb-2 col-md-6">
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        placeholder={translate("Enter Product Name")}
-                                        value={searchQuery}
-                                        onChange={(e) =>
-                                            setSearchQuery(e.target.value)
-                                        }
-                                    />
-                                </div>
-                            </div>
-                            <div className="row products-card-container">
-                                {products.length > 0 &&
-                                    products.map((product, index) => (
-                                        <div
-                                            onClick={() =>
-                                                addProductToCart(product.id)
-                                            }
-                                            className="col-6 col-md-4 col-lg-3 mb-3"
-                                            key={index}
-                                            style={{ cursor: "pointer" }}
-                                        >
-                                            <div className="text-center">
-                                                <img
-                                                    src={`${fullDomainWithPort}/storage/${product.image}`}
-                                                    alt={product.name}
-                                                    className="mr-2 img-thumb"
-                                                    onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = `${fullDomainWithPort}/assets/images/no-image.png`;
-                                                    }}
-                                                    width={120}
-                                                    height={100}
-                                                />
-                                                <div className="product-details">
-                                                    <p className="mb-0 text-bold product-name">
-                                                        {product.name} (
-                                                        {product.quantity})
-                                                    </p>
-                                                    <p>
-                {translate("Price:")}{" "}
-                                                        {
-                                                            product?.discounted_price
-                                                        }
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                            </div>
-                            {loading && (
-                                <div className="loading-more">
-                                {translate("Loading more...")}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+        <div className="qpos-pos-grid">
+            <nav className="qpos-workspace-tabs" role="tablist" aria-label={translate('POS')} onKeyDown={event => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const next = event.key === 'Home' ? 'catalogue' : event.key === 'End' ? 'checkout' : activePanel === 'catalogue' ? 'checkout' : 'catalogue';
+                setActivePanel(next);
+                document.getElementById('pos-tab-' + next)?.focus();
+            }}>
+                <button id="pos-tab-catalogue" type="button" role="tab" aria-selected={activePanel === 'catalogue'} aria-controls="pos-panel-catalogue" tabIndex={activePanel === 'catalogue' ? 0 : -1} onClick={() => setActivePanel('catalogue')}><Package size={18} aria-hidden="true" />{translate('Products')}</button>
+                <button id="pos-tab-checkout" type="button" role="tab" aria-selected={activePanel === 'checkout'} aria-controls="pos-panel-checkout" tabIndex={activePanel === 'checkout' ? 0 : -1} onClick={() => setActivePanel('checkout')}><ShoppingCart size={18} aria-hidden="true" />{translate('Cart')} <span className="qpos-badge qpos-badge-info">{carts.length}</span></button>
+            </nav>
+            <section id="pos-panel-catalogue" role="tabpanel" className={'qpos-card qpos-catalogue-panel ' + (activePanel === 'catalogue' ? 'is-active' : '')} aria-labelledby="pos-tab-catalogue">
+                <header className="qpos-workspace-heading"><div><span className="qpos-eyebrow">{translate("POS")}</span><h2 id="qpos-catalogue-title">{translate("Product catalogue")}</h2></div><Package size={24} aria-hidden="true" /></header>
+                <div className="qpos-search-grid">
+                    <Field label={translate("Enter Product Barcode")}><span className="qpos-input-icon"><Barcode size={18} aria-hidden="true" /><input className="qpos-control" type="text" value={searchBarcode} onChange={e => setSearchBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && searchBarcode.trim()) { e.preventDefault(); getProducts('',1,searchBarcode.trim()); } }} autoFocus={window.matchMedia('(pointer: fine)').matches} /></span></Field>
+                    <Field label={translate("Search products")}><span className="qpos-input-icon"><Search size={18} aria-hidden="true" /><input className="qpos-control" type="search" placeholder={translate("Enter Product Name")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></span></Field>
                 </div>
-            </div>
-            <Toaster position="top-right" richColors closeButton theme={theme} />
-        </>
+                <div className="qpos-products-grid" aria-busy={loading}>
+                    {products.map(product => <button type="button" className="qpos-product" key={product.id} onClick={() => addProductToCart(product.id)}>
+                        <img src={window.qposStorageUrl + '/' + product.image} alt="" loading="lazy" width="160" height="128" onError={e => { e.target.onerror=null; e.target.src=window.qposFallbackImage; }} />
+                        <span className="qpos-product-name">{product.name}</span>
+                        <span className="qpos-product-stock">{translate("Stock")}: {product.quantity}</span>
+                        <strong>{product.discounted_price}</strong>
+                    </button>)}
+                </div>
+                {loading ? <p className="qpos-workspace-status" role="status">{translate("Loading more...")}</p> : !products.length && <EmptyState title={translate("No products found")} description={translate("Search products")} />}
+                {currentPage < totalPages && <div className="qpos-workspace-footer"><button type="button" className="qpos-button qpos-button-md qpos-button-secondary" disabled={loading} onClick={() => getProducts(searchQuery, currentPage+1)}>{translate("Load more products")}</button></div>}
+            </section>
+            <section id="pos-panel-checkout" role="tabpanel" className={'qpos-card qpos-checkout-panel ' + (activePanel === 'checkout' ? 'is-active' : '')} aria-labelledby="pos-tab-checkout">
+                <header className="qpos-workspace-heading"><div><span className="qpos-eyebrow">{translate("Sale")}</span><h2 id="qpos-summary-title">{translate("Order summary")}</h2></div><ShoppingCart size={24} aria-hidden="true" /></header>
+                <div className="qpos-workspace-body"><label className="qpos-field-label" htmlFor="pos-customer">{translate("Customer")}</label><CustomerSelect setCustomerId={setCustomerId} /></div>
+                <Cart carts={carts} setCartUpdated={setCartUpdated} cartUpdated={cartUpdated} />
+                <div className="qpos-totals">
+                    <div><span>{translate("Sub Total:")}</span><strong>{total}</strong></div>
+                    <label><span>{translate("Discount:")}</span><input className="qpos-control" type="number" min="0" disabled={total<=0} value={orderDiscount} onChange={e => { const value=e.target.value; if(parseFloat(value)>total || parseFloat(value)<0) return; setOrderDiscount(value); }} /></label>
+                    <label className="qpos-check-row"><span>{translate("Apply Fractional Discount:")}</span><input type="checkbox" disabled={total<=0} onChange={e => setOrderDiscount(e.target.checked ? (total % 1).toFixed(2) : 0)} /></label>
+                    <div className="qpos-total-highlight"><span>{translate("Total:")}</span><strong>{updateTotal}</strong></div>
+                    <label><span>{translate("Paid:")}</span><input className="qpos-control" type="number" min="0" disabled={total<=0} value={paid} onChange={e => { if(parseFloat(e.target.value)<0) return; setPaid(e.target.value); }} /></label>
+                    <div><span>{translate("Due")}</span><strong>{due}</strong></div>
+                    {parseFloat(change)>0 && <div className="qpos-success"><span>{translate("Change:")}</span><strong>{change}</strong></div>}
+                </div>
+                <div className="qpos-checkout-actions"><button type="button" className="qpos-button qpos-button-md qpos-button-danger" disabled={total<=0} onClick={cartEmpty}><Trash2 size={18} aria-hidden="true" />{translate("Clear Cart")}</button><button type="button" className="qpos-button qpos-button-lg qpos-button-primary" disabled={total<=0} onClick={orderCreate}><Check size={20} aria-hidden="true" />{translate("Checkout")}</button></div>
+            </section>
+            <WorkspaceToaster />
+        </div>
     );
 }

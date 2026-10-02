@@ -15,7 +15,7 @@
             </x-backend.card>
 
             <x-backend.card :title="__('Product')" :padded="false">
-                <div class="overflow-x-auto p-4 sm:p-6">
+                <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
                     <table class="w-full border-collapse text-sm">
                         <thead>
                             <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">

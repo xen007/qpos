@@ -24,9 +24,16 @@
         );
 
     const buttonTone =
-        "flex h-9 w-9 items-center justify-center rounded-lg border border-qpos-line text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink";
+        "qpos-icon-button flex h-9 w-9 items-center justify-center";
 
     const disabledTone = "pointer-events-none opacity-50";
+
+    const icon = (name) => {
+        const aliases = window.qposIconAliases ?? {};
+        const resolved = String(name).split(' ').map(part => aliases[part]).find(Boolean) ?? 'circle-help';
+        const url = `${window.qposIconSprite ?? ''}#${resolved}`;
+        return `<svg class="qpos-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="${escapeHtml(url)}"></use></svg>`;
+    };
 
     /**
      * Boutons d'action d'une ligne.
@@ -41,13 +48,14 @@
         const rendered = items
             .map((item) => {
                 const label = escapeHtml(item.label);
-                const icon = `<i class="${escapeHtml(item.icon)}" aria-hidden="true"></i>`;
-                const tone = `${buttonTone} ${item.disabled ? disabledTone : ""}`;
+                const iconMarkup = icon(item.icon);
+                const destructive = /fa-trash|fa-times|fa-ban/.test(item.icon ?? "");
+                const tone = `${buttonTone} ${destructive ? "qpos-icon-button-danger" : ""} ${item.disabled ? disabledTone : ""}`;
                 const disabledLink = item.disabled ? ' aria-disabled="true" tabindex="-1"' : "";
 
                 if (item.type === "form") {
                     const confirm = item.confirm && !item.disabled
-                        ? ` onsubmit="return confirm('${escapeHtml(item.confirm)}')"`
+                        ? ` onsubmit="return confirm(${escapeHtml(JSON.stringify(String(item.confirm)))})"`
                         : "";
                     const method =
                         item.method && item.method !== "POST"
@@ -59,12 +67,12 @@
                             <input type="hidden" name="_token" value="${escapeHtml(csrf)}">
                             ${method}
                             <button type="submit" class="${tone}" title="${label}"
-                                aria-label="${label}"${item.disabled ? " disabled" : ""}>${icon}</button>
+                                aria-label="${label}"${item.disabled ? " disabled" : ""}>${iconMarkup}</button>
                         </form>`;
                 }
 
                 return `<a href="${escapeHtml(item.url)}" class="${tone}" title="${label}"
-                    aria-label="${label}"${disabledLink}>${icon}</a>`;
+                    aria-label="${label}"${disabledLink}>${iconMarkup}</a>`;
             })
             .join("");
 
@@ -102,13 +110,13 @@
      */
     const statusBadge = (isActive, labels, tones = {}) => {
         const tone = isActive
-            ? (tones.active ?? "bg-qpos-brand text-white")
-            : (tones.inactive ?? "bg-qpos-page text-qpos-muted border border-qpos-line");
+            ? (tones.active ?? "qpos-badge-success")
+            : (tones.inactive ?? "qpos-badge-neutral");
 
-        return `<span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold ${tone}">${
+        return `<span class="qpos-badge ${tone}">${
             isActive ? escapeHtml(labels.active) : escapeHtml(labels.inactive)
         }</span>`;
     };
 
-    window.qposTableActions = { buttons, inline, statusBadge, escapeHtml };
+    window.qposTableActions = { buttons, inline, statusBadge, escapeHtml, icon };
 })();

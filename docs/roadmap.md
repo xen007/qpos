@@ -98,11 +98,11 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | D13 | Validée — 01/10/2026 | Fuseau métier `Africa/Douala` (E04) | Aligner le fuseau applicatif sur l'activité métier ; l'utiliser pour journées, rapports et clôtures, avec stockage cohérent des instants. Phase 1 |
 | D14 | À robustifier en Phase 1 | B1 — 419 intermittent au login/logout ; ce passage a réussi avec `localhost` cohérent | Tester `SESSION_DOMAIN=localhost`, aligner `APP_URL`/`system.site_url` (E01), puis vérifier onglets et hôtes séparés avant de décider le réglage |
 | D15 | Corrigée, à revalider navigateur | B2 — agrégation dashboard, coût par vente et liste inventaire | Phase 0 ; SQL agrégé, `withSum`, pagination serveur et unité préchargée |
-| D16 | À corriger | Résidus visuels dans sidebar/header ; erreur console `copyright.js` sur élément absent pendant les parcours testés | Phase 1, shell et scripts partagés |
-| D17 | À corriger | Couleurs du thème nulles/non renseignées | Phase 1, clair/sombre et paramètres de thème |
-| D18 | À corriger | Boutons de retour manquants/incohérents | Phase 1, navigation et composants |
+| D16 | Implémentée — à revalider par le propriétaire | Résidus visuels dans sidebar/header ; erreur console `copyright.js` sur élément absent pendant les parcours testés | Phase 1, shell et scripts partagés |
+| D17 | Implémentée — à revalider par le propriétaire | Couleurs du thème nulles/non renseignées | Phase 1, clair/sombre et paramètres de thème |
+| D18 | Composant et retours CRUD implémentés — à revalider | Boutons de retour manquants/incohérents | Phase 1, navigation et composants |
 | D19 | À corriger | Texte anglais restant au pied de facture | Phase 1, traductions et impression |
-| D20 | À corriger | Finitions UI/UX et responsive | Phase 1, composants et parcours |
+| D20 | Socle commun implémenté — validation visuelle attendue | Finitions UI/UX et responsive | Phase 1, composants et parcours |
 | D21 | À décider | La marque doit-elle être obligatoire à la création produit ? | Phase 2, règle catalogue et données historiques |
 | D22 | À décider | Contrat des prix de vente et d'achat séparés par produit/conditionnement | Phase 2, catalogue et consommation achats/ventes |
 | D23 | À décider | Rôle et distinction métier entre marque et fournisseur | Phase 2–3, catalogue et approvisionnement |
@@ -366,7 +366,7 @@ Enveloppe indicative de 12–16 semaines à réviser après phase 1 selon dispon
 
 ## 11. Journal de reprise
 
-**Point de reprise actuel — 01/10/2026 :** sous-lot 4, Lot A, commit explicitement délégué à Codex par le propriétaire. Fondations Soft Modern, shell, trois palettes globales et quatre écrans d’authentification + 404 préparés ; configuration actuelle Indigo conservée dans le lot. Accueil direct sur login maintenu. Build Vite, syntaxe PHP/JS, compilation des dix vues et contrôles HTTP publics réussis ; aucun test automatisé ajouté/exécuté. Le contrôle visuel final complet et la soumission des paramètres n’ont pas été vérifiés par Codex (navigateur intégré en expiration). Retour du propriétaire : la beauté et la vivacité ne sont pas encore au rendez-vous ; ce commit constitue une étape intermédiaire, pas une validation esthétique définitive. Maquettes HTML temporaires supprimées avant commit ; diagnostic de lenteur conservé, optimisations serveur/SQL/authentification non appliquées. Prochaine action : présenter une proposition visuelle plus aboutie pour les composants communs, attendre validation avant modification. Aucun sous-lot suivant commencé.
+**Point de reprise actuel — 02/10/2026 :** Phase 1, sous-lot 4, refonte UI transversale des ecrans existants implementée avec une revue finale unique autorisée par le propriétaire. Un seul shell Tailwind, y compris POS/achat React ; Inter, composants, espacements, contrôles mobiles, palettes et icones Lucide communs. Les sept étapes visuelles ne remplacent pas les phases métier 2–8. Bilan : [refonte-ui-complete.md](refonte-ui-complete.md), contrats : [ui-composants.md](ui-composants.md). Compilation de 89 vues et rendu des composants réussis ; builds Vite réussis ; HTTP CSS/cache, récupération et 404 contrôlés. La revue navigateur a été autorisée, mais inspection/capture expirent : rendu visuel authentifié non validé. Un GET login a dépassé 30 secondes ; diagnostic PHP/environnement encore à traiter. Aucune écriture métier ou migration, aucun commit de cette finition. Prochaine action : revue globale du propriétaire et commit du groupe, puis reprise des travaux métier et défauts restants selon la roadmap.
 
 | Date | État / action | Prochaine action |
 |---|---|---|
@@ -405,3 +405,14 @@ La migration est déjà commitée sur `main`. Ne pas répéter une fusion ni sup
 Avant commit : examiner le diff, ajouter seulement les fichiers du lot et vérifier l'index. Les noms de fichiers et messages sont adaptés au changement réel. Aucun `git add .`, reset ou écrasement de travail existant pour préparer un lot.
 
 La préparation documentaire a reçu une délégation de commit. Le propriétaire a autorisé la Phase 0 ; ses étapes 1–6 sont exécutées et documentées. Aucun commit ni push de cette phase n'a été effectué.
+
+### Complément de finition — chargement CSS et navigation
+
+À la suite du retour sur la lenteur perçue et les sidebars variables, le CSS des pages publiques a été isolé dans `resources/css/auth.css` (sources Tailwind limitées aux vues publiques) ; le login GET charge cette entrée et non le CSS back-office. Build mesuré : 41,08 Ko brut / 8,06 Ko gzip, contre 54,58 Ko / 10,37 Ko pour la feuille back-office. Un cache immutable d'un an ne s'applique qu'aux assets Vite hachés de `public/build`; confirmé en réponse HEAD HTTP. Les assets hachés étant versionnés dans leur nom, chaque nouveau build reçoit une URL différente. Aucun changement de base ou de configuration Apache globale.
+
+Les deux pages encore sous AdminLTE (POS et création d'achat) gardent leur layout fonctionnel ; leur navigation a été rapprochée du shell Tailwind par les tokens de palette et l'espacement/hauteur des entrées. Compression HTTP non activée (mod_deflate absent) et coût variable du HTML Laravel/PHP restent hors de cette correction. Build Vite, GET login 200 avec auth.css seule, réponse CSS 200/cache confirmé, et `git diff --check` réussis. L'inspection visuelle de l'utilisateur reste le contrôle final ; aucun commit de cette finition n'est fait.
+
+
+**Mise à jour runtime — 02/10/2026 :** `C:\xampp\php\php.ini` modifié pour charger OPcache, activer `opcache.enable=1` et neutraliser le JIT (`opcache.jit=off`), avec sauvegarde `C:\xampp\php\php.ini.codex-backup-20261002`. Apache confirme le cache actif ; login mesuré entre 1,5 et 2,8 s. `.env` local : `APP_DEBUG=false`. Le disque système est un HDD SATA WDC ; limite matérielle constatée pour les accès froids. Defender est actif, ses exclusions existantes sont illisibles sans privilèges administrateur. Exclusions candidates, non appliquées : `vendor/`, `bootstrap/cache`, `storage/framework/views` dans le projet QPOS, sans exclusion large de `C:\xampp\`.
+
+**État UI — 02/10/2026 :** le sélecteur de palette est présent sous Paramètres > Style, protégé par `style_settings`, et enregistre une palette globale dans `config/system.php`. Valeur actuelle : Indigo. Les maquettes restent en test par le propriétaire. Les vues login, oubli, reset/nouveau mot de passe et 404 utilisent le layout public Soft Modern ; reset/nouveau mot de passe conservent leurs redirections actuelles sans session. Le sélecteur FR/EN non sélectionné utilise la couleur de marque en mode clair, côté public et shell Tailwind. Compilation Blade, build Vite, GET login/oubli à 200, redirections reset/nouveau à 302 et 404 à 404 vérifiés. L’inspection visuelle automatisée clair/sombre est indisponible dans cette session ; revue du propriétaire à faire. Aucun commit de ce groupe n’a été créé.

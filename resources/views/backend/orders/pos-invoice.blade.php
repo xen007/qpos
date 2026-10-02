@@ -6,7 +6,7 @@
     {{-- Ticket de caisse : apparence volontairement claire (noir sur blanc) et
          monospace, independante du theme clair/sombre, pour rester lisible sur
          papier. La largeur vient du reglage receiptMaxwidth. --}}
-    <div id="printable-section"
+    <div id="printable-section" data-qpos-invoice
         class="mx-auto border border-dotted border-black bg-white p-2 font-mono text-xs text-black"
         style="max-width: {{ $maxWidth }};">
         <div class="text-center">
@@ -116,8 +116,8 @@
 
     <div class="mt-3 pb-3 text-center print:hidden">
         <button type="button" onclick="window.print()"
-            class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-            <i class="fas fa-print" aria-hidden="true"></i>
+            class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            <x-backend.icon name="fas fa-print" />
             {{ __('Print') }}
         </button>
     </div>

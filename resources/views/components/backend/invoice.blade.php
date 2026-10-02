@@ -10,7 +10,7 @@
 --}}
 @props(['title', 'order'])
 
-<div class="mx-auto w-full max-w-4xl space-y-6 bg-qpos-surface p-6 text-qpos-ink">
+<div data-qpos-invoice class="mx-auto w-full max-w-4xl space-y-6 bg-qpos-surface p-6 text-qpos-ink">
     {{-- En-tete --}}
     <header class="flex flex-wrap items-start justify-between gap-4">
         <h1 class="flex items-center gap-2 text-xl font-semibold">

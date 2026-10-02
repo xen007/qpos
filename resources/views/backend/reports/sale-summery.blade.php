@@ -9,17 +9,17 @@
         <div>
             <label for="start_date" class="block text-xs font-medium text-qpos-muted">{{ __('Date range from') }}</label>
             <input type="date" id="start_date" name="start_date" value="{{ $start_date_input }}"
-                class="mt-1 rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink">
+                class="qpos-control mt-1 rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink">
         </div>
 
         <div>
             <label for="end_date" class="block text-xs font-medium text-qpos-muted">{{ __('Date range to') }}</label>
             <input type="date" id="end_date" name="end_date" value="{{ $end_date_input }}"
-                class="mt-1 rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink">
+                class="qpos-control mt-1 rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink">
         </div>
 
         <button type="submit"
-            class="rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
+            class="qpos-button qpos-button-md qpos-button-primary rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
             {{ __('Apply') }}
         </button>
 
@@ -66,8 +66,8 @@
 
         <div class="mt-6 text-right">
             <button type="button" onclick="window.print()"
-                class="inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 print:hidden">
-                <i class="fas fa-print" aria-hidden="true"></i>
+                class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 print:hidden">
+                <x-backend.icon name="fas fa-print" />
                 {{ __('Print') }}
             </button>
         </div>
