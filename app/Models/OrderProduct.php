@@ -14,6 +14,11 @@ class OrderProduct extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function stockAllocations(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(OrderStockAllocation::class);
+    }
     protected $appends = ['discounted_price'];
     public function getDiscountedPriceAttribute()
     {

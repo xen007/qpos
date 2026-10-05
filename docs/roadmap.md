@@ -110,6 +110,7 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | D40 | À corriger | Ancienne D24 de Phase 0 : sélecteurs du formulaire d'achat ; Tempus Dominus 4 signale Moment.js absent sur la page testée | Phase 3, fournisseur/produits/unités et dépendances front |
 | D25 | Validée — 02/10/2026 | Promotions : priorité décroissante, remise la plus avantageuse puis ID croissant ; une promotion par ligne. Prix/coûts et calculs en DECIMAL(20,6), remises HALF_UP à six décimales | Phase 2 ; arrondi FINAL des paiements/factures selon devise en Phase 4 (FCFA : zéro décimale) |
 | D41 | À corriger | Ancienne D25 de Phase 0 : quantité initiale à zéro dans le formulaire d'achat | Phase 3 ; imposer une quantité positive avant enregistrement |
+| D42 | Validée — 05/10/2026 | Interface multi-boutique détectée dynamiquement selon le nombre de boutiques actives de l'entreprise | Une boutique active : interface simple, sélecteur masqué ; deux boutiques actives ou plus : interface complète avec sélecteur. Ne confère aucun droit supplémentaire et ne remplace pas le contrôle d'accès serveur. Phase 3 |
 | D26 | À clarifier | Libellé et sens du prix d'achat dans les parcours produit/achat | Phase 3 ; distinguer coût de réception et référence produit |
 | D27 | Clarifié | Menu et bouton de liste mènent au même formulaire ; ce n'est pas un doublon métier | Phase 3 ; deux raccourcis conservés au besoin UX |
 | D28 | À corriger | Lecture du scanner USB/code-barres au POS | Phase 4, saisie et correspondance produit/conditionnement |
@@ -243,7 +244,7 @@ Conversion : structure, données de référence, conversion contrôlée, rapproc
 
 Critère : catalogue exploitable, accès contrôlés, conversions expliquées, données préservées. Les capacités nouvelles sont exposées quand les consommateurs concernés les prennent en charge.
 
-**État au 05/10/2026 :** sous-lots 2.1–2.5 implémentés ; conversion sur copie, rejeu sans doublons et application locale réussis, historique préservé. Six migrations appliquées, application rouverte. 51 références, 51 codes-barres et 50 promotions ; 51 règles fractionnaires historiques restent inconnues à configurer, aucune affectation utilisateur automatique. Vérifications techniques et exemples manuels sur copie réalisés ; validation visuelle/parcours du propriétaire et commit attendus. Bilan détaillé et inventaire : [phase2-report.md](phase2-report.md). Aucun travail Phase 3 lancé.
+**État au 05/10/2026 :** sous-lots 2.1–2.5 implémentés ; conversion sur copie, rejeu sans doublons et application locale réussis, historique préservé. Six migrations appliquées, application rouverte. 51 références, 51 codes-barres et 50 promotions ; aucune règle `allows_fractional` courante ne manque, tandis que les 51 anomalies historiques restent conservées comme audit. Aucune affectation utilisateur automatique. Phase 2 validée et commitée par le propriétaire en `9862796`. Bilan détaillé et inventaire : [phase2-report.md](phase2-report.md). Aucun travail Phase 3 lancé avant la présente reprise.
 
 ### Phase 3 — Approvisionnement et stock
 

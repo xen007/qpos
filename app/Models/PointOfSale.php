@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PointOfSale extends Model
 {
@@ -25,6 +26,21 @@ class PointOfSale extends Model
         return $this->belongsToMany(User::class)
             ->withPivot('is_active')
             ->withTimestamps();
+    }
+
+    public function productStocks(): HasMany
+    {
+        return $this->hasMany(ProductStock::class);
+    }
+
+    public function batchStocks(): HasMany
+    {
+        return $this->hasMany(BatchStock::class);
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
     }
 
     public function scopeActive(Builder $query): Builder

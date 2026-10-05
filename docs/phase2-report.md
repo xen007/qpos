@@ -1,8 +1,8 @@
 # QPOS — Bilan Phase 2
 
-Date : 05/10/2026. Implémentation et conversion locale exécutées ; validation finale du propriétaire attendue. Aucun commit ni push effectué par l’assistant.
+Date : 05/10/2026. Implémentation, conversion locale et validation Phase 2 du propriétaire terminées. Commit `9862796` créé par le propriétaire ; aucun commit ni push effectué par l’assistant.
 
-## Mise à jour finale — commit `fc2ee98`
+## Mise à jour finale — commit `9862796`
 
 Cette mise à jour remplace les états historiques contradictoires ci-dessous concernant le commit, les règles fractionnaires et les unités de base « Dozen » :
 
@@ -13,9 +13,9 @@ Cette mise à jour remplace les états historiques contradictoires ci-dessous co
 ## 1. État Git et périmètre
 
 - Répertoire : C:/xampp/htdocs/qpos ; branche main.
-- HEAD et référence locale origin/main : `fc2ee98` ; branche main synchronisée selon le suivi local. Aucun fetch effectué pendant cette reprise.
-- Point de comparaison de la Phase 2 : fin de Phase 1, 50edb2d. Le commit `fc2ee98` inclut la correction finale des règles fractionnaires et des 11 unités « Douzaine ».
-- Le commit de Phase 2 appartient au propriétaire. Les corrections du présent audit restent non commitées.
+- HEAD et référence locale origin/main : `9862796` ; branche main synchronisée selon le suivi local. Aucun fetch effectué pendant cette reprise.
+- Point de comparaison de la Phase 2 : fin de Phase 1, 50edb2d. Le commit `9862796` inclut la correction finale des règles fractionnaires et des 11 unités « Douzaine ».
+- Le commit de Phase 2 et ses corrections finales appartiennent au propriétaire ; elles sont incluses dans `9862796`.
 - Les sauvegardes et rapports privés ne sont pas dans Git. Les inventaires complets figurent à la fin du document.
 
 ## 2. Résultat par sous-lot
@@ -28,7 +28,7 @@ Cette mise à jour remplace les états historiques contradictoires ci-dessous co
 | 2.4 Tarifs et promotions | Implémenté. Prix TTC/coût de référence par conditionnement ; coût réel de réception distinct. Tarifs D24 et promotions D25 déterministes ; quatre types : pourcentage, fixe, quantité offerte, prix par lot du même conditionnement. Calculateur et paramètres appliqués exposés. |
 | 2.5 Conversion | Exécutée sur copie puis sur qpos. Sauvegarde restaurée, rejeu sans doublons, empreintes historiques inchangées. Anomalies conservées et visibles. |
 
-La validation visuelle et les parcours authentifiés complets du propriétaire restent attendus. Le moteur natif est livré comme catalogue/calculateur ; le checkout et les paiements sont Phase 4.
+Le rapport historique ne consigne pas la validation visuelle ni tous les parcours authentifiés ; le propriétaire a depuis validé la Phase 2. Le moteur natif est livré comme catalogue/calculateur ; le checkout et les paiements sont Phase 4.
 
 ## 3. Sauvegarde, répétition et application
 
@@ -53,7 +53,7 @@ Sauvegarde privée utilisée : C:/qpos-backups/phase2-20261005-b3e84b6f, droits 
 | Promotions créées | 50 | 0 | 50 |
 | Anomalies du passage | 51 | 51 | 51 |
 
-Les 51 anomalies fractional_rule_unknown reflètent l'état au moment de la conversion et restent conservées comme historique d'audit. Après la correction incluse dans `fc2ee98`, l'état courant est : 0 produit sans règle `allows_fractional`, 0 produit avec l'unité de base « Dozen ». Les 11 produits « Douzaine » utilisent l'unité de base « Piece » et un conditionnement facteur 12. Les quatre lignes de vente historiques restent conservées avec leurs snapshots inconnus : zéro `product_unit_id` renseigné rétroactivement. Aucune affectation utilisateur créée automatiquement.
+Les 51 anomalies fractional_rule_unknown reflètent l'état au moment de la conversion et restent conservées comme historique d'audit. Après la correction incluse dans `9862796`, l'état courant est : 0 produit sans règle `allows_fractional`, 0 produit avec l'unité de base « Dozen ». Les 11 produits « Douzaine » utilisent l'unité de base « Piece » et un conditionnement facteur 12. Les quatre lignes de vente historiques restent conservées avec leurs snapshots inconnus : zéro `product_unit_id` renseigné rétroactivement. Aucune affectation utilisateur créée automatiquement.
 
 Le premier essai avait échoué sur une copie précédente avec une FK vers point_of_sales. Correction : constrained('points_of_sale') explicite dans la migration des tarifs. Recherche dans les migrations : aucune autre coquille trouvée. Cette copie partielle et les anciennes sauvegardes sont conservées pour traçabilité ; elles ne constituent pas la preuve finale de conversion.
 
@@ -82,7 +82,7 @@ Non vérifié : parcours navigateur authentifié complet, upload réel d’image
 
 ## 5. Limites et décisions restantes
 
-1. Règles fractionnaires historiques résolues dans `fc2ee98` : 0 produit sans règle. Les 11 anciens produits « Douzaine » ont été corrigés comme décrit ci-dessus.
+1. Règles fractionnaires historiques résolues dans `9862796` : 0 produit sans règle. Les 11 anciens produits « Douzaine » ont été corrigés comme décrit ci-dessus.
 2. MAIN existe ; zéro affectation utilisateur. Créer les boutiques voulues et affecter explicitement leurs utilisateurs via les nouveaux écrans. La préférence seule ne donne pas accès.
 3. Stocks toujours legacy globaux : journal, lots, ouverture, soldes par boutique et raccordement des écrivains sont Phase 3. Aucune répartition arbitraire du stock faite.
 4. POS et achats historiques utilisent encore les montants DOUBLE(10,2). Les valeurs natives DECIMAL(20,6) font autorité pour le catalogue/calculateur ; copie de compatibilité à deux décimales lorsque représentable. Le checkout natif et l’arrondi final devise, FCFA zéro décimale, restent Phase 4.
