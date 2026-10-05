@@ -638,5 +638,9 @@
     "This stock movement type is not supported.": "This stock movement type is not supported.",
     "Unallocated opening stock cannot carry a batch.": "Unallocated opening stock cannot carry a batch.",
     "Use a signed decimal with at most six decimal places.": "Use a signed decimal with at most six decimal places.",
-    "A reason is required for a stock adjustment.": "A reason is required for a stock adjustment."
+    "A reason is required for a stock adjustment.": "A reason is required for a stock adjustment.",
+    "Choose an active assigned shop.": "Choose an active assigned shop.",
+    "A received or historical purchase cannot be rewritten; record a traced correction.": "A received or historical purchase cannot be rewritten; record a traced correction.",
+    "Stock quantities are managed through receipts and stock adjustments.": "Stock quantities are managed through receipts and stock adjustments.",
+    "Purchase received; expiry information is missing, so this stock is blocked.": "Purchase received; expiry information is missing, so this stock is blocked."
 }

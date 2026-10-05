@@ -41,7 +41,9 @@ class ProductController extends Controller
     {
 
         if ($request->ajax() && $request->has('draw')) {
+            $shop = $request->attributes->get('point_of_sale');
             $products = Product::query()->with('unit')->latest();
+            if ($shop) { app(\App\Services\StockAvailability::class)->attach($products, $shop->id); }
             return DataTables::of($products)
                 ->addIndexColumn()
                 // Colonnes neutres : les pages migrees composent leurs cellules
@@ -102,6 +104,8 @@ class ProductController extends Controller
 
             // Initialize the query
             $products = Product::query();
+            $shop = \App\Support\StockContext::shop($request);
+            app(\App\Services\StockAvailability::class)->attach($products,$shop->id);
 
             // Apply filters based on the search term
             $products = $products->where(function ($query) use ($request) {
@@ -258,7 +262,8 @@ class ProductController extends Controller
 
         $result = \App\Support\CatalogueCodes::transaction(function () use ($id) {
             $product = Product::whereKey($id)->lockForUpdate()->firstOrFail();
-            if (OrderProduct::where('product_id', $product->id)->exists() || PurchaseItem::where('product_id', $product->id)->exists()) {
+            if (OrderProduct::where('product_id', $product->id)->exists() || PurchaseItem::where('product_id', $product->id)->exists()
+                || $product->stockMovements()->exists() || \Illuminate\Support\Facades\DB::table('stock_opening_sources')->where('product_id',$product->id)->exists()) {
                 return ['blocked' => true];
             }
 
@@ -292,9 +297,10 @@ class ProductController extends Controller
             ]);
 
             $supplierId = Supplier::where('name', 'Own Supplier')->value('id');
+            $shopId = \App\Support\StockContext::shop($request)->id;
 
-            \App\Support\CatalogueCodes::transaction(function () use ($validated, $supplierId) {
-                Excel::import(new ProductsImport($supplierId ? (int) $supplierId : null, (int) auth()->id()), $validated['file']);
+            \App\Support\CatalogueCodes::transaction(function () use ($validated, $supplierId, $shopId) {
+                Excel::import(new ProductsImport($supplierId ? (int) $supplierId : null, (int) auth()->id(),$shopId), $validated['file']);
             });
             return redirect()->back()->with('success', __('Products imported successfully.'));
         }

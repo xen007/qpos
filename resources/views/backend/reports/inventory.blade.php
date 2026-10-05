@@ -71,7 +71,7 @@
                     [10, 25, 50, 100, "All"]
                 ],
                 ajax: {
-                    url: "{{ route('backend.admin.inventory.report') }}"
+                    url: "{{ route('backend.admin.inventory.report', ['operation_point_of_sale_id' => ($selectedPointOfSale ?? null)?->id]) }}"
                 },
                 lengthChange: true,
                 columns: [{

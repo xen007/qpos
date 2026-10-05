@@ -27,6 +27,9 @@ class SetPointOfSaleContext
                 } else {
                     $preferred = $request->session()->get('active_point_of_sale_id', $user->preferred_point_of_sale_id);
                     $selected = $choices->firstWhere('id', (int) $preferred);
+                    if (!$selected && PointOfSale::active()->count() === 1 && $choices->count() === 1) {
+                        $selected = $choices->first();
+                    }
                 }
             } elseif ($request->has($contextField)) {
                 abort(403);
@@ -39,6 +42,7 @@ class SetPointOfSaleContext
         View::share('availablePointsOfSale', $choices);
         View::share('selectedPointOfSale', $selected);
         View::share('pointOfSaleContextReady', PointOfSaleContext::ready());
+        View::share('multipleActivePointsOfSale', PointOfSaleContext::ready() && PointOfSale::active()->count() > 1);
         return $next($request);
     }
 }

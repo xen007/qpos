@@ -33,7 +33,7 @@ class UpdateProductRequest extends FormRequest
             'discount' => 'nullable|numeric|min:0|max:99999999999999.999999|required_with:discount_type',
             'discount_type' => ['nullable', 'required_with:discount', Rule::in(['fixed', 'percentage'])],
             'purchase_price' => 'nullable|numeric|min:0|max:99999999999999.999999',
-            'quantity' => 'nullable|integer|min:0|max:2147483647',
+            'quantity' => 'prohibited',
             'expire_date' => 'nullable|date',
             'status' => 'nullable|boolean',
         ];

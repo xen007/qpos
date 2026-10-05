@@ -65,6 +65,7 @@
         window.qposStorageUrl = @json(asset('storage'));
         window.qposFallbackImage = @json(asset('assets/images/no-image.png'));
         window.qposPurchaseIndex = @json(route('backend.admin.purchase.index'));
+        window.qposOperationShopId = @json(($selectedPointOfSale ?? null)?->id);
     </script>
 
     @stack('style')

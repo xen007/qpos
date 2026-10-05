@@ -72,6 +72,8 @@ class ReportController extends Controller
 
         if ($request->ajax()) {
             $products = Product::query()->with('unit')->latest()->active();
+            $shop = \App\Support\StockContext::shop($request);
+            app(\App\Services\StockAvailability::class)->attach($products,$shop->id);
             return DataTables::of($products)
                 ->addIndexColumn()
                 // Colonnes neutres : la page migree compose le prix (avec le prix

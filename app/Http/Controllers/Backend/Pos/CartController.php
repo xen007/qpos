@@ -8,6 +8,10 @@ use App\Models\PosCart;
 use App\Models\Product;
 use App\Models\ProductBarcode;
 use App\Models\User;
+use App\Services\StockService;
+use App\Services\StockAvailability;
+use App\Support\StockContext;
+use Brick\Math\BigDecimal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -19,6 +23,7 @@ class CartController extends Controller
         $this->authorizePos();
         if ($request->wantsJson()) {
             $cartItems = PosCart::where('user_id', auth()->id())
+                ->where('point_of_sale_id', StockContext::shop($request)->id)
                 ->with('product')
                 ->latest('created_at')
                 ->get()
@@ -41,7 +46,8 @@ class CartController extends Controller
     {
         $this->authorizePos();
 
-        $products = Product::query()->active()->stocked();
+        $products = app(StockAvailability::class)->attach(Product::query()->active(), StockContext::shop($request)->id)
+            ->having('stock_available', '>=', 1);
         // Search by name if provided
         $products->when($request->search, function ($query, $search) {
             $query->where('name', 'LIKE', "%{$search}%");
@@ -88,11 +94,13 @@ class CartController extends Controller
 
         $product_id = $request->id;
 
-        return DB::transaction(function () use ($product_id) {
+        $shopId = StockContext::shop($request)->id;
+        return DB::transaction(function () use ($product_id, $shopId) {
             $userId = auth()->id();
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
             $product = Product::whereKey($product_id)->lockForUpdate()->firstOrFail();
             $cartItem = PosCart::where('user_id', $userId)
+                ->where('point_of_sale_id', $shopId)
                 ->where('product_id', $product_id)
                 ->lockForUpdate()
                 ->first();
@@ -100,12 +108,13 @@ class CartController extends Controller
             if (!$product->status) {
                 return response()->json(['message' => __('Product is not available')], 400);
             }
-            if ($product->quantity <= 0) {
+            $available = BigDecimal::of(app(StockService::class)->available($shopId, (int)$product_id));
+            if ($available->isLessThan('1')) {
                 return response()->json(['message' => __('Insufficient stock available')], 400);
             }
 
             if ($cartItem) {
-                if ($cartItem->quantity >= $product->quantity) {
+                if ($available->isLessThan((string)($cartItem->quantity + 1))) {
                     return response()->json(['message' => __('Cannot add more, stock limit reached')], 400);
                 }
                 $cartItem->increment('quantity');
@@ -113,6 +122,7 @@ class CartController extends Controller
             }
 
             PosCart::create([
+                'point_of_sale_id' => $shopId,
                 'user_id' => $userId,
                 'product_id' => $product_id,
                 'quantity' => 1,
@@ -129,13 +139,15 @@ class CartController extends Controller
         return DB::transaction(function () use ($request) {
             $userId = auth()->id();
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
-            $cartSnapshot = PosCart::where('user_id', $userId)->whereKey($request->id)->firstOrFail();
+            $shopId = StockContext::shop($request)->id;
+            $cartSnapshot = PosCart::where('user_id', $userId)->where('point_of_sale_id',$shopId)->whereKey($request->id)->firstOrFail();
             $product = Product::whereKey($cartSnapshot->product_id)->lockForUpdate()->firstOrFail();
-            $cart = PosCart::where('user_id', $userId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
-            if ($product->quantity <= 0) {
+            $cart = PosCart::where('user_id', $userId)->where('point_of_sale_id',$shopId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            $available = BigDecimal::of(app(StockService::class)->available($shopId,(int)$product->id));
+            if (!$product->status || $available->isLessThan('1')) {
                 return response()->json(['message' => __('Insufficient stock available')], 400);
             }
-            if ($cart->quantity >= $product->quantity) {
+            if ($available->isLessThan((string)($cart->quantity + 1))) {
                 return response()->json(['message' => __('Cannot add more, stock limit reached')], 400);
             }
             $cart->increment('quantity');
@@ -149,7 +161,7 @@ class CartController extends Controller
         return DB::transaction(function () use ($request) {
             $userId = auth()->id();
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
-            $cart = PosCart::where('user_id', $userId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            $cart = PosCart::where('user_id', $userId)->where('point_of_sale_id', StockContext::shop($request)->id)->whereKey($request->id)->lockForUpdate()->firstOrFail();
             if ($cart->quantity <= 1) {
                 return response()->json(['message' => __('Quantity cannot be less than 1.')], 400);
             }
@@ -165,7 +177,7 @@ class CartController extends Controller
         return DB::transaction(function () use ($request) {
             $userId = auth()->id();
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
-            $cart = PosCart::where('user_id', $userId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            $cart = PosCart::where('user_id', $userId)->where('point_of_sale_id', StockContext::shop($request)->id)->whereKey($request->id)->lockForUpdate()->firstOrFail();
             $cart->delete();
             return response()->json(['message' => __('Item successfully deleted')], 200);
         });
@@ -176,7 +188,7 @@ class CartController extends Controller
         $deletedCount = DB::transaction(function () {
             $userId = auth()->id();
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
-            return PosCart::where('user_id', $userId)->delete();
+            return PosCart::where('user_id', $userId)->where('point_of_sale_id',StockContext::shop(request())->id)->delete();
         });
 
         if ($deletedCount > 0) {
@@ -188,6 +200,7 @@ class CartController extends Controller
 
     private function authorizePos(): void
     {
+        StockContext::shop(request());
     }
 
     private function validateCartRequest(Request $request): void
@@ -196,7 +209,8 @@ class CartController extends Controller
             'id' => [
                 'required',
                 'integer',
-                Rule::exists('pos_carts', 'id')->where('user_id', auth()->id()),
+                Rule::exists('pos_carts', 'id')->where('user_id', auth()->id())
+                    ->where('point_of_sale_id',StockContext::shop($request)->id),
             ],
         ]);
     }

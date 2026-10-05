@@ -35,7 +35,7 @@
     <script type="application/json" id="qpos-products-table">
         {!! json_encode(
             [
-                'ajax' => route('backend.admin.products.index'),
+                'ajax' => route('backend.admin.products.index', ['operation_point_of_sale_id' => ($selectedPointOfSale ?? null)?->id]),
                 'csrf' => csrf_token(),
                 'fallbackImage' => asset('assets/images/no-image.png'),
                 'permissions' => [

@@ -18,7 +18,7 @@ class StockMovement extends Model
     protected $casts = [
         'quantity_delta' => 'decimal:6',
         'unit_cost' => 'decimal:6',
-        'occurred_at' => 'datetime',
+        'occurred_at' => \App\Casts\StockDateTime::class,
     ];
 
     protected static function booted(): void

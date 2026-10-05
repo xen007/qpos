@@ -15,7 +15,7 @@ class ProductBatch extends Model
 
     protected $casts = [
         'expires_on' => 'date',
-        'received_at' => 'datetime',
+        'received_at' => \App\Casts\StockDateTime::class,
         'unit_cost' => 'decimal:6',
     ];
 

@@ -638,5 +638,9 @@
     "This stock movement type is not supported.": "Ce type de mouvement de stock n’est pas autorisé.",
     "Unallocated opening stock cannot carry a batch.": "Un stock initial non attribué ne peut pas être rattaché à un lot.",
     "Use a signed decimal with at most six decimal places.": "Saisissez un nombre décimal signé avec six décimales au maximum.",
-    "A reason is required for a stock adjustment.": "Un motif est requis pour corriger le stock."
+    "A reason is required for a stock adjustment.": "Un motif est requis pour corriger le stock.",
+    "Choose an active assigned shop.": "Choisissez une boutique active affectée à votre compte.",
+    "A received or historical purchase cannot be rewritten; record a traced correction.": "Un achat réceptionné ou historique ne peut pas être réécrit ; enregistrez une correction traçable.",
+    "Stock quantities are managed through receipts and stock adjustments.": "Les quantités de stock se gèrent par les réceptions et les ajustements de stock.",
+    "Purchase received; expiry information is missing, so this stock is blocked.": "Achat réceptionné : les informations de péremption manquent, ce stock est donc bloqué."
 }

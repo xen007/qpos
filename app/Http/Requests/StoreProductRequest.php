@@ -24,7 +24,7 @@ class StoreProductRequest extends FormRequest
             'price' => 'required|numeric|min:0|max:99999999999999.999999',
             'discount' => 'nullable|numeric|min:0|max:99999999999999.999999|required_with:discount_type',
             'discount_type' => ['nullable', 'required_with:discount', Rule::in(['fixed', 'percentage'])],
-            'quantity' => 'nullable|integer|min:0|max:2147483647',
+            'quantity' => 'prohibited',
             'expire_date' => 'nullable|date',
             'status' => 'nullable|boolean',
         ];

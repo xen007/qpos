@@ -10,6 +10,7 @@ class Purchase extends Model
     use HasFactory;
 
     protected $fillable = [
+        'point_of_sale_id',
         'supplier_id',
         'user_id',
         'sub_total',

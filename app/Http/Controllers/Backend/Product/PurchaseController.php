@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
+use App\Support\StockContext;
+use App\Services\ReceiptStockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +20,7 @@ class PurchaseController extends Controller
     {
 
         if ($request->ajax()) {
-            $purchases = Purchase::query()->with('supplier')->latest();
+            $purchases = \App\Support\StockDocumentAccess::query(Purchase::query(),$request)->with('supplier')->latest();
             return DataTables::of($purchases)
                 ->addIndexColumn()
                 // Colonnes neutres : les pages migrees composent leurs actions
@@ -56,6 +58,10 @@ class PurchaseController extends Controller
     {
         $purchaseId = $request->input('purchase_id');
         abort_if(!auth()->user()->can($purchaseId ? 'purchase_update' : 'purchase_create'), 403);
+        $shopId = StockContext::shop($request)->id;
+        if ($purchaseId) {
+            throw ValidationException::withMessages(['purchase_id'=>__('A received or historical purchase cannot be rewritten; record a traced correction.')]);
+        }
 
         $validated = $request->validate([
             'purchase_id' => ['nullable', 'integer', 'min:1'],
@@ -67,6 +73,8 @@ class PurchaseController extends Controller
             'products.*.purchase_price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'products.*.price' => ['required', 'numeric', 'min:0', 'max:99999999.99'],
             'products.*.qty' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'products.*.expiry_status' => ['nullable', 'in:dated,not_applicable,unknown'],
+            'products.*.expires_on' => ['nullable','date_format:Y-m-d'],
             'totals' => ['nullable', 'array'],
             'totals.tax' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'totals.discount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
@@ -85,19 +93,14 @@ class PurchaseController extends Controller
         }
         $grandTotal = round($subTotal + $tax - $discount + $shipping, 2);
 
-        $purchase = DB::transaction(function () use ($validated, $purchaseId, $tax, $discount, $shipping, $subTotal, $grandTotal) {
-            $purchase = $purchaseId
-                ? Purchase::whereKey($purchaseId)->lockForUpdate()->firstOrFail()
-                : new Purchase();
-
-            $items = $purchaseId ? $purchase->items()->lockForUpdate()->get() : collect();
-            $submittedItemIds = collect($validated['products'])->pluck('item_id')->filter()->map(fn ($id) => (int) $id);
-            $ownedItemIds = $items->pluck('id')->map(fn ($id) => (int) $id);
-            if ($submittedItemIds->diff($ownedItemIds)->isNotEmpty()) {
+        $purchase = DB::transaction(function () use ($validated, $purchaseId, $tax, $discount, $shipping, $subTotal, $grandTotal, $shopId) {
+            $purchase = new Purchase();
+            if (collect($validated['products'])->pluck('item_id')->filter()->isNotEmpty()) {
                 throw ValidationException::withMessages(['products' => __('One or more purchase items are invalid.')]);
             }
 
             $purchase->fill([
+                'point_of_sale_id'=>$shopId,
                 'supplier_id' => $validated['supplierId'],
                 'user_id' => auth()->id(),
                 'sub_total' => $subTotal,
@@ -110,40 +113,32 @@ class PurchaseController extends Controller
                 'status' => 1,
             ])->save();
 
-            $productIds = collect($validated['products'])->pluck('id')->merge($items->pluck('product_id'))->unique()->sort()->values();
+            $productIds = collect($validated['products'])->pluck('id')->unique()->sort()->values();
             $lockedProducts = Product::whereIn('id', $productIds)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             if ($lockedProducts->count() !== $productIds->count()) {
                 throw ValidationException::withMessages(['products' => __('One or more products are unavailable.')]);
             }
 
-            $oldQuantities = $items->groupBy('product_id')->map(fn ($rows) => (int) $rows->sum('quantity'));
-            $newQuantities = collect($validated['products'])->groupBy('id')->map(fn ($rows) => (int) $rows->sum('qty'));
-            foreach ($productIds as $productId) {
-                $stockDelta = (int) ($newQuantities[$productId] ?? 0) - (int) ($oldQuantities[$productId] ?? 0);
-                if ($stockDelta < 0 && (int) $lockedProducts[$productId]->quantity < abs($stockDelta)) {
-                    throw ValidationException::withMessages(['products' => __('This purchase cannot be reduced because some of its stock has already been used.')]);
-                }
-                if ($stockDelta !== 0) {
-                    $lockedProducts[$productId]->increment('quantity', $stockDelta);
-                }
-            }
-            $purchase->items()->delete();
-
             foreach ($validated['products'] as $item) {
-                PurchaseItem::create([
+                $receiptItem = PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $item['id'],
                     'purchase_price' => round((float) $item['purchase_price'], 2),
                     'price' => round((float) $item['price'], 2),
                     'quantity' => (int) $item['qty'],
                 ]);
+                app(ReceiptStockService::class)->receive($receiptItem,$shopId,(int)auth()->id(),[
+                    'expiry_status'=>$item['expiry_status'] ?? 'unknown','expires_on'=>$item['expires_on'] ?? null,
+                ]);
             }
 
-            return $purchase->load('items', 'supplier');
+            return app(\App\Services\StockAvailability::class)->purchase($purchase);
         });
 
         return response()->json([
-            'message' => __('Purchase saved successfully.'),
+            'message' => collect($validated['products'])->contains(fn ($item) => ($item['expiry_status'] ?? 'unknown') === 'unknown')
+                ? __('Purchase received; expiry information is missing, so this stock is blocked.')
+                : __('Purchase saved successfully.'),
             'purchase' => $purchase,
         ], 201);
     }
@@ -151,7 +146,8 @@ class PurchaseController extends Controller
     public function show(Request $request, $id)
     {
         if ($request->wantsJson()) {
-            return Purchase::with('items.product', 'supplier')->findOrFail($id);
+            $purchase = \App\Support\StockDocumentAccess::query(Purchase::query(),$request)->findOrFail($id);
+            return app(\App\Services\StockAvailability::class)->purchase($purchase);
         }
         abort(404);
     }
@@ -173,7 +169,8 @@ class PurchaseController extends Controller
 
     public function purchaseProducts(Request $request, $id)
     {
-        $purchase = Purchase::with('items.product')->findOrFail($id);
+        $purchase = \App\Support\StockDocumentAccess::query(Purchase::query(),$request)->with('items.product')->findOrFail($id);
+        app(\App\Services\StockAvailability::class)->purchase($purchase);
         return view('backend.purchase.products', compact('id', 'purchase'));
     }
 }

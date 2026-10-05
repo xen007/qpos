@@ -8,6 +8,9 @@ use App\Models\OrderTransaction;
 use App\Models\PosCart;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\StockService;
+use App\Support\StockContext;
+use Brick\Math\BigDecimal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,7 +25,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $orders = Order::query()
+            $orders = \App\Support\StockDocumentAccess::query(Order::query(),$request)
                 ->with('customer')
                 ->withSum('products as item_quantity_sum', 'quantity')
                 ->select('orders.*');
@@ -81,10 +84,12 @@ class OrderController extends Controller
             'paid' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
         ]);
 
-        $order = DB::transaction(function () use ($request, $validated) {
+        $shopId = StockContext::shop($request)->id;
+        $order = DB::transaction(function () use ($request, $validated, $shopId) {
             $userId = $request->user()->id;
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
             $carts = PosCart::where('user_id', $request->user()->id)
+                ->where('point_of_sale_id',$shopId)
                 ->orderBy('product_id')
                 ->get();
 
@@ -95,6 +100,7 @@ class OrderController extends Controller
             }
 
             $order = Order::create([
+                'point_of_sale_id'=>$shopId,
                 'customer_id' => $validated['customer_id'],
                 'user_id' => $request->user()->id,
             ]);
@@ -106,7 +112,7 @@ class OrderController extends Controller
             foreach ($carts as $cart) {
                 $product = Product::whereKey($cart->product_id)->lockForUpdate()->firstOrFail();
 
-                if (!$product->status || $product->quantity < $cart->quantity) {
+                if (!$product->status || BigDecimal::of(app(StockService::class)->available($shopId,(int)$product->id))->isLessThan((string)$cart->quantity)) {
                     throw ValidationException::withMessages([
                         'cart' => __('A product is no longer available in the requested quantity.'),
                     ]);
@@ -130,7 +136,7 @@ class OrderController extends Controller
                     ]);
                 }
 
-                $order->products()->create([
+                $line = $order->products()->create([
                     'quantity' => $cart->quantity,
                     'price' => $unitPrice,
                     'purchase_price' => $product->purchase_price,
@@ -140,7 +146,11 @@ class OrderController extends Controller
                     'product_id' => $product->id,
                 ]);
 
-                $product->decrement('quantity', $cart->quantity);
+                app(StockService::class)->decrease($shopId,(int)$product->id,(string)$cart->quantity,[
+                    'correlation_key'=>'sale:line:'.$line->id,
+                    'order_product_id'=>$line->id,
+                    'user_id'=>$userId,
+                ]);
                 $productTotal += $lineTotal;
                 $subTotal += $lineSubTotal;
             }
@@ -176,7 +186,7 @@ class OrderController extends Controller
                 ]);
             }
 
-            PosCart::where('user_id', $userId)->delete();
+            PosCart::where('user_id', $userId)->where('point_of_sale_id',$shopId)->delete();
 
             return $order->fresh();
         });
@@ -219,7 +229,7 @@ class OrderController extends Controller
     }
     public function invoice($id)
     {
-        $order = Order::with(['customer', 'products.product'])->findOrFail($id);
+        $order = \App\Support\StockDocumentAccess::query(Order::query(),request())->with(['customer', 'products.product'])->findOrFail($id);
         return view('backend.orders.print-invoice', compact('order'));
     }
     public function collection(Request $request, $id)
@@ -231,7 +241,7 @@ class OrderController extends Controller
             ]);
 
             $transaction = DB::transaction(function () use ($id, $data) {
-                $order = Order::whereKey($id)->lockForUpdate()->firstOrFail();
+                $order = \App\Support\StockDocumentAccess::query(Order::query(),request())->whereKey($id)->lockForUpdate()->firstOrFail();
                 $amount = round((float) $data['amount'], 2);
 
                 if ($amount > (float) $order->due) {
@@ -256,7 +266,7 @@ class OrderController extends Controller
             return to_route('backend.admin.collectionInvoice', $transaction->id);
         }
 
-        $order = Order::findOrFail($id);
+        $order = \App\Support\StockDocumentAccess::query(Order::query(),$request)->findOrFail($id);
         return view('backend.orders.collection.create', compact('order'));
     }
     //collection invoice by order_transaction id
@@ -265,18 +275,19 @@ class OrderController extends Controller
         $transaction = OrderTransaction::findOrFail($id);
         $collection_amount = $transaction->amount;
         $order = $transaction->order;
+        \App\Support\StockDocumentAccess::query(Order::query(),request())->whereKey($order->id)->firstOrFail();
         return view('backend.orders.collection.invoice', compact('order', 'collection_amount', 'transaction'));
     }
     //transactions by order id
     public function transactions($id)
     {
-        $order = Order::with('transactions')->findOrFail($id);
+        $order = \App\Support\StockDocumentAccess::query(Order::query(),request())->with('transactions')->findOrFail($id);
         return view('backend.orders.collection.index', compact('order'));
     }
 
     public function posInvoice($id)
     {
-        $order = Order::with(['customer', 'products.product'])->findOrFail($id);
+        $order = \App\Support\StockDocumentAccess::query(Order::query(),request())->with(['customer', 'products.product'])->findOrFail($id);
         $maxWidth = readConfig('receiptMaxwidth')??'300px';
         return view('backend.orders.pos-invoice', compact('order', 'maxWidth'));
     }

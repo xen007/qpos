@@ -7,6 +7,13 @@ import translate from './utils/translate';
 
 axios.defaults.baseURL = window.qposBaseUrl;
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+// Pin this page's shop so another tab cannot silently move its operation.
+axios.interceptors.request.use((config) => {
+    if (window.qposOperationShopId && String(config.url ?? '').startsWith('/admin/')) {
+        config.params = { ...config.params, operation_point_of_sale_id: window.qposOperationShopId };
+    }
+    return config;
+});
 const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
 if (csrf) axios.defaults.headers.common['X-CSRF-TOKEN'] = csrf;
 

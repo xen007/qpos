@@ -9,6 +9,7 @@
         <form action="{{ route('backend.admin.products.import') }}" method="post" class="accountForm"
             enctype="multipart/form-data">
             @csrf
+            @if ($selectedPointOfSale)<input type="hidden" name="operation_point_of_sale_id" value="{{ $selectedPointOfSale->id }}">@endif
 
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <div>

@@ -23,6 +23,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
     public function __construct(
         private readonly ?int $supplierId,
         private readonly int $userId,
+        private readonly int $shopId,
     ) {
     }
 
@@ -125,7 +126,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'discount' => round((float) ($row['discount'] ?? 0), 2),
             'discount_type' => $row['discount_type'],
             'purchase_price' => round((float) $row['purchase_price'], 2),
-            'quantity' => (int) $row['quantity'],
+            'quantity' => 0,
             'expire_date' => $row['expire_date'] ?? null,
             'status' => (bool) $row['status'],
         ]);
@@ -150,6 +151,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             throw ValidationException::withMessages(['quantity' => __('The purchase total exceeds the supported limit.')]);
         }
         $purchase = Purchase::create([
+            'point_of_sale_id'=>$this->shopId,
             'supplier_id' => $this->supplierId,
             'user_id' => $this->userId,
             'sub_total' => $lineTotal,
@@ -162,12 +164,16 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'date' => now(),
         ]);
 
-        PurchaseItem::create([
+        $receiptItem = PurchaseItem::create([
             'purchase_id' => $purchase->id,
             'product_id' => $product->id,
             'purchase_price' => round((float) $row['purchase_price'], 2),
             'price' => round((float) $row['price'], 2),
             'quantity' => (int) $row['quantity'],
+        ]);
+        app(\App\Services\ReceiptStockService::class)->receive($receiptItem,$this->shopId,$this->userId,[
+            'expiry_status'=>$row['expiry_status'] ?? (!empty($row['expire_date']) ? 'dated' : 'unknown'),
+            'expires_on'=>$row['expire_date'] ?? null,
         ]);
     }
 
@@ -186,6 +192,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             '*.purchase_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             '*.quantity' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             '*.expire_date' => ['nullable', 'date'],
+            '*.expiry_status' => ['nullable','in:dated,not_applicable,unknown'],
             '*.status' => ['nullable', 'boolean'],
         ];
     }

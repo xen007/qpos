@@ -32,6 +32,27 @@ class Product extends Model
     protected $appends = ['discounted_price'];
     protected $casts = ['allows_fractional' => 'boolean', 'catalogue_price_ttc' => 'decimal:6', 'catalogue_reference_cost' => 'decimal:6', 'catalogue_discount' => 'decimal:6'];
 
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product) {
+            if (($product->exists && $product->isDirty('quantity'))
+                || (!$product->exists && !\Brick\Math\BigDecimal::of((string)($product->getAttributes()['quantity'] ?? '0'))->isZero())) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['quantity'=>__('Stock quantities are managed through receipts and stock adjustments.')]);
+            }
+        });
+    }
+
+    public function getQuantityAttribute($legacy): mixed
+    {
+        if (array_key_exists('stock_available', $this->attributes)) {
+            return $this->attributes['stock_available'] ?? '0.000000';
+        }
+        // Console conversion commands preserve the frozen legacy source value.
+        if (app()->runningInConsole()) { return $legacy; }
+        $shop = request()->attributes->get('point_of_sale');
+        return $shop ? app(\App\Services\StockService::class)->available((int)$shop->id,(int)$this->id) : null;
+    }
+
     public function productUnits(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ProductUnit::class);
@@ -98,7 +119,8 @@ class Product extends Model
     }
     public function scopeStocked($query)
     {
-        return $query->where('quantity','>=',1);
+        $shop = \App\Support\StockContext::shop(request());
+        return app(\App\Services\StockAvailability::class)->attach($query,$shop->id)->having('stock_available','>=',1);
     }
     public function getDiscountedPriceAttribute()
     {
