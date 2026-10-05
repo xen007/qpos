@@ -98,7 +98,7 @@ class StockService
                 'bucket' => $bucket,
                 'quantity_delta' => (string) $amount,
                 'type' => $type,
-                'occurred_at' => $options['occurred_at'] ?? now(),
+                'occurred_at' => $options['occurred_at'] ?? now('Africa/Douala'),
                 'user_id' => $options['user_id'] ?? null,
                 'unit_cost' => $cost,
                 'correlation_key' => $key,
@@ -128,7 +128,7 @@ class StockService
             $this->assertBucket($bucket, [self::SALEABLE, self::UNSALEABLE]);
             $key = $this->operationKey($options['correlation_key'] ?? null);
             $orderProductId = isset($options['order_product_id']) ? (int) $options['order_product_id'] : null;
-            if ($orderProductId && $bucket !== self::SALEABLE) {
+            if (($orderProductId || $type === 'sale') && $bucket !== self::SALEABLE) {
                 throw ValidationException::withMessages(['bucket' => __('Sales can only allocate from saleable stock.')]);
             }
             if ($orderProductId) {
@@ -184,7 +184,7 @@ class StockService
                     'bucket' => $bucket,
                     'quantity_delta' => (string) $take->negated()->toScale(6),
                     'type' => $type,
-                    'occurred_at' => $options['occurred_at'] ?? now(),
+                    'occurred_at' => $options['occurred_at'] ?? now('Africa/Douala'),
                     'user_id' => $options['user_id'] ?? null,
                     'unit_cost' => $batchStock->batch?->unit_cost,
                     'correlation_key' => $key,
@@ -217,7 +217,7 @@ class StockService
                     'bucket' => $bucket,
                     'quantity_delta' => (string) $remaining->negated()->toScale(6),
                     'type' => $type,
-                    'occurred_at' => $options['occurred_at'] ?? now(),
+                    'occurred_at' => $options['occurred_at'] ?? now('Africa/Douala'),
                     'user_id' => $options['user_id'] ?? null,
                     'unit_cost' => null,
                     'correlation_key' => $key,
@@ -284,8 +284,9 @@ class StockService
                 ->where('correlation_key', $key)->where('type', 'transfer_in')->orderBy('correlation_line')->get();
             if ($existingOut->isNotEmpty() || $existingIn->isNotEmpty()) {
                 $amount = $this->baseQuantity(Product::findOrFail($productId), $quantity);
-                $this->assertCollectionReplayMatches($existingOut, $productId, $amount, 'transfer_out', self::SALEABLE, null, $options['reason'] ?? null);
-                $this->assertCollectionReplayMatches($existingIn, $productId, $amount, 'transfer_in', self::SALEABLE, null, $options['reason'] ?? null);
+                $bucket = $options['bucket'] ?? self::SALEABLE;
+                $this->assertCollectionReplayMatches($existingOut, $productId, $amount, 'transfer_out', $bucket, null, $options['reason'] ?? null);
+                $this->assertCollectionReplayMatches($existingIn, $productId, $amount, 'transfer_in', $bucket, null, $options['reason'] ?? null, false);
                 return ['out' => $existingOut, 'in' => $existingIn];
             }
 
@@ -397,7 +398,7 @@ class StockService
                 'batch_number' => isset($data['batch_number']) ? trim((string) $data['batch_number']) : null,
                 'expiry_status' => $expiryStatus,
                 'expires_on' => $data['expires_on'] ?? null,
-                'received_at' => $data['received_at'] ?? now(),
+                'received_at' => $data['received_at'] ?? now('Africa/Douala'),
                 'unit_cost' => $cost,
                 'purchase_receipt_item_id' => $data['purchase_receipt_item_id'] ?? null,
                 'provenance' => $data['provenance'] ?? $type,
@@ -555,10 +556,11 @@ class StockService
         }
     }
 
-    private function assertCollectionReplayMatches(Collection $existing, int $productId, BigDecimal $amount, string $type, string $bucket, ?int $orderProductId, ?string $reason = null): void
+    private function assertCollectionReplayMatches(Collection $existing, int $productId, BigDecimal $amount, string $type, string $bucket, ?int $orderProductId, ?string $reason = null, bool $negative = true): void
     {
         if ($existing->isEmpty() || $existing->contains(fn (StockMovement $movement) =>
             (int) $movement->product_id !== $productId || $movement->type !== $type || $movement->bucket !== $bucket
+            || BigDecimal::of($movement->quantity_delta)->isNegative() !== $negative
             || (int) ($movement->order_product_id ?? 0) !== (int) ($orderProductId ?? 0)
             || ($movement->reason ?? null) !== $reason)) {
             throw ValidationException::withMessages(['correlation_key' => __('This stock operation key was already used for different values.')]);

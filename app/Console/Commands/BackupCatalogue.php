@@ -16,12 +16,20 @@ class BackupCatalogue extends Command
     {
         $directory = rtrim($this->argument('directory'), '/\\');
         $resolved = realpath($directory);
+        $normalized = $resolved ? strtolower(str_replace('\\', '/', $resolved)) : '';
+        $application = strtolower(str_replace('\\', '/', base_path()));
+        $backupRoot = strtolower(str_replace('\\', '/', storage_path('app/backups')));
+        $privateFallback = str_starts_with($normalized, $backupRoot.'/');
         if (!$resolved || !is_dir($resolved) || count(array_diff(scandir($resolved), ['.', '..'])) !== 0
-            || str_starts_with(strtolower(str_replace('\\', '/', $resolved)), strtolower(str_replace('\\', '/', base_path())).'/')) {
-            $this->error('Use an empty, protected directory outside the application.');
+            || ($normalized === $application || (str_starts_with($normalized, $application.'/') && !$privateFallback))) {
+            $this->error('Use an empty protected directory outside the application, or under storage/app/backups.');
             return self::FAILURE;
         }
         $connection = DB::connection();
+        if ($privateFallback && file_put_contents(storage_path('app/backups/.htaccess'), "Require all denied\n") === false) {
+            $this->error('Cannot protect the private fallback backup directory.');
+            return self::FAILURE;
+        }
         $config = $connection->getConfig();
         if ($connection->getDriverName() !== 'mysql') { $this->error('This command requires MariaDB/MySQL.'); return self::FAILURE; }
         $sqlPath = $directory.'/database.sql';
@@ -59,6 +67,9 @@ class BackupCatalogue extends Command
             $entries = is_dir($path) ? new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path, \FilesystemIterator::SKIP_DOTS)) : [new \SplFileInfo($path)];
             foreach ($entries as $file) {
                 if (!$file->isFile() || $file->isLink()) { continue; }
+                // Backups contain secrets and must never recursively archive themselves.
+                $filePath = strtolower(str_replace('\\', '/', $file->getPathname()));
+                if (str_starts_with($filePath, $backupRoot.'/')) { continue; }
                 $name = str_replace('\\', '/', substr($file->getPathname(), strlen(base_path()) + 1));
                 $files[$name] = hash_file('sha256', $file->getPathname());
                 if (!$zip->addFile($file->getPathname(), $name)) { throw new \RuntimeException('Cannot archive '.$name); }

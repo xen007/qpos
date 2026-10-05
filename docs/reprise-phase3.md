@@ -7,10 +7,9 @@ Dépôt : C:\xampp\htdocs\qpos. Terminal PowerShell : Get-Content et Select-Obje
 
 ÉTAT CONSTATÉ LE 05/10/2026
 - Branche main.
-- HEAD et référence locale origin/main : `9862796`, branche synchronisée ; arbre de travail propre.
-- Le commit Phase 2 appartient au propriétaire. Aucun fetch réseau n'a été réalisé pour ce constat.
+- HEAD : `a65781a` (commit propriétaire 3.A), précédent commit Phase 2 : `9862796`. Groupes 3.B et 3.C préparés, commits propriétaire en attente ; ne pas supposer origin/main synchronisé. Aucun fetch réseau réalisé.
 - Laravel 12.69.3, PHP 8.2.12, XAMPP, MariaDB 10.4.32 ; OPcache actif, JIT off, APP_DEBUG=false.
-- Base locale qpos : six migrations boutiques/catalogue/prix/suivi appliquées en batch 3, application rouverte.
+- Base locale qpos : socle 3.A et ouvertures 3.B appliqués ; 314 unités bloquées dans MAIN, données legacy préservées. Le raccordement 3.C est consigné séparément dans docs/phase3-3c-report.md ; lire ce bilan avant reprise.
 
 PHASE 2 LIVRÉE
 - Unités, conditionnements, conversions exactes à six décimales, codes-barres.
@@ -29,6 +28,8 @@ PHASE 2 LIVRÉE
 DOCUMENTS À LIRE
 docs/roadmap.md : sections 3, 4, 5 et registre 3.5.
 docs/phase2-report.md, docs/schema-cible.md, docs/contrats.md, docs/conversion-strategie.md.
+docs/phase3-report.md : sauvegarde, contrôles 3.A et reprise 3.B appliquée.
+docs/phase3-3c-report.md : raccordement des consommateurs et limites restantes ; deux commits séparés avant nouvelle passe sur les fichiers achats.
 Puis docs/phase0-report.md, docs/ui-composants.md, docs/refonte-ui-complete.md selon le périmètre.
 
 RÈGLES ACTIVES
@@ -48,7 +49,7 @@ MISSION IMMÉDIATE PHASE 3 APRÈS AUTORISATION
 2. Lire les contrats et préparer le premier sous-lot journal/soldes/lots + StockService ; présenter les fichiers et choix avant modification.
 3. Confirmer boutique de reprise, provenance/coûts/expiration des stocks existants et traitement des inconnus ; ne pas répartir le stock global arbitrairement.
 4. Implémenter dans l’ordre roadmap : journal/soldes/lots et StockService ; mouvements d’ouverture ; raccordement des écrivains existants y compris POS ; fournisseurs/achats et PurchaseService ; imports/transferts/inventaires.
-5. Le stock reste aujourd’hui products.quantity global et legacy. Tous les écrivains doivent utiliser le même journal avant activation du nouveau stock.
+5. products.quantity reste une source historique figée. Les consommateurs raccordés en 3.C utilisent le journal et les soldes par boutique ; pas de réécriture ni de nouvelle autorité de stock dans cette colonne.
 6. Corriger dans le lot fournisseurs le down() dangereux de create_suppliers_table, qui cible customers. Traiter les bugs achats D40–D41 (anciens D24–D25 Phase 0), D26–D27.
 7. Les imports de stock ont encore quantités entières/coûts réels à deux décimales et traitement legacy des SKU doublons ; les reprendre avec les réceptions.
 8. Le calculateur natif Phase 2 n’est pas raccordé au checkout : intégration tarifs/promotions, paniers, caisse, paiements et arrondis finaux restent Phase 4.

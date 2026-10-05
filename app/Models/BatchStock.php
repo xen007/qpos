@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BatchStock extends Model
 {
+    protected $table = 'batch_stock';
+
     protected $fillable = ['point_of_sale_id', 'product_batch_id', 'saleable_quantity', 'unsaleable_quantity'];
 
     protected $casts = [
