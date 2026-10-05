@@ -6,6 +6,7 @@ return [
     'fa-cart-plus' => 'shopping-cart', 'fa-shopping-cart' => 'shopping-cart',
     'fa-chart-bar' => 'chart-no-axes-combined', 'fa-chart-pie' => 'chart-pie',
     'fa-cog' => 'settings', 'fa-coins' => 'coins', 'fa-shopping-bag' => 'shopping-bag',
+    'fa-store' => 'store', 'fa-list' => 'list',
     'fa-tags' => 'tags', 'fa-user-circle' => 'circle-user-round', 'fa-circle' => 'circle',
     'fa-chevron-circle-right' => 'circle-chevron-right', 'fa-plus-circle' => 'circle-plus',
     'fa-plus' => 'plus', 'fa-arrow-left' => 'arrow-left', 'fa-reply' => 'save',

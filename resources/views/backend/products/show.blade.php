@@ -12,7 +12,7 @@
         @endcan
     </div>
     <dl class="grid gap-5 sm:grid-cols-2">
-        @foreach ([__('Name') => $product->name, __('Sku') => $product->sku, __('Price') => $product->price, __('Brand') => $product->brand?->name, __('Category') => $product->category?->name, __('Unit') => $product->unit?->title, __('Status') => $product->status ? __('Active') : __('Inactive')] as $label => $value)
+        @foreach ([__('Name') => $product->name, __('Sku') => $product->sku, __('Price') => $product->catalogue_price_ttc ?? $product->price, __('Brand') => $product->brand?->name, __('Category') => $product->category?->name, __('Unit') => $product->unit?->title, __('Status') => $product->status ? __('Active') : __('Inactive')] as $label => $value)
             <div><dt class="text-sm text-qpos-muted">{{ $label }}</dt><dd class="font-medium">{{ $value ?? '—' }}</dd></div>
         @endforeach
     </dl>

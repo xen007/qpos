@@ -1,8 +1,8 @@
 # QPOS — Stratégie de conversion
 
-Date : 01/10/2026. Statut : proposition du sous-lot 2, à valider avant implémentation.
+Date initiale : 01/10/2026. Mise à jour : 05/10/2026. La reprise catalogue Phase 2 est implémentée ; les reprises stock et financières restent dans leurs phases.
 
-Références : [roadmap.md](roadmap.md), [schema-cible.md](schema-cible.md), [contrats.md](contrats.md). Aucun SQL, migration ou changement de données n'est exécuté par ce document.
+Références : [roadmap.md](roadmap.md), [schema-cible.md](schema-cible.md), [contrats.md](contrats.md). Le document ne s’exécute pas lui-même ; les opérations réellement effectuées le 05/10/2026 sont consignées dans `phase2-report.md`.
 
 ## 1. Principes
 
@@ -35,7 +35,7 @@ Conserver chaque unité et chaque lien valide. Pour un produit avec unité recon
 
 La vente historique ne contient pas d'instantané d'unité. L'unité courante du produit ne prouve pas celle utilisée à la date de vente : laisser l'instantané historique inconnu sauf preuve externe. Conserver prix/coût/discount source et D36 : purchase_price produit est un coût de référence, pas le coût prouvé du stock restant.
 
-Quantités entières convertibles exactement vers DECIMAL ; prix en double : extraire valeur brute, représentation cible et delta avant conversion. Aucune réécriture silencieuse des totaux par un nouvel arrondi. Si nécessaire, préserver une colonne source et stocker la valeur cible séparément jusqu'à approbation. Précision, bornes et tolérance d'écart : **à proposer**.
+Quantités entières convertibles exactement vers DECIMAL ; prix en double : extraire valeur brute, représentation cible et delta avant conversion. Aucune réécriture silencieuse des totaux par un nouvel arrondi. Si nécessaire, préserver une colonne source et stocker la valeur cible séparément jusqu'à approbation. Phase 2 : DECIMAL(20,6), conversion exacte sans tolérance implicite. Valeur négative, hors borne ou exigeant plus de six décimales : anomalie, source conservée, cible laissée inconnue.
 
 ### Boutique de reprise et stock
 
@@ -103,4 +103,15 @@ Obstacle constaté : `2024_10_16_123030_create_suppliers_table.php::down()` cibl
 - Autorisations boutique, dernière unité concurrente, double checkout, perte de réponse et retours partiels vérifiés dans les lots propriétaires.
 - Sauvegarde restaurable et point de récupération documenté ; comptes rendus conservés hors secrets.
 
-Les scénarios ci-dessus sont des critères futurs ; aucun test n'est exécuté ou automatisé dans ce sous-lot. Toute automatisation de test reste soumise à l'accord prévu dans la roadmap.
+Les scénarios stock/paiements restent dans leurs phases. Aucun test automatisé n’est autorisé pour cette livraison. Le rapport Phase 2 distingue les contrôles techniques et les vérifications manuelles sur copie.
+
+## 7. Procédure effective de reprise catalogue Phase 2
+
+1. Geler les écritures (`artisan down`) ; aucun worker ou écrivain externe ne doit continuer à écrire.
+2. Créer un répertoire privé vide hors application, protégé pour le propriétaire et SYSTEM. Exécuter `php artisan qpos:catalogue-backup <répertoire>` : SQL complet, fichiers/configuration/médias et manifeste SHA-256 ; restauration SQL sur une base `qpos_phase2_probe_*` et restauration des fichiers vérifiées par empreintes. Ne jamais publier ces archives ni leur `.env`.
+3. Lire `manifest.json` pour connaître la base de copie. Exécuter `php artisan qpos:catalogue-convert --backup=<répertoire> --database=<base-copie> --apply`. Cette commande applique seulement les six migrations boutiques/catalogue/prix/suivi autorisées ; elle crée des références facteur 1, codes-barres SKU non ambigus et promotions historiques prouvées. Les snapshots des ventes restent inconnus.
+4. Examiner compteurs/anomalies et vérifier manuellement les parcours sur copie. Rejouer la conversion sur copie pour contrôler l’absence de nouveaux doublons.
+5. Exécuter `php artisan qpos:catalogue-convert --backup=<répertoire> --apply` sur la source encore gelée. La commande exige la même sauvegarde, les données historiques inchangées et une preuve de conversion réussie sur la copie avec les mêmes empreintes du convertisseur et des migrations.
+6. Conserver `conversion-probe.json` et `conversion-source.json` dans le répertoire privé. Réouvrir avec `artisan up` après contrôle. Les données historiques sont comparées ligne par ligne via leurs empreintes ; nouvelles colonnes/tables natives, permissions et boutique MAIN sont des ajouts explicites.
+
+Les erreurs DDL MariaDB peuvent laisser une structure partiellement préparée : la restauration privée constitue le point de récupération, pas un rollback général. La preuve de répétition doit être renouvelée après toute modification du convertisseur ou d’une migration. Les anomalies fractionnaires ou d’unité ne sont pas résolues arbitrairement : produits à configurer, source intacte.

@@ -5,15 +5,16 @@
     (retablie par old() apres un echec de validation). `placeholder` ajoute une
     premiere option a valeur vide, comme les formulaires d'origine.
 --}}
-@props(['name', 'label' => null, 'options' => [], 'selected' => null, 'placeholder' => null, 'required' => false])
+@props(['name', 'label' => null, 'options' => [], 'selected' => null, 'placeholder' => null, 'required' => false, 'id' => null, 'restoreOld' => true])
 
 @php
-    $current = old($name, $selected);
+    $controlId = $id ?? $name;
+    $current = $restoreOld ? old($name, $selected) : $selected;
 @endphp
 
 <div>
     @if ($label)
-        <label for="{{ $name }}" class="block text-sm font-medium text-qpos-ink">
+        <label for="{{ $controlId }}" class="block text-sm font-medium text-qpos-ink">
             {{ $label }}
             @if ($required)
                 <span class="text-red-600" aria-hidden="true">*</span>
@@ -21,9 +22,9 @@
         </label>
     @endif
 
-    <select name="{{ $name }}" id="{{ $name }}"
+    <select name="{{ $name }}" id="{{ $controlId }}"
         @if ($required) required @endif
-        @if (isset($errors) && $errors->has($name)) aria-invalid="true" aria-describedby="{{ $name }}-error" @endif
+        @if ($restoreOld && isset($errors) && $errors->has($name)) aria-invalid="true" aria-describedby="{{ $controlId }}-error" @endif
         {{ $attributes->merge([
             'class' => 'qpos-control mt-1 w-full',
         ]) }}>
@@ -36,7 +37,7 @@
         @endforeach
     </select>
 
-    @if (isset($errors) && $errors->has($name))
-        <p id="{{ $name }}-error" class="mt-1 text-xs text-qpos-danger" role="alert">{{ $errors->first($name) }}</p>
+    @if ($restoreOld && isset($errors) && $errors->has($name))
+        <p id="{{ $controlId }}-error" class="mt-1 text-xs text-qpos-danger" role="alert">{{ $errors->first($name) }}</p>
     @endif
 </div>

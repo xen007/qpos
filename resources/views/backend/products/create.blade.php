@@ -25,7 +25,7 @@
                 <x-backend.select name="category_id" :label="__('Category')"
                     :options="$categories->pluck('name', 'id')->all()" :placeholder="__('Select Category')" />
 
-                <x-backend.input name="price" type="number" step="0.01" min="0" :label="__('Price')"
+                <x-backend.input name="price" type="number" step="0.000001" min="0" :label="__('Price')"
                     :placeholder="__('Enter price')" required />
 
                 <x-backend.select name="unit_id" :label="__('Unit')"
@@ -43,10 +43,10 @@
                 ]"
                     :placeholder="__('Select Discount Type')" />
 
-                <x-backend.input name="purchase_price" type="number" step="0.01" min="0"
+                <x-backend.input name="purchase_price" type="number" step="0.000001" min="0"
                     :label="__('Purchase Price')" :placeholder="__('Enter purchase Price')" />
 
-                <x-backend.input name="discount" type="number" step="0.01" min="0" :label="__('Discount Amount')"
+                <x-backend.input name="discount" type="number" step="0.000001" min="0" :label="__('Discount Amount')"
                     :placeholder="__('Enter discount')" />
 
                 <x-backend.image-field name="product_image" :label="__('Image')" />

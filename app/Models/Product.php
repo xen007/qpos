@@ -29,11 +29,16 @@ class Product extends Model
         'status',
     ];
     protected $appends = ['discounted_price'];
-    protected $casts = ['allows_fractional' => 'boolean', 'catalogue_price_ttc' => 'decimal:6', 'catalogue_reference_cost' => 'decimal:6'];
+    protected $casts = ['allows_fractional' => 'boolean', 'catalogue_price_ttc' => 'decimal:6', 'catalogue_reference_cost' => 'decimal:6', 'catalogue_discount' => 'decimal:6'];
 
     public function productUnits(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ProductUnit::class);
+    }
+
+    public function legacyPromotion(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(Promotion::class, 'legacy_product_id');
     }
 
     public function setNameAttribute($value)

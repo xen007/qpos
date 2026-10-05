@@ -589,5 +589,8 @@
     "conversion.barcode_not_convertible": "Code-barres à vérifier",
     "conversion.amount_requires_decision_sale_price_ttc": "Prix de vente à vérifier",
     "conversion.amount_requires_decision_reference_purchase_cost": "Coût de référence à vérifier",
-    "conversion.discount_requires_decision": "Remise à vérifier"
+    "conversion.discount_requires_decision": "Remise à vérifier",
+    "Catalogue pricing is available in this preview. POS integration is scheduled for Phase 4.": "Les tarifs du catalogue sont disponibles dans cet aperçu. Leur intégration au POS est prévue en Phase 4.",
+    "Product discounts support fixed amounts or percentages.": "Les remises du produit acceptent un montant fixe ou un pourcentage.",
+    "Catalogue codes are busy; try again.": "Les codes du catalogue sont occupés ; réessayez."
 }

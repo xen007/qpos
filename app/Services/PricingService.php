@@ -16,7 +16,7 @@ class PricingService
     // The caller must authorize the operation's shop and customer.
     public function quote(ProductUnit $unit, string $quantity, int $shopId, ?int $customerId = null, ?CarbonInterface $at = null): array
     {
-        $unit->loadMissing('product');
+        $unit->loadMissing(['product', 'unit']);
         if (!$unit->is_active || !$unit->product->status || $unit->product->allows_fractional === null || $unit->sale_price_ttc === null) {
             throw ValidationException::withMessages(['product_unit_id' => __('Configure the active product and packaging before calculating a price.')]);
         }
@@ -61,13 +61,16 @@ class PricingService
         $discount = $best['discount'] ?? BigDecimal::zero()->toScale(6);
         $promotion = $best['promotion'] ?? null;
         return [
+            'product_label' => $unit->product->name.' / '.$unit->label,
             'product_unit_id' => $unit->id, 'point_of_sale_id' => $shopId, 'customer_id' => $customerId,
             'quantity' => (string) $qty->toScale(6), 'factor_used' => $unit->factor, 'base_quantity' => $baseQuantity,
+            'unit_id_snapshot' => $unit->unit_id, 'unit_label_snapshot' => $unit->unit->title,
+            'packaging_label_snapshot' => $unit->label,
             'price_ttc' => (string) $price, 'gross_total' => (string) $gross,
             'discount_total' => (string) $discount, 'total_ttc' => (string) MoneyDecimal::rounded($gross->minus($discount)),
             'price_rule_id' => $rule?->id, 'promotion_id' => $promotion?->id,
             'price_rule_snapshot' => $rule?->only(['id', 'price_ttc', 'minimum_quantity', 'priority', 'starts_at', 'ends_at', 'customer_id', 'point_of_sale_id']),
-            'promotion_snapshot' => $promotion?->only(['id', 'kind', 'value', 'buy_quantity', 'free_quantity', 'bundle_quantity', 'bundle_price', 'minimum_quantity', 'priority', 'starts_at', 'ends_at']),
+            'promotion_snapshot' => $promotion?->only(['id', 'kind', 'value', 'buy_quantity', 'free_quantity', 'bundle_quantity', 'bundle_price', 'minimum_quantity', 'priority', 'starts_at', 'ends_at', 'point_of_sale_id', 'customer_id']),
             'calculated_at' => $at->toIso8601String(), 'calculation_version' => 'phase2-v1',
         ];
     }

@@ -36,8 +36,8 @@
                     :options="$categories->pluck('name', 'id')->all()" :selected="$product->category_id"
                     :placeholder="__('Select Category')" />
 
-                <x-backend.input name="price" type="number" step="0.01" min="0" :label="__('Price')"
-                    :value="$product->price" :placeholder="__('Enter price')" required />
+                <x-backend.input name="price" type="number" step="0.000001" min="0" :label="__('Price')"
+                    :value="$product->catalogue_price_ttc ?? $product->price" :placeholder="__('Enter price')" required />
 
                 <x-backend.select name="unit_id" :label="__('Unit')"
                     :options="$units->mapWithKeys(fn ($unit) => [$unit->id => $unit->title . ' (' . $unit->short_name . ')'])->all()"
@@ -54,14 +54,14 @@
                     'fixed' => __('Fixed'),
                     'percentage' => __('Percentage'),
                 ]"
-                    :selected="$product->discount_type" :placeholder="__('Select Discount Type')" />
+                    :selected="$product->relationLoaded('legacyPromotion') ? ($product->legacyPromotion?->kind ?? $product->catalogue_discount_type ?? $product->discount_type) : $product->discount_type" :placeholder="__('Select Discount Type')" />
 
-                <x-backend.input name="purchase_price" type="number" step="0.01" min="0"
-                    :label="__('Purchase Price')" :value="$product->purchase_price"
+                <x-backend.input name="purchase_price" type="number" step="0.000001" min="0"
+                    :label="__('Purchase Price')" :value="\App\Support\PricingSchema::ready() ? $product->catalogue_reference_cost : $product->purchase_price"
                     :placeholder="__('Enter purchase Price')" />
 
-                <x-backend.input name="discount" type="number" step="0.01" min="0" :label="__('Discount Amount')"
-                    :value="$product->discount" :placeholder="__('Enter discount')" />
+                <x-backend.input name="discount" type="number" step="0.000001" min="0" :label="__('Discount Amount')"
+                    :value="$product->relationLoaded('legacyPromotion') ? ($product->legacyPromotion ? ($product->legacyPromotion->is_active ? $product->legacyPromotion->value : '0') : ($product->catalogue_discount ?? $product->discount)) : $product->discount" :placeholder="__('Enter discount')" />
 
                 <x-backend.image-field name="product_image" :label="__('Image')"
                     :current-image="$product->image" />

@@ -14,7 +14,7 @@ class CatalogueFingerprint
                 $table = (string) array_values((array) $row)[0];
                 if ($allTables || !in_array($table, self::EXCLUDED, true)) {
                     $columns = $connection->getSchemaBuilder()->getColumnListing($table);
-                    if (!$allTables && $table === 'products') { $columns = array_values(array_diff($columns, ['catalogue_price_ttc', 'catalogue_reference_cost'])); }
+                    if (!$allTables && $table === 'products') { $columns = array_values(array_diff($columns, ['catalogue_price_ttc', 'catalogue_reference_cost', 'catalogue_discount', 'catalogue_discount_type'])); }
                     $specification[$table] = ['columns' => $columns];
                 }
             }

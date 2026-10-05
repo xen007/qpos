@@ -49,8 +49,8 @@ class ProductController extends Controller
                 ->addColumn('id', fn($data) => $data->id)
                 ->addColumn('is_active', fn($data) => (bool) $data->status)
                 ->addColumn('thumb_url', fn($data) => asset('storage/' . $data->image))
-                ->addColumn('price_value', fn($data) => $data->discounted_price)
-                ->addColumn('price_original', fn($data) => $data->price)
+                ->addColumn('price_value', fn($data) => $data->catalogue_price_ttc ?? $data->discounted_price)
+                ->addColumn('price_original', fn($data) => $data->catalogue_price_ttc ?? $data->price)
                 ->addColumn('quantity_value', fn($data) => $data->quantity)
                 ->addColumn('unit_short', fn($data) => optional($data->unit)->short_name)
                 // L'URL d'achat porte un parametre de requete : elle est construite
@@ -145,12 +145,13 @@ class ProductController extends Controller
         if (CatalogueSchema::ready()) {
             $validated['allows_fractional'] ??= false;
         }
-        $product = DB::transaction(function () use ($validated) {
+        $product = \App\Support\CatalogueCodes::transaction(function () use ($validated) {
+            \App\Support\CatalogueCodes::validateSku($validated['sku']);
             if (!CatalogueSchema::ready()) {
-                return Product::create($validated);
+                return Product::create(\App\Support\LegacyMoney::compatible($validated));
             }
             if (empty($validated['unit_id'])) {
-                $product = Product::create($validated);
+                $product = Product::create(\App\Support\LegacyMoney::compatible($validated));
                 app(\App\Services\ReferencePricingService::class)->sync($product, $validated, true);
                 return $product;
             }
@@ -158,7 +159,7 @@ class ProductController extends Controller
             if (!$unit) {
                 throw ValidationException::withMessages(['unit_id' => __('Select an active unit.')]);
             }
-            $product = Product::create($validated);
+            $product = Product::create(\App\Support\LegacyMoney::compatible($validated));
             app(ProductUnitService::class)->save($product, [
                 'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title,
                 'factor' => '1', 'is_active' => true,
@@ -192,7 +193,7 @@ class ProductController extends Controller
 
 
         $product = Product::findOrFail($id);
-        $brands = Brand::whereStatus(true)->get();
+        if (\App\Support\PricingSchema::ready()) { $product->load('legacyPromotion'); }
         $categories = Category::whereStatus(true)->orWhere('id', $product->category_id)->get();
         $brands = Brand::whereStatus(true)->orWhere('id', $product->brand_id)->get();
         $catalogueUnitsReady = CatalogueSchema::ready();
@@ -212,10 +213,11 @@ class ProductController extends Controller
                 unset($validated[$field]);
             }
         }
-        $product = DB::transaction(function () use ($id, $validated) {
+        $product = \App\Support\CatalogueCodes::transaction(function () use ($id, $validated) {
             $product = Product::whereKey($id)->lockForUpdate()->firstOrFail();
+            if (isset($validated['sku'])) { \App\Support\CatalogueCodes::validateSku($validated['sku'], $product->id); }
             if (!CatalogueSchema::ready()) {
-                $product->update($validated);
+                $product->update(\App\Support\LegacyMoney::compatible($validated, $product));
                 return $product;
             }
             $unitId = array_key_exists('unit_id', $validated) ? $validated['unit_id'] : $product->unit_id;
@@ -226,7 +228,12 @@ class ProductController extends Controller
             if ((int) $product->unit_id !== (int) $unitId && $product->productUnits()->exists()) {
                 throw ValidationException::withMessages(['unit_id' => __('The base unit cannot change once packagings exist.')]);
             }
-            $product->update($validated);
+            $product->update(\App\Support\LegacyMoney::compatible($validated, $product));
+            if ($unit && $product->allows_fractional !== null && !$product->productUnits()->where('is_reference', true)->exists()) {
+                app(ProductUnitService::class)->save($product, [
+                    'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title, 'factor' => '1', 'is_active' => true,
+                ]);
+            }
             app(\App\Services\ReferencePricingService::class)->sync($product, $validated);
             return $product;
         });
@@ -246,7 +253,7 @@ class ProductController extends Controller
     public function destroy($id)
     {
 
-        $result = DB::transaction(function () use ($id) {
+        $result = \App\Support\CatalogueCodes::transaction(function () use ($id) {
             $product = Product::whereKey($id)->lockForUpdate()->firstOrFail();
             if (OrderProduct::where('product_id', $product->id)->exists() || PurchaseItem::where('product_id', $product->id)->exists()) {
                 return ['blocked' => true];
@@ -282,10 +289,9 @@ class ProductController extends Controller
             ]);
 
             $supplierId = Supplier::where('name', 'Own Supplier')->value('id');
-            abort_if(!$supplierId, 422, __('The default supplier is not configured.'));
 
-            DB::transaction(function () use ($validated, $supplierId) {
-                Excel::import(new ProductsImport($supplierId, (int) auth()->id()), $validated['file']);
+            \App\Support\CatalogueCodes::transaction(function () use ($validated, $supplierId) {
+                Excel::import(new ProductsImport($supplierId ? (int) $supplierId : null, (int) auth()->id()), $validated['file']);
             });
             return redirect()->back()->with('success', __('Products imported successfully.'));
         }

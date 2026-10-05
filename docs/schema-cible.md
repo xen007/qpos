@@ -1,14 +1,14 @@
 # QPOS — Schéma cible
 
-Date : 01/10/2026. Sous-lot 2 de Phase 1. Statut : proposition documentaire à valider avant implémentation.
+Date initiale : 01/10/2026. Mise à jour Phase 2 : 05/10/2026. Les parties catalogue/boutiques/prix décrivent l’implémentation autorisée ; les phases suivantes restent proposées.
 
 Référence : [roadmap.md](roadmap.md), sections 3.5, 4 et 5. Documents associés : [conversion-strategie.md](conversion-strategie.md) et [contrats.md](contrats.md).
 
-Ce document décrit une cible, pas des migrations exécutées. Aucun nouvel identifiant Dxx n'est créé. Les décisions D02–D10, D13, D38 et D39 sont validées ; les choix structurels ci-dessous restent soumis à validation. Les paramètres non fixés sont marqués **à proposer**.
+Ce document décrit la cible par phase. D21–D25 et les règles décimales ont été validées pour la Phase 2 ; les vérifications et migrations réellement exécutées sont consignées dans `phase2-report.md`. Les paramètres des phases suivantes non fixés restent marqués **à proposer**.
 
 ## 1. Cartographie de l'existant
 
-Lecture des migrations du dépôt, des modèles et des consommateurs ciblés au commit `5546975`. Aucun relevé du schéma réel ni contrôle des données de la base courante n'a été exécuté dans ce sous-lot. Les migrations décrivent le schéma attendu ; un rapprochement avec les métadonnées de la base sera nécessaire avant conversion.
+Lecture des migrations du dépôt, des modèles et des consommateurs ciblés au commit `5546975`. Lors du sous-lot documentaire initial, aucun relevé du schéma réel ni contrôle des données courantes n’avait été exécuté. Le rapprochement et la conversion Phase 2 du 05/10/2026 sont désormais consignés dans `phase2-report.md`. Les migrations décrivent le schéma attendu ; un rapprochement avec les métadonnées de la base sera nécessaire avant conversion.
 
 | Table existante | Structure et usage observés | Adaptation prévue |
 |---|---|---|
@@ -49,10 +49,10 @@ Les listes de colonnes sont la proposition minimale de chaque domaine. Toutes le
 |---|---|---|
 | `points_of_sale` | `code`, `name`, `address` nullable, `is_active`, timestamps | Code unique ; boutique = établissement, pas terminal de caisse |
 | `point_of_sale_user` | `user_id`, `point_of_sale_id`, `is_active`, timestamps | Couple unique ; FK users/boutiques ; rôle global conservé |
-| `product_units` | `product_id`, `unit_id`, `code`, `label`, `factor`, `is_reference`, `is_active` | Facteur strictement positif ; code unique par produit ; une seule référence de facteur 1 par produit, garantie lors des écritures |
+| `product_units` | `product_id`, `unit_id`, `code`, `label`, `factor`, `is_reference`, `is_active`, `sale_price_ttc`, `reference_purchase_cost` nullables | Facteur strictement positif ; code unique par produit ; une seule référence de facteur 1 par produit, garantie lors des écritures |
 | `product_barcodes` | `product_unit_id`, `barcode`, `is_active` | Code-barres texte, zéros initiaux conservés ; unicité du code dans le catalogue pour une résolution sans ambiguïté |
-| `price_rules` | `product_unit_id`, `point_of_sale_id` nullable, `customer_id` nullable, `minimum_quantity` nullable, `price_ttc`, dates de validité, `is_active` | Portée et conditions explicites ; priorité D24 validée : client + boutique > client global > boutique > global ; seuil décroissant, priorité décroissante puis ID croissant ; D22 validée le 02/10/2026 : prix TTC et coût de référence distincts par conditionnement, mise à jour manuelle du coût de référence par l'administrateur |
-| `promotions`, `promotion_items` | Code, type, paramètres, validité ; promotion/conditionnements concernés | Une promotion applicable par ligne ; départage exact **à proposer** ; pas de cumul automatique |
+| `price_rules` | `product_unit_id`, `point_of_sale_id` nullable, `customer_id` nullable, `minimum_quantity` (défaut 0), `priority`, `price_ttc`, dates de validité, `is_active` | Portée et conditions explicites ; priorité D24 validée : client + boutique > client global > boutique > global ; seuil décroissant, priorité décroissante puis ID croissant ; D22 validée le 02/10/2026 : prix TTC et coût de référence distincts par conditionnement, mise à jour manuelle du coût de référence par l'administrateur |
+| `promotions` | Conditionnement, boutique/client nullables, type, valeur, quantités achetées/offertes ou quantité/prix du lot, seuil, priorité, validité, actif ; origine produit historique nullable unique | D25 : priorité décroissante, remise arrondie la plus avantageuse, ID croissant ; une promotion par ligne. Phase 2 : promotions sur un seul conditionnement ; aucun lot mixte de plusieurs produits ni table `promotion_items` |
 
 Phase 1 implémente seulement les structures minimales boutiques/affectations dans un lot ultérieur autorisé. Les tarifs/promotions complets appartiennent à la Phase 2 et leur consommation au checkout à la Phase 4.
 
@@ -159,3 +159,13 @@ Vérifier les index déjà créés par les FK avant d'en ajouter. Mesurer les pl
 ## 7. Points à proposer avant activation
 
 Arrondis finaux selon devise, taxes et répartition des remises en Phase 4 ; taux/exemptions ; traitement des périssables d'expiration inconnue ; valorisation des stocks d'ouverture sans coût ; coût d'acquisition/transport ; portée des avoirs ; désignation de la boutique de reprise et affectations ; états détaillés ; durées de rétention et canaux/destinataires. D21–D23 ont été validées le 02/10/2026 dans la roadmap ; D34 reste ouverte à sa phase. Ces propositions ne sont pas approuvées par la seule validation de la cartographie.
+
+## 8. Implémentation Phase 2 et compatibilité
+
+- `products` conserve ses colonnes historiques et ajoute `allows_fractional` nullable, `catalogue_price_ttc`, `catalogue_reference_cost`, `catalogue_discount` en DECIMAL(20,6), et `catalogue_discount_type`. Ces valeurs natives conservent les saisies exactes, même pour un produit sans unité encore à configurer. Les anciennes valeurs nulles restent nulles.
+- Les anciens consommateurs utilisent encore les colonnes DOUBLE(10,2). Les nouvelles écritures y maintiennent une copie de compatibilité HALF_UP à deux décimales lorsque le montant est représentable ; un montant supérieur conserve l’ancienne valeur, ou zéro pour une création. Cette copie ne constitue pas le prix du moteur natif. Le POS historique doit être raccordé au moteur en Phase 4 avant d’utiliser en caisse les prix natifs à six décimales ou hors bornes legacy.
+- La liste et la fiche catalogue affichent le prix TTC natif de référence lorsqu’il existe. Le calculateur applique les tarifs/promotions avec boutique et client explicitement autorisés. Ce calcul ne crée ni vente, ni paiement, ni réservation.
+- Promotion `quantity` : pour N achetés et M offerts, la quantité commandée inclut les offerts ; chaque groupe complet de N+M reçoit M unités gratuites. Promotion `bundle` : prix spécial pour chaque groupe complet d’un même conditionnement ; le reliquat garde son prix unitaire. Aucun panier mixte interproduits n’est couvert.
+- `catalogue_conversion_runs`, `catalogue_conversion_issues`, `catalogue_conversion_mappings` sont les noms implémentés pour la reprise catalogue. Les noms génériques de la section 3.5 restent une cible pour les conversions ultérieures.
+- Les références, facteurs et codes-barres sont protégés par transactions et contraintes. Un verrou MariaDB commun sérialise les écritures SKU/codes-barres de l’application ; les imports respectent ce même verrou.
+- Une règle fractionnaire historique inconnue reste NULL et bloque le calcul natif jusqu’à décision explicite ; aucune règle métier n’est déduite du stock entier historique.

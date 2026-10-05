@@ -3,6 +3,7 @@
 @section('content')
 <x-backend.card>
     <p class="mb-4 text-sm text-qpos-muted">{{ __('Prices include tax. Payment and invoice currency rounding will be implemented in Phase 4.') }}</p>
+    <p class="mb-4 text-sm text-qpos-muted">{{ __('Catalogue pricing is available in this preview. POS integration is scheduled for Phase 4.') }}</p>
     <form method="get" class="flex flex-wrap gap-3 mb-5">
         <x-backend.input name="search" :label="__('Search products')" :value="$search" maxlength="100" />
         <button type="submit" class="qpos-button qpos-button-md qpos-button-secondary">{{ __('Search') }}</button>
@@ -10,6 +11,7 @@
     @if (session('pricing_quote'))
         @php($quote = session('pricing_quote'))
         <div role="status" class="mb-5 rounded-xl border border-qpos-line p-4">
+            <p class="font-semibold">{{ $quote['product_label'] }}</p>
             <p>{{ __('Price including tax') }} : {{ $quote['price_ttc'] }}</p>
             <p>{{ __('Discount') }} : {{ $quote['discount_total'] }}</p>
             <p>{{ __('Total') }} : {{ $quote['total_ttc'] }}</p>
@@ -25,9 +27,10 @@
                 <details class="my-3"><summary class="cursor-pointer">{{ __('Packaging prices') }}</summary>
                     <form method="post" action="{{ route('backend.admin.pricing.packaging', $unit) }}" class="mt-3 grid gap-4 sm:grid-cols-2">
                         @csrf @method('PUT')
-                        <x-backend.input name="sale_price_ttc" :label="__('Price including tax')" :value="$unit->sale_price_ttc" inputmode="decimal" required />
+                        <input type="hidden" name="_pricing_form" value="pack-{{ $unit->id }}">
+                        <x-backend.input name="sale_price_ttc" :id="'pack-'.$unit->id.'-sale_price_ttc'" :restore-old="old('_pricing_form') === 'pack-'.$unit->id" :label="__('Price including tax')" :value="$unit->sale_price_ttc" inputmode="decimal" required />
                         @if (auth()->user()->hasRole('Admin'))
-                            <x-backend.input name="reference_purchase_cost" :label="__('Reference purchase cost')" :value="$unit->reference_purchase_cost" inputmode="decimal" />
+                            <x-backend.input name="reference_purchase_cost" :id="'pack-'.$unit->id.'-reference_purchase_cost'" :restore-old="old('_pricing_form') === 'pack-'.$unit->id" :label="__('Reference purchase cost')" :value="$unit->reference_purchase_cost" inputmode="decimal" />
                         @endif
                         <button type="submit" class="qpos-button qpos-button-md qpos-button-primary">{{ __('Save') }}</button>
                     </form>
@@ -43,10 +46,10 @@
                 </details>
             @endcan
             <form method="post" action="{{ route('backend.admin.pricing.quote') }}" class="mt-3 flex flex-wrap items-end gap-3">
-                @csrf <input type="hidden" name="product_unit_id" value="{{ $unit->id }}">
+                @csrf <input type="hidden" name="_pricing_form" value="quote-{{ $unit->id }}"><input type="hidden" name="product_unit_id" value="{{ $unit->id }}">
                 @if ($selectedPointOfSale)<input type="hidden" name="operation_point_of_sale_id" value="{{ $selectedPointOfSale->id }}">@endif
-                <x-backend.input name="quantity" :label="__('Quantity')" inputmode="decimal" value="1" required />
-                <x-backend.select name="customer_id" :label="__('Customer')" :options="$customers->pluck('name', 'id')->all()" :placeholder="__('All customers')" />
+                <x-backend.input name="quantity" :id="'quote-'.$unit->id.'-quantity'" :restore-old="old('_pricing_form') === 'quote-'.$unit->id" :label="__('Quantity')" inputmode="decimal" value="1" required />
+                <x-backend.select name="customer_id" :id="'quote-'.$unit->id.'-customer_id'" :restore-old="old('_pricing_form') === 'quote-'.$unit->id" :label="__('Customer')" :options="$customers->pluck('name', 'id')->all()" :placeholder="__('All customers')" />
                 <button type="submit" class="qpos-button qpos-button-md qpos-button-secondary">{{ __('Calculate price') }}</button>
             </form>
         </section>

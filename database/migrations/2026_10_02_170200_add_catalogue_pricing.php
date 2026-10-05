@@ -10,6 +10,8 @@ return new class extends Migration {
         Schema::table('products', function (Blueprint $table) {
             $table->decimal('catalogue_price_ttc', 20, 6)->nullable();
             $table->decimal('catalogue_reference_cost', 20, 6)->nullable();
+            $table->decimal('catalogue_discount', 20, 6)->nullable();
+            $table->string('catalogue_discount_type', 16)->nullable();
         });
         Schema::table('product_units', function (Blueprint $table) {
             $table->decimal('sale_price_ttc', 20, 6)->nullable();
@@ -19,7 +21,7 @@ return new class extends Migration {
             Schema::create($name, function (Blueprint $table) use ($name) {
                 $table->id();
                 $table->foreignId('product_unit_id')->constrained()->restrictOnDelete();
-                $table->foreignId('point_of_sale_id')->nullable()->constrained()->restrictOnDelete();
+                $table->foreignId('point_of_sale_id')->nullable()->constrained('points_of_sale')->restrictOnDelete();
                 $table->foreignId('customer_id')->nullable()->constrained()->restrictOnDelete();
                 $table->string('name');
                 $table->decimal('minimum_quantity', 20, 6)->default(0);
@@ -45,12 +47,12 @@ return new class extends Migration {
     }
     public function down(): void
     {
-        if (DB::table('products')->whereNotNull('catalogue_price_ttc')->orWhereNotNull('catalogue_reference_cost')->exists()
+        if (DB::table('products')->whereNotNull('catalogue_price_ttc')->orWhereNotNull('catalogue_reference_cost')->orWhereNotNull('catalogue_discount')->orWhereNotNull('catalogue_discount_type')->exists()
             || DB::table('price_rules')->exists() || DB::table('promotions')->exists()
             || DB::table('product_units')->whereNotNull('sale_price_ttc')->orWhereNotNull('reference_purchase_cost')->exists()) {
             throw new RuntimeException('Pricing data exists; use the documented recovery procedure.');
         }
-        Schema::table('products', fn (Blueprint $table) => $table->dropColumn(['catalogue_price_ttc', 'catalogue_reference_cost']));
+        Schema::table('products', fn (Blueprint $table) => $table->dropColumn(['catalogue_price_ttc', 'catalogue_reference_cost', 'catalogue_discount', 'catalogue_discount_type']));
         Schema::drop('promotions');
         Schema::drop('price_rules');
         Schema::table('product_units', fn (Blueprint $table) => $table->dropColumn(['sale_price_ttc', 'reference_purchase_cost']));

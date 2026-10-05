@@ -66,7 +66,7 @@ class ProductUnitController extends Controller
         $data = $request->validate([
             'barcode' => ['required', 'string', 'max:128', 'regex:/\A[!-~]+\z/D', Rule::unique('product_barcodes', 'barcode')],
         ]);
-        DB::transaction(function () use ($product, $packaging, $data) {
+        \App\Support\CatalogueCodes::transaction(function () use ($product, $packaging, $data) {
             Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
             $legacyMatch = Product::where('sku', $data['barcode'])->first();
             if ($legacyMatch && (!$packaging->is_reference || $legacyMatch->id !== $product->id)) {

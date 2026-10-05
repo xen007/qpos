@@ -123,7 +123,15 @@ Durées pour payloads, tentatives et synthèses : **à proposer**, coordonnées 
 - Catalogue partagé. L'administration globale des boutiques exige la capacité explicite `point_of_sale_manage_all` ; elle ne donne pas le droit d'opérer dans une boutique sans affectation active.
 - Le sélecteur conserve une préférence sans accorder de droit. Chaque opération doit porter `operation_point_of_sale_id`, contrôlé côté serveur, pour conserver son contexte en présence de plusieurs onglets. Le raccordement des écritures de stock et des ventes appartient aux Phases 3–4.
 
-## 6. Paramètres encore à proposer
+## 6. Tarifs et promotions — D24–D25 validées
+
+Prix TTC natifs et coûts de référence : DECIMAL(20,6), calcul exact. Tarifs : client + boutique > client global > boutique > global ; puis seuil le plus élevé, priorité la plus élevée, plus petit ID. Promotions : priorité la plus élevée, remise arrondie la plus avantageuse, plus petit ID ; une seule promotion par ligne. Remises et résultats du calculateur : HALF_UP à six décimales. Les paiements/factures sont arrondis selon la devise en Phase 4, notamment FCFA à zéro décimale.
+
+Les promotions quantité et lot portent un même conditionnement : groupes complets, reliquat au tarif unitaire. Pour N achetés + M offerts, la quantité saisie comprend les M offerts. Le moteur expose les paramètres appliqués et instantanés ; le checkout Phase 4 doit les conserver, sans recalcul historique.
+
+Les colonnes monétaires natives sont la source exacte du catalogue. La copie DOUBLE(10,2) reste une compatibilité temporaire pour les anciens écrans et opérations ; voir schema-cible section 8. Un import de stock reste limité à des quantités entières et coûts réels à deux décimales tant que les réceptions Phase 3 ne sont pas raccordées. Un import catalogue sans stock ne nécessite pas de fournisseur ni de référence fictive.
+
+## 7. Paramètres encore à proposer
 
 | Paramètre | Validation attendue avant mise en service |
 |---|---|

@@ -21,7 +21,7 @@ use Maatwebsite\Excel\Concerns\WithValidation;
 class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEmptyRows
 {
     public function __construct(
-        private readonly int $supplierId,
+        private readonly ?int $supplierId,
         private readonly int $userId,
     ) {
     }
@@ -74,6 +74,14 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             foreach (['price', 'purchase_price', 'discount'] as $field) {
                 $row[$field] = (string) \App\Support\MoneyDecimal::parse((string) $row[$field], $field);
             }
+            $price = \Brick\Math\BigDecimal::of($row['price']);
+            $discount = \Brick\Math\BigDecimal::of($row['discount']);
+            if ($row['discount_type'] === 'percentage' && $discount->isGreaterThan('100')) {
+                throw ValidationException::withMessages(['discount' => __('A percentage discount cannot exceed 100.')]);
+            }
+            if ($row['discount_type'] === 'fixed' && $discount->isGreaterThan($price)) {
+                throw ValidationException::withMessages(['discount' => __('A fixed discount cannot exceed the product price.')]);
+            }
             if ((int) $row['quantity'] > 0 && !\Brick\Math\BigDecimal::of($row['purchase_price'])->isEqualTo(\Brick\Math\BigDecimal::of($row['purchase_price'])->toScale(2, \Brick\Math\RoundingMode::HalfUp))) {
                 throw ValidationException::withMessages(['purchase_price' => __('Legacy purchase receipts support two decimals; use a reference cost with two decimals until Phase 3.')]);
             }
@@ -100,6 +108,10 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
         $counter = 1;
         while (Product::where('sku', $sku)->exists()) {
             $sku = $originalSku . '-' . $counter++;
+        }
+
+        if (CatalogueSchema::ready() && \App\Models\ProductBarcode::where('barcode', $sku)->exists()) {
+            throw ValidationException::withMessages(['sku' => __('This barcode is already in use.')]);
         }
 
         $product = Product::create([
@@ -131,7 +143,11 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'discount' => (string) $row['discount'], 'discount_type' => $row['discount_type'],
         ], true);
         if ((int) $row['quantity'] === 0) { return null; }
-        $lineTotal = round((float) $row['purchase_price'] * (int) $row['quantity'], 2);
+        if (!$this->supplierId) { throw ValidationException::withMessages(['quantity' => __('The default supplier is not configured.')]); }
+        $lineTotal = (string) \Brick\Math\BigDecimal::of((string) $row['purchase_price'])->multipliedBy((string) $row['quantity'])->toScale(2);
+        if (\Brick\Math\BigDecimal::of($lineTotal)->isGreaterThan('99999999.99')) {
+            throw ValidationException::withMessages(['quantity' => __('The purchase total exceeds the supported limit.')]);
+        }
         $purchase = Purchase::create([
             'supplier_id' => $this->supplierId,
             'user_id' => $this->userId,

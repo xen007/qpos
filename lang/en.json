@@ -589,5 +589,8 @@
     "conversion.barcode_not_convertible": "Barcode needs review",
     "conversion.amount_requires_decision_sale_price_ttc": "Sale price needs review",
     "conversion.amount_requires_decision_reference_purchase_cost": "Reference cost needs review",
-    "conversion.discount_requires_decision": "Discount needs review"
+    "conversion.discount_requires_decision": "Discount needs review",
+    "Catalogue pricing is available in this preview. POS integration is scheduled for Phase 4.": "Catalogue pricing is available in this preview. POS integration is scheduled for Phase 4.",
+    "Product discounts support fixed amounts or percentages.": "Product discounts support fixed amounts or percentages.",
+    "Catalogue codes are busy; try again.": "Catalogue codes are busy; try again."
 }

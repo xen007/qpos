@@ -51,8 +51,8 @@ class PricingController extends Controller
         $search = $request->validate(['search' => ['nullable', 'string', 'max:100']])['search'] ?? '';
         $units = ProductUnit::with('product')->whereHas('product', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
             ->orderBy('product_id')->orderBy('id')->paginate(20, ['*'], 'units_page')->withQueryString();
-        $rules = $this->scoped(PriceRule::with(['productUnit.product', 'pointOfSale', 'customer']))->latest()->paginate(20, ['*'], 'rules_page')->withQueryString();
-        $promotions = $this->scoped(Promotion::with(['productUnit.product', 'pointOfSale', 'customer']))->latest()->paginate(20, ['*'], 'promotions_page')->withQueryString();
+        $rules = $this->scoped(PriceRule::with(['productUnit.product', 'pointOfSale', 'customer'])->whereHas('productUnit.product', fn ($q) => $q->where('name', 'like', '%'.$search.'%')))->latest()->paginate(20, ['*'], 'rules_page')->withQueryString();
+        $promotions = $this->scoped(Promotion::with(['productUnit.product', 'pointOfSale', 'customer'])->whereHas('productUnit.product', fn ($q) => $q->where('name', 'like', '%'.$search.'%')))->latest()->paginate(20, ['*'], 'promotions_page')->withQueryString();
         $shops = PointOfSaleContext::manageableBy($request->user())->orderBy('name')->get();
         $customers = $request->user()->can('customer_view') ? Customer::select(['id', 'name'])->orderBy('name')->get() : collect();
         return view('backend.pricing.index', compact('units', 'rules', 'promotions', 'shops', 'customers', 'search'));
@@ -71,10 +71,13 @@ class PricingController extends Controller
         $this->ready();
         $model = $this->model($entity);
         $data = $this->validated($request, $entity);
-        DB::transaction(function () use ($model, $id, $data) {
+        DB::transaction(function () use ($model, $id, $data, $entity) {
             $row = $model::whereKey($id)->lockForUpdate()->firstOrFail();
             $this->authorizeScope($row->point_of_sale_id);
             $this->authorizeScope($data['point_of_sale_id']);
+            if ($entity === 'promotions' && $row->legacy_product_id && !in_array($data['kind'], ['fixed', 'percentage'], true)) {
+                throw ValidationException::withMessages(['kind' => __('Product discounts support fixed amounts or percentages.')]);
+            }
             $row->update($data);
         });
         return back()->with('success', __('Pricing rule saved.'));
@@ -172,7 +175,7 @@ class PricingController extends Controller
             if ($data['kind'] === 'percentage' && MoneyDecimal::parse($data['value'])->isGreaterThan('100')) {
                 throw ValidationException::withMessages(['value' => __('A percentage discount cannot exceed 100.')]);
             }
-            $data['bundle_price'] = !empty($data['bundle_price']) ? (string) MoneyDecimal::parse($data['bundle_price'], 'bundle_price') : null;
+            $data['bundle_price'] = isset($data['bundle_price']) ? (string) MoneyDecimal::parse($data['bundle_price'], 'bundle_price') : null;
             if ($data['kind'] === 'bundle' && $data['bundle_price'] === null) { $data['bundle_price'] = '0.000000'; }
             foreach (['buy_quantity', 'free_quantity', 'bundle_quantity'] as $field) { $data[$field] ??= null; }
             $fields = array_merge($fields, ['kind', 'value', 'buy_quantity', 'free_quantity', 'bundle_quantity', 'bundle_price']);

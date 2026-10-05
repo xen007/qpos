@@ -45,6 +45,17 @@ class ConvertCatalogue extends Command
             $this->error('Business data changed since backup; create a new backup.'); return self::FAILURE;
         }
         if (!$this->option('apply')) { $this->info('Preflight passed; no data changed.'); return self::SUCCESS; }
+        if (!$probe) {
+            $proofPath = $directory.'/conversion-probe.json';
+            $proof = is_file($proofPath) ? json_decode(file_get_contents($proofPath), true, 512, JSON_THROW_ON_ERROR) : [];
+            if (empty($proof['legacy_business_unchanged']) || empty($proof['probe'])
+                || ($proof['database'] ?? null) !== $manifest['probe_database']
+                || ($proof['backup_sha256'] ?? null) !== $manifest['database_sha256']
+                || ($proof['converter_sha256'] ?? null) !== hash_file('sha256', __FILE__)) {
+                $this->error('Apply and verify this backup on its isolated probe before source conversion.');
+                return self::FAILURE;
+            }
+        }
         $migrationPaths = [
             'database/migrations/2026_10_01_100000_create_points_of_sale_table.php',
             'database/migrations/2026_10_01_100100_create_point_of_sale_user_table.php',
@@ -53,6 +64,12 @@ class ConvertCatalogue extends Command
             'database/migrations/2026_10_02_170200_add_catalogue_pricing.php',
             'database/migrations/2026_10_02_170300_add_catalogue_conversion_tracking.php',
         ];
+        $migrationHashes = [];
+        foreach ($migrationPaths as $migrationPath) { $migrationHashes[$migrationPath] = hash_file('sha256', base_path($migrationPath)); }
+        if (!$probe && ($proof['migration_hashes'] ?? null) !== $migrationHashes) {
+            $this->error('Migration code changed since the isolated conversion; repeat it on the probe.');
+            return self::FAILURE;
+        }
         if (Artisan::call('migrate', ['--path' => $migrationPaths, '--force' => true]) !== 0) { $this->error('Schema preparation failed.'); return self::FAILURE; }
         $this->line(Artisan::output());
         $runId = (string) Str::uuid();
@@ -117,12 +134,13 @@ class ConvertCatalogue extends Command
                     if ($discount->isPositive() && !DB::table('catalogue_conversion_mappings')->where('source_table', 'products')->where('source_id', $product->id)->where('purpose', 'discount')->exists()) {
                         if (!in_array($product->discount_type, ['fixed', 'percentage'], true) || ($product->discount_type === 'percentage' && $discount->isGreaterThan('100'))
                             || ($product->discount_type === 'fixed' && ($reference->sale_price_ttc === null || $discount->isGreaterThan($reference->sale_price_ttc)))) { throw new \RuntimeException('Invalid discount.'); }
-                        $promotion = Promotion::create(['product_unit_id' => $reference->id, 'name' => 'Legacy: '.$product->name, 'legacy_product_id' => $product->id, 'kind' => $product->discount_type,
+                        $promotion = Promotion::firstOrCreate(['legacy_product_id' => $product->id], ['product_unit_id' => $reference->id, 'name' => 'Legacy: '.$product->name, 'kind' => $product->discount_type,
                             'value' => (string) $discount, 'minimum_quantity' => '0', 'priority' => 0, 'is_active' => (bool) $product->status]);
                         $map($product->id, 'discount', 'promotions', $promotion->id, ['discount' => $product->raw_discount, 'discount_type' => $product->discount_type]);
-                        $counts['promotions_created']++;
+                        if ($promotion->wasRecentlyCreated) { $counts['promotions_created']++; }
                     }
-                } catch (\Throwable $exception) { $issue($product->id, 'discount_requires_decision', ['discount' => $product->raw_discount, 'discount_type' => $product->discount_type]); }
+                } catch (\Illuminate\Database\QueryException $exception) { throw $exception; }
+                catch (\Throwable $exception) { $issue($product->id, 'discount_requires_decision', ['discount' => $product->raw_discount, 'discount_type' => $product->discount_type]); }
             }
             if ($fingerprint->snapshot($connection, $manifest['fingerprints']) !== $manifest['fingerprints']) { throw new \RuntimeException('Legacy business fingerprint changed; additive conversion rolled back.'); }
             DB::table('catalogue_conversion_runs')->where('id', $runId)->update(['status' => $counts['issues'] ? 'completed_with_issues' : 'completed', 'counts' => json_encode($counts, JSON_THROW_ON_ERROR), 'completed_at' => $now, 'updated_at' => $now]);
@@ -131,7 +149,7 @@ class ConvertCatalogue extends Command
         foreach ([\Database\Seeders\PointOfSaleSeeder::class, \Database\Seeders\PointOfSalePermissionSeeder::class, \Database\Seeders\PricingPermissionSeeder::class] as $seeder) {
             if (Artisan::call('db:seed', ['--class' => $seeder, '--force' => true]) !== 0) { throw new \RuntimeException('Scoped reference seeding failed.'); }
         }
-        $report = ['run_id' => $runId, 'database' => $connection->getDatabaseName(), 'counts' => $counts, 'legacy_business_unchanged' => true,
+        $report = ['run_id' => $runId, 'database' => $connection->getDatabaseName(), 'backup_sha256' => $manifest['database_sha256'], 'converter_sha256' => hash_file('sha256', __FILE__), 'migration_hashes' => $migrationHashes, 'counts' => $counts, 'legacy_business_unchanged' => true,
             'completed_at' => now()->toIso8601String(), 'probe' => (bool) $probe];
         file_put_contents($directory.'/conversion-'.($probe ? 'probe' : 'source').'.json', json_encode($report, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
         $this->info('Additive conversion completed; legacy business fingerprints unchanged.');
