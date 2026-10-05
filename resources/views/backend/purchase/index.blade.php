@@ -24,7 +24,7 @@
             <table id="datatables" class="w-full border-collapse text-sm">
                 <thead>
                     <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
-                        <th data-orderable="false" class="px-3 py-3">#</th>
+                        <th data-orderable="false" class="px-3 py-3">{{ __('Line') }}</th>
                         <th class="px-3 py-3">{{ __('Supplier') }}</th>
                         <th class="px-3 py-3">{{ __('ID') }}</th>
                         <th class="px-3 py-3">{{ __('Total') }} {{ currency()->symbol ?? '' }}</th>

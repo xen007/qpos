@@ -49,8 +49,9 @@ class PricingController extends Controller
     {
         $this->ready();
         $search = $request->validate(['search' => ['nullable', 'string', 'max:100']])['search'] ?? '';
-        $units = ProductUnit::with('product')->whereHas('product', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
-            ->orderBy('product_id')->orderBy('id')->paginate(20, ['*'], 'units_page')->withQueryString();
+        $units = ProductUnit::with('product')->where('is_active', true)
+            ->whereHas('product', fn ($q) => $q->where('name', 'like', '%'.$search.'%'))
+            ->orderBy('product_id')->orderBy('factor')->orderBy('id')->paginate(20, ['*'], 'units_page')->withQueryString();
         $rules = $this->scoped(PriceRule::with(['productUnit.product', 'pointOfSale', 'customer'])->whereHas('productUnit.product', fn ($q) => $q->where('name', 'like', '%'.$search.'%')))->latest()->paginate(20, ['*'], 'rules_page')->withQueryString();
         $promotions = $this->scoped(Promotion::with(['productUnit.product', 'pointOfSale', 'customer'])->whereHas('productUnit.product', fn ($q) => $q->where('name', 'like', '%'.$search.'%')))->latest()->paginate(20, ['*'], 'promotions_page')->withQueryString();
         $shops = PointOfSaleContext::manageableBy($request->user())->orderBy('name')->get();

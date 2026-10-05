@@ -131,8 +131,9 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
         ]);
 
         if (CatalogueSchema::ready()) {
-            $product->update(['allows_fractional' => false]);
-            if ($unit) {
+            $fractionalRule = \App\Support\FractionalQuantityRule::classify($unit);
+            $product->update(['allows_fractional' => $fractionalRule]);
+            if ($unit && $fractionalRule !== null) {
                 app(ProductUnitService::class)->save($product, [
                     'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title, 'factor' => '1', 'is_active' => true,
                 ]);

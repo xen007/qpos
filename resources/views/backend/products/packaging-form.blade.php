@@ -13,7 +13,7 @@
             <label for="unit-{{ $formKey }}" class="text-sm">{{ __('Unit') }}</label>
             <select id="unit-{{ $formKey }}" name="unit_id" class="qpos-control mt-1 w-full" required>
                 @foreach ($availableUnits as $unit)
-                    <option value="{{ $unit->id }}" @selected((string) $value('unit_id', $packaging?->unit_id ?? $product->unit_id) === (string) $unit->id)>{{ $unit->title }} ({{ $unit->short_name }})</option>
+                    <option value="{{ $unit->id }}" @selected((string) $value('unit_id', $packaging?->unit_id ?? $product->unit_id) === (string) $unit->id)>{{ __($unit->title) }} ({{ $unit->short_name }})</option>
                 @endforeach
             </select>
         </div>

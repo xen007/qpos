@@ -40,14 +40,18 @@
                     :value="$product->catalogue_price_ttc ?? $product->price" :placeholder="__('Enter price')" required />
 
                 <x-backend.select name="unit_id" :label="__('Unit')"
-                    :options="$units->mapWithKeys(fn ($unit) => [$unit->id => $unit->title . ' (' . $unit->short_name . ')'])->all()"
+                    :options="$units->mapWithKeys(fn ($unit) => [$unit->id => __($unit->title) . ' (' . $unit->short_name . ')'])->all()"
                     :selected="$product->unit_id" :placeholder="__('Select Unit')" />
 
                 @if ($catalogueUnitsReady)
-                    <x-backend.select name="allows_fractional" :label="__('Fractional quantities')"
-                        :options="[0 => __('No'), 1 => __('Yes')]"
-                        :selected="$product->allows_fractional === null ? null : (int) $product->allows_fractional"
-                        :placeholder="__('Choose the quantity rule')" />
+                    @if (auth()->user()->hasRole('Admin'))
+                        <x-backend.select name="allows_fractional" :label="__('Fractional quantities')"
+                            :options="[0 => __('No'), 1 => __('Yes')]"
+                            :selected="$product->allows_fractional === null ? null : (int) $product->allows_fractional"
+                            :placeholder="__('Automatic from base unit')" />
+                    @else
+                        <p class="self-end text-sm text-qpos-muted">{{ $product->allows_fractional === null ? __('Quantity rule needs administrator review.') : __('Quantity rule follows the product configuration.') }}</p>
+                    @endif
                 @endif
 
                 <x-backend.select name="discount_type" :label="__('Discount Type')" :options="[

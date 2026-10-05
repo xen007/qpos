@@ -9,8 +9,8 @@
     <form method="post" action="{{ $shop->exists ? route('backend.admin.shops.update', $shop) : route('backend.admin.shops.store') }}">
         @csrf @if ($shop->exists) @method('PUT') @endif
         <div class="grid gap-5 sm:grid-cols-2">
-            <x-backend.input name="code" :label="__('Code')" :value="$shop->code" maxlength="64" required />
-            <x-backend.input name="name" :label="__('Name')" :value="$shop->name" maxlength="255" required />
+            <x-backend.input name="code" id="store-code" :label="__('Code')" :value="$shop->code" maxlength="64" :required="$shop->exists" />
+            <x-backend.input name="name" id="store-name" :label="__('Name')" :value="$shop->name" maxlength="255" required />
             <x-backend.input name="address" :label="__('Address')" :value="$shop->address" maxlength="255" />
             <x-backend.switch name="is_active" :label="__('Active')" :checked="$shop->is_active" />
         </div>
@@ -35,5 +35,25 @@
         @endif
         <button class="qpos-button qpos-button-md qpos-button-primary mt-6" type="submit">{{ __('Save') }}</button>
     </form>
+    @if (!$shop->exists)
+        <script>
+            (() => {
+                const name = document.getElementById('store-name');
+                const code = document.getElementById('store-code');
+                if (!name || !code) return;
+                let manual = code.value.trim() !== '';
+                const generate = value => {
+                    const words = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').match(/[a-zA-Z0-9]+/g) || [];
+                    const base = words.length > 1 ? words.map(word => word[0]).join('') : (words[0] || '').slice(0, 3);
+                    return base.toUpperCase().slice(0, 50);
+                };
+                code.addEventListener('input', () => { manual = code.value.trim() !== ''; });
+                name.addEventListener('input', () => {
+                    if (!manual) code.value = generate(name.value);
+                });
+                if (!manual) code.value = generate(name.value);
+            })();
+        </script>
+    @endif
 </x-backend.card>
 @endsection

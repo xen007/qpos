@@ -29,12 +29,16 @@
                     :placeholder="__('Enter price')" required />
 
                 <x-backend.select name="unit_id" :label="__('Unit')"
-                    :options="$units->mapWithKeys(fn ($unit) => [$unit->id => $unit->title . ' (' . $unit->short_name . ')'])->all()"
+                    :options="$units->mapWithKeys(fn ($unit) => [$unit->id => __($unit->title) . ' (' . $unit->short_name . ')'])->all()"
                     :placeholder="__('Select Unit')" />
 
                 @if ($catalogueUnitsReady)
-                    <x-backend.select name="allows_fractional" :label="__('Fractional quantities')"
-                        :options="[0 => __('No'), 1 => __('Yes')]" :selected="0" />
+                    @if (auth()->user()->hasRole('Admin'))
+                        <x-backend.select name="allows_fractional" :label="__('Fractional quantities')"
+                            :options="[0 => __('No'), 1 => __('Yes')]" :placeholder="__('Automatic from base unit')" />
+                    @else
+                        <p class="self-end text-sm text-qpos-muted">{{ __('The quantity rule follows the base unit. An administrator can override it.') }}</p>
+                    @endif
                 @endif
 
                 <x-backend.select name="discount_type" :label="__('Discount Type')" :options="[
@@ -42,9 +46,6 @@
                     'percentage' => __('Percentage'),
                 ]"
                     :placeholder="__('Select Discount Type')" />
-
-                <x-backend.input name="purchase_price" type="number" step="0.000001" min="0"
-                    :label="__('Purchase Price')" :placeholder="__('Enter purchase Price')" />
 
                 <x-backend.input name="discount" type="number" step="0.000001" min="0" :label="__('Discount Amount')"
                     :placeholder="__('Enter discount')" />

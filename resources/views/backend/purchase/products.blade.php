@@ -19,7 +19,7 @@
                     <table class="w-full border-collapse text-sm">
                         <thead>
                             <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
-                                <th class="px-3 py-3">#</th>
+                                <th class="px-3 py-3">{{ __('Line') }}</th>
                                 <th class="px-3 py-3">{{ __('Product') }}</th>
                                 <th class="px-3 py-3">{{ __('Purchase Price') }} {{ currency()->symbol ?? '' }}</th>
                                 <th class="px-3 py-3">{{ __('Quantity') }}</th>

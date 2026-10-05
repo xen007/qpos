@@ -142,9 +142,6 @@ class ProductController extends Controller
                 unset($validated[$field]);
             }
         }
-        if (CatalogueSchema::ready()) {
-            $validated['allows_fractional'] ??= false;
-        }
         $product = \App\Support\CatalogueCodes::transaction(function () use ($validated) {
             \App\Support\CatalogueCodes::validateSku($validated['sku']);
             if (!CatalogueSchema::ready()) {
@@ -159,11 +156,14 @@ class ProductController extends Controller
             if (!$unit) {
                 throw ValidationException::withMessages(['unit_id' => __('Select an active unit.')]);
             }
+            $validated['allows_fractional'] ??= \App\Support\FractionalQuantityRule::classify($unit);
             $product = Product::create(\App\Support\LegacyMoney::compatible($validated));
-            app(ProductUnitService::class)->save($product, [
-                'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title,
-                'factor' => '1', 'is_active' => true,
-            ]);
+            if ($product->allows_fractional !== null) {
+                app(ProductUnitService::class)->save($product, [
+                    'unit_id' => $unit->id, 'code' => 'BASE', 'label' => $unit->title,
+                    'factor' => '1', 'is_active' => true,
+                ]);
+            }
             app(\App\Services\ReferencePricingService::class)->sync($product, $validated, true);
             return $product;
         });
@@ -227,6 +227,9 @@ class ProductController extends Controller
             }
             if ((int) $product->unit_id !== (int) $unitId && $product->productUnits()->exists()) {
                 throw ValidationException::withMessages(['unit_id' => __('The base unit cannot change once packagings exist.')]);
+            }
+            if (array_key_exists('allows_fractional', $validated) && $validated['allows_fractional'] === null && $unit) {
+                $validated['allows_fractional'] = \App\Support\FractionalQuantityRule::classify($unit);
             }
             $product->update(\App\Support\LegacyMoney::compatible($validated, $product));
             if ($unit && $product->allows_fractional !== null && !$product->productUnits()->where('is_reference', true)->exists()) {

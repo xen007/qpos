@@ -28,7 +28,7 @@ class UpdateProductRequest extends FormRequest
             'category_id' => 'nullable|exists:categories,id',
             'brand_id' => 'nullable|exists:brands,id',
             'unit_id' => 'nullable|exists:units,id',
-            'allows_fractional' => [Rule::excludeIf(!\App\Support\CatalogueSchema::ready()), 'nullable', 'boolean'],
+            'allows_fractional' => [Rule::excludeIf(!\App\Support\CatalogueSchema::ready() || !$this->user()?->hasRole('Admin')), 'nullable', 'boolean'],
             'price' => 'required|numeric|min:0|max:99999999999999.999999',
             'discount' => 'nullable|numeric|min:0|max:99999999999999.999999|required_with:discount_type',
             'discount_type' => ['nullable', 'required_with:discount', Rule::in(['fixed', 'percentage'])],

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
 
 class PointOfSaleController extends Controller
 {
@@ -108,8 +109,8 @@ class PointOfSaleController extends Controller
     }
     private function validated(Request $request, ?PointOfSale $shop = null): array
     {
-        return $request->validate([
-            'code' => ['required', 'string', 'max:64', 'regex:/\\A[A-Za-z0-9_-]+\\z/D', Rule::unique('points_of_sale', 'code')->ignore($shop?->id)],
+        $data = $request->validate([
+            'code' => [$shop ? 'required' : 'nullable', 'string', 'max:64', 'regex:/\A[A-Za-z0-9_-]+\z/D', Rule::unique('points_of_sale', 'code')->ignore($shop?->id)],
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
@@ -117,6 +118,30 @@ class PointOfSaleController extends Controller
             'user_ids' => ['nullable', 'array', 'max:500'],
             'user_ids.*' => ['required', 'integer', 'distinct', Rule::exists('users', 'id')->where('is_suspended', false)],
         ]);
+
+        if (!$shop && blank($data['code'] ?? null)) {
+            $data['code'] = $this->uniqueCodeFor($data['name']);
+        }
+
+        return $data;
+    }
+    private function uniqueCodeFor(string $name): string
+    {
+        preg_match_all('/[A-Za-z0-9]+/', Str::ascii($name), $matches);
+        $words = $matches[0] ?? [];
+        $base = count($words) > 1
+            ? implode('', array_map(fn ($word) => $word[0], $words))
+            : substr($words[0] ?? 'SHOP', 0, 3);
+        $base = strtoupper(substr($base ?: 'SHOP', 0, 50));
+        $candidate = $base;
+        $suffix = 2;
+
+        while (PointOfSale::where('code', $candidate)->exists()) {
+            $ending = '-'.$suffix++;
+            $candidate = substr($base, 0, 64 - strlen($ending)).$ending;
+        }
+
+        return $candidate;
     }
     private function assignUsers(PointOfSale $shop, array $ids): void
     {

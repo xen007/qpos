@@ -19,7 +19,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-ChhukfIV.css",
+    "file": "assets/app-yDT91wjJ.css",
     "name": "app",
     "names": [
       "app.css"
@@ -37,7 +37,7 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-CSZH48R5.js",
+    "file": "assets/app-CG2W4p-6.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -60,7 +60,7 @@
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-DjXQpeZp.js",
+    "file": "assets/Pos-CdaMF1Hu.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
@@ -76,7 +76,7 @@
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-zdgWQ9ZM.js",
+    "file": "assets/Purchase-BFkcdNgs.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,
