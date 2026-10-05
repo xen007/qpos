@@ -509,6 +509,7 @@
     "The base unit cannot change once packagings exist.": "L’unité de base ne peut plus changer lorsque des conditionnements existent.",
     "Packaging saved successfully.": "Conditionnement enregistré.",
     "Barcode saved successfully.": "Code-barres enregistré.",
+    "This packaging will be supported in Phase 4.": "Ce conditionnement sera pris en charge en Phase 4.",
     "Base quantity: :quantity": "Quantité de base : :quantity",
     "This barcode conflicts with an existing product SKU.": "Ce code-barres correspond à la référence SKU d’un autre produit ou conditionnement.",
     "This barcode is already in use.": "Ce code-barres est déjà utilisé.",

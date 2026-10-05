@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\PosCart;
 use App\Models\Product;
+use App\Models\ProductBarcode;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -46,10 +47,31 @@ class CartController extends Controller
             $query->where('name', 'LIKE', "%{$search}%");
         });
 
-        // Search by barcode if provided
-        $products->when($request->barcode, function ($query, $barcode) {
-            $query->where('sku', $barcode);
-        });
+        // Resolve registered packaging barcodes before falling back to product SKUs.
+        $barcode = trim((string) $request->input('barcode', ''));
+        if ($barcode !== '') {
+            $packagingBarcode = ProductBarcode::query()
+                ->where('barcode', $barcode)
+                ->where('is_active', true)
+                ->whereHas('productUnit', fn ($query) => $query->where('is_active', true))
+                ->with(['productUnit.product'])
+                ->first();
+
+            if ($packagingBarcode) {
+                $productUnit = $packagingBarcode->productUnit;
+                if ((string) $productUnit->factor !== '1.000000') {
+                    return response()->json([
+                        'data' => [],
+                        'meta' => ['last_page' => 1],
+                        'scan_message' => __('This packaging will be supported in Phase 4.'),
+                    ]);
+                }
+
+                $products->whereKey($productUnit->product_id);
+            } else {
+                $products->where('sku', $barcode);
+            }
+        }
         $products = $products->latest()->paginate(96);
         if (request()->wantsJson()) {
             return ProductResource::collection($products);

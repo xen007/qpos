@@ -34,6 +34,14 @@ export default function Pos() {
     const [totalPages, setTotalPages] = useState(0);
     const [loading, setLoading] = useState(true);
     const productRequest = useRef(0);
+    const barcodeInput = useRef(null);
+
+    useEffect(() => {
+        if (activePanel !== 'catalogue') return;
+        const frame = window.requestAnimationFrame(() => barcodeInput.current?.focus());
+        return () => window.cancelAnimationFrame(frame);
+    }, [activePanel]);
+
     const getProducts = useCallback(
         async (search = "", page = 1, barcode = "") => {
             const requestId = ++productRequest.current;
@@ -46,6 +54,11 @@ export default function Pos() {
                 if (requestId !== productRequest.current) return;
                 setProducts(prev => page === 1 ? productsData.data : [...prev, ...productsData.data]);
                 setCurrentPage(page);
+                if (productsData.scan_message) {
+                    toast.error(productsData.scan_message);
+                    setTotalPages(1);
+                    return;
+                }
                 if (productsData.data.length === 1 && barcode != "") {
                     addProductToCart(productsData.data[0].id);
                 }
@@ -96,18 +109,18 @@ export default function Pos() {
         setDue((balance > 0 ? balance : 0).toFixed(2));
         setChange((balance < 0 ? -balance : 0).toFixed(2));
     }, [orderDiscount, paid, total]);
-    function addProductToCart(id) {
-        axios
-            .post("/admin/cart", { id })
-            .then((res) => {
-                setCartUpdated(previous => !previous);
-                playSound(SuccessSound);
-                toast.success(res?.data?.message);
-            })
-            .catch((err) => {
-                playSound(WarningSound);
-                toast.error(getErrorMessage(err));
-            });
+    async function addProductToCart(id) {
+        try {
+            const res = await axios.post("/admin/cart", { id });
+            setCartUpdated(previous => !previous);
+            playSound(SuccessSound);
+            toast.success(res?.data?.message);
+        } catch (err) {
+            playSound(WarningSound);
+            toast.error(getErrorMessage(err));
+        } finally {
+            barcodeInput.current?.focus();
+        }
     }
     function cartEmpty() {
         if (total <= 0) {
@@ -204,7 +217,7 @@ export default function Pos() {
             <section id="pos-panel-catalogue" role="tabpanel" className={'qpos-card qpos-catalogue-panel ' + (activePanel === 'catalogue' ? 'is-active' : '')} aria-labelledby="pos-tab-catalogue">
                 <header className="qpos-workspace-heading"><div><span className="qpos-eyebrow">{translate("POS")}</span><h2 id="qpos-catalogue-title">{translate("Product catalogue")}</h2></div><Package size={24} aria-hidden="true" /></header>
                 <div className="qpos-search-grid">
-                    <Field label={translate("Enter Product Barcode")}><span className="qpos-input-icon"><Barcode size={18} aria-hidden="true" /><input className="qpos-control" type="text" value={searchBarcode} onChange={e => setSearchBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && searchBarcode.trim()) { e.preventDefault(); getProducts('',1,searchBarcode.trim()); } }} autoFocus={window.matchMedia('(pointer: fine)').matches} /></span></Field>
+                    <Field label={translate("Enter Product Barcode")}><span className="qpos-input-icon"><Barcode size={18} aria-hidden="true" /><input ref={barcodeInput} className="qpos-control" type="text" value={searchBarcode} onChange={e => setSearchBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && searchBarcode.trim()) { e.preventDefault(); const barcode = searchBarcode.trim(); setSearchBarcode(""); getProducts('',1,barcode); } }} /></span></Field>
                     <Field label={translate("Search products")}><span className="qpos-input-icon"><Search size={18} aria-hidden="true" /><input className="qpos-control" type="search" placeholder={translate("Enter Product Name")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></span></Field>
                 </div>
                 <div className="qpos-products-grid" aria-busy={loading}>

@@ -37,7 +37,7 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-CG2W4p-6.js",
+    "file": "assets/app-DMJTfZq0.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -60,7 +60,7 @@
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-CdaMF1Hu.js",
+    "file": "assets/Pos-1MmnBM-L.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
@@ -76,7 +76,7 @@
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-BFkcdNgs.js",
+    "file": "assets/Purchase-B41ROoeq.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,

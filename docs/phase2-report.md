@@ -2,12 +2,20 @@
 
 Date : 05/10/2026. Implémentation et conversion locale exécutées ; validation finale du propriétaire attendue. Aucun commit ni push effectué par l’assistant.
 
+## Mise à jour finale — commit `fc2ee98`
+
+Cette mise à jour remplace les états historiques contradictoires ci-dessous concernant le commit, les règles fractionnaires et les unités de base « Dozen » :
+
+- La correction des 11 produits historiquement configurés avec « Douzaine » comme unité de base est incluse : unité de base « Piece », conditionnement « Douzaine » au facteur 12 et quantité entière.
+- État final constaté : 0 produit sans règle `allows_fractional` et 0 produit dont l'unité de base est « Dozen ».
+- L'historique des anomalies de conversion reste conservé dans les tables d'audit ; ces données ne sont pas modifiées par la présente mise à jour.
+
 ## 1. État Git et périmètre
 
 - Répertoire : C:/xampp/htdocs/qpos ; branche main.
-- HEAD et référence locale origin/main : 8a47f85545ce4a6fefbf6e468b5ba8074e7d26ba, commit WIP du propriétaire. Aucun fetch effectué pendant cette reprise.
-- Point de comparaison de la Phase 2 : fin de Phase 1, 50edb2d. Le WIP déjà commité et les corrections non commitées constituent ensemble cette livraison.
-- Travail existant conservé. Pas de reset, retrait de fichiers métier, commit ou push. Le remplacement d’un asset CSS provient du build Vite.
+- HEAD et référence locale origin/main : `fc2ee98` ; branche main synchronisée selon le suivi local. Aucun fetch effectué pendant cette reprise.
+- Point de comparaison de la Phase 2 : fin de Phase 1, 50edb2d. Le commit `fc2ee98` inclut la correction finale des règles fractionnaires et des 11 unités « Douzaine ».
+- Le commit de Phase 2 appartient au propriétaire. Les corrections du présent audit restent non commitées.
 - Les sauvegardes et rapports privés ne sont pas dans Git. Les inventaires complets figurent à la fin du document.
 
 ## 2. Résultat par sous-lot
@@ -45,7 +53,7 @@ Sauvegarde privée utilisée : C:/qpos-backups/phase2-20261005-b3e84b6f, droits 
 | Promotions créées | 50 | 0 | 50 |
 | Anomalies du passage | 51 | 51 | 51 |
 
-Toutes les anomalies source sont fractional_rule_unknown : aucun choix fractionnaire inventé. Prix et coûts de référence connus : aucune valeur cible manquante. Les quatre lignes de vente historiques restent conservées avec leurs nouveaux snapshots inconnus : zéro product_unit_id renseigné rétroactivement. Aucune affectation utilisateur créée automatiquement.
+Les 51 anomalies fractional_rule_unknown reflètent l'état au moment de la conversion et restent conservées comme historique d'audit. Après la correction incluse dans `fc2ee98`, l'état courant est : 0 produit sans règle `allows_fractional`, 0 produit avec l'unité de base « Dozen ». Les 11 produits « Douzaine » utilisent l'unité de base « Piece » et un conditionnement facteur 12. Les quatre lignes de vente historiques restent conservées avec leurs snapshots inconnus : zéro `product_unit_id` renseigné rétroactivement. Aucune affectation utilisateur créée automatiquement.
 
 Le premier essai avait échoué sur une copie précédente avec une FK vers point_of_sales. Correction : constrained('points_of_sale') explicite dans la migration des tarifs. Recherche dans les migrations : aucune autre coquille trouvée. Cette copie partielle et les anciennes sauvegardes sont conservées pour traçabilité ; elles ne constituent pas la preuve finale de conversion.
 
@@ -74,7 +82,7 @@ Non vérifié : parcours navigateur authentifié complet, upload réel d’image
 
 ## 5. Limites et décisions restantes
 
-1. Le propriétaire doit définir explicitement allows_fractional pour les 51 produits historiques. Le calculateur natif refuse un produit dont cette règle reste inconnue.
+1. Règles fractionnaires historiques résolues dans `fc2ee98` : 0 produit sans règle. Les 11 anciens produits « Douzaine » ont été corrigés comme décrit ci-dessus.
 2. MAIN existe ; zéro affectation utilisateur. Créer les boutiques voulues et affecter explicitement leurs utilisateurs via les nouveaux écrans. La préférence seule ne donne pas accès.
 3. Stocks toujours legacy globaux : journal, lots, ouverture, soldes par boutique et raccordement des écrivains sont Phase 3. Aucune répartition arbitraire du stock faite.
 4. POS et achats historiques utilisent encore les montants DOUBLE(10,2). Les valeurs natives DECIMAL(20,6) font autorité pour le catalogue/calculateur ; copie de compatibilité à deux décimales lorsque représentable. Le checkout natif et l’arrondi final devise, FCFA zéro décimale, restent Phase 4.

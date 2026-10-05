@@ -509,6 +509,7 @@
     "The base unit cannot change once packagings exist.": "The base unit cannot change once packagings exist.",
     "Packaging saved successfully.": "Packaging saved successfully.",
     "Barcode saved successfully.": "Barcode saved successfully.",
+    "This packaging will be supported in Phase 4.": "This packaging will be supported in Phase 4.",
     "Base quantity: :quantity": "Base quantity: :quantity",
     "This barcode conflicts with an existing product SKU.": "This barcode conflicts with an existing product SKU.",
     "This barcode is already in use.": "This barcode is already in use.",

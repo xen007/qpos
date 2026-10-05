@@ -259,6 +259,8 @@ Critère : stocks réconciliables, achats et POS cohérents, lots traçables, tr
 
 Clients, client de passage protégé, dettes/échéances/avoirs ; `SaleService` ; POS tactile et clavier ; conditionnements/tarifs/promotions ; scanner USB ; paiements multiples et monnaie rendue ; caisses/comptage/écarts ; dépenses ; retours/échanges/remboursements/annulations ; historique/règlements/factures/tickets 80 mm/étiquettes selon formats retenus.
 
+Pour le scan d'un code de conditionnement, adapter `pos_carts` pour conserver `product_unit_id` et une quantité décimale, puis intégrer cette unité au panier et au checkout dans `CartController`, `OrderController` et `Pos.jsx`. En Phase 2, le scan d'un conditionnement autre que l'unité de référence est reconnu puis refusé avec un message explicite ; aucun conditionnement n'est ajouté au panier.
+
 Préparer sessions/paiements avant branchement du checkout. Isolation des paniers, transactions et verrous, idempotence et récupération du résultat après perte réseau. Une réponse perdue après validation ne doit pas entraîner une deuxième vente.
 
 Critère : vente traçable, stock correct, encaissements cohérents, retours contrôlés, interface FR/EN finalisée.

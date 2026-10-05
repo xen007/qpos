@@ -73,9 +73,6 @@ class BackendMenu
 
         if ($user->can('pricing_view') && PricingSchema::ready()) {
             $items[] = self::item('Prices and promotions', 'fas fa-tags', 'backend.admin.pricing.index', ['backend.admin.pricing.*']);
-            if ($user->can('point_of_sale_manage_all')) {
-                $items[] = self::item('Catalogue conversion', 'fas fa-list', 'backend.admin.catalogue-conversion.index');
-            }
         }
 
         // --- Produits -------------------------------------------------------
