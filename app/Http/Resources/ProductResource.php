@@ -25,6 +25,14 @@ class ProductResource extends JsonResource
             'purchase_price' => $this->purchase_price,
             'discounted_price' => $this->discounted_price,
             'quantity' => $this->quantity,
+            'allows_fractional' => $this->allows_fractional,
+            'product_units' => $this->whenLoaded('productUnits', fn () => $this->productUnits
+                ->where('is_active', true)->values()->map(fn ($unit) => [
+                    'id' => $unit->id, 'label' => $unit->label, 'code' => $unit->code,
+                    'factor' => $unit->factor, 'is_reference' => $unit->is_reference,
+                    'unit_cost' => $unit->reference_purchase_cost,
+                    'sale_price' => $unit->sale_price_ttc,
+                ])),
             'status' => $this->status,
             'created_at' => $this->created_at,
             // 'image_url' => $this->getImageUrl(),

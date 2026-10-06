@@ -11,7 +11,7 @@
             <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <x-backend.input name="name" :label="__('Name')" :placeholder="__('Enter title')" required />
 
-                <x-backend.input name="phone" :label="__('Phone')" :placeholder="__('Enter phone')" required />
+                <x-backend.input name="phone" :label="__('Phone')" :placeholder="__('Enter phone')" />
 
                 <x-backend.input name="address" :label="__('Address')" :placeholder="__('Enter Address')" />
             </div>

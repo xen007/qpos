@@ -25,13 +25,13 @@ class SupplierController extends Controller
                 // Colonnes neutres : les pages migrees composent leurs actions
                 // cote page, en respectant la regle du fournisseur interne.
                 ->addColumn('id', fn($data) => $data->id)
-                ->addColumn('is_default', fn($data) => $data->name === 'Own Supplier')
+                ->addColumn('is_default', fn($data) => (bool)$data->is_internal)
                 ->addColumn('name', fn($data) => $data->name)
                 ->addColumn('phone', fn($data) => $data->phone)
                 ->addColumn('address', fn($data) => $data->address)
                 ->addColumn('created_at', fn($data) => $data->created_at->translatedFormat('d M, Y'))
                 ->addColumn('action', function ($data) {
-                    $isDefaultSupplier = $data->name === 'Own Supplier';
+                    $isDefaultSupplier = (bool)$data->is_internal;
                     return '<div class="btn-group">
                     <button type="button" class="btn bg-gradient-primary btn-flat">' . e(__('Actions')) . '</button>
                     <button type="button" class="btn bg-gradient-primary btn-flat dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-expanded="false">
@@ -53,7 +53,7 @@ class SupplierController extends Controller
                 ->toJson();
         }
         if ($request->wantsJson()) {
-            return response()->json(Supplier::latest()->get());
+            return response()->json(Supplier::where('is_active', true)->latest()->get());
         }
 
 
@@ -73,15 +73,8 @@ class SupplierController extends Controller
      */
     public function store(StoreSupplierRequest $request)
     {
-        if ($request->wantsJson()) {
-            $supplier = Supplier::create([
-                'name' => $request->name,
-            ]);
-
-            return response()->json($supplier);
-        }
-
-        $supplier = Supplier::create($request->only(['name', 'phone', 'address']));
+        $supplier = Supplier::create($request->safe()->only(['name', 'phone', 'address', 'is_active']));
+        if ($request->wantsJson()) return response()->json($supplier, 201);
 
         session()->flash('success', __('Supplier created successfully.'));
         return to_route('backend.admin.suppliers.index');
@@ -92,7 +85,21 @@ class SupplierController extends Controller
      */
     public function show(Supplier $supplier)
     {
-        //
+        abort_unless(auth()->user()->can('supplier_view'), 403);
+        if (request()->wantsJson()) return response()->json($supplier);
+        $purchases = null;
+        if (auth()->user()->can('purchase_view')) {
+            $purchases = \App\Support\StockDocumentAccess::query(Purchase::query(), request())
+                ->where('supplier_id', $supplier->id)->with('paymentAllocations.payment')->latest()->paginate(20);
+            foreach ($purchases as $purchase) {
+                $paid = \Brick\Math\BigDecimal::zero();
+                foreach ($purchase->paymentAllocations as $allocation) {
+                    $paid = $allocation->payment->direction === 'outgoing' ? $paid->plus($allocation->amount) : $paid->minus($allocation->amount);
+                }
+                $purchase->setAttribute('due_amount', $purchase->payment_status === 'unknown' ? null : (($purchase->cancelled_at || $purchase->payment_status === 'not_applicable') ? '0.000000' : (string)\Brick\Math\BigDecimal::of((string)$purchase->grand_total)->minus($paid)));
+            }
+        }
+        return view('backend.suppliers.show', compact('supplier','purchases'));
     }
 
     /**
@@ -101,6 +108,8 @@ class SupplierController extends Controller
     public function edit($id)
     {
         $supplier = Supplier::findOrFail($id);
+        abort_unless(auth()->user()->can('supplier_update'), 403);
+        abort_if($supplier->is_internal, 403, __('The internal supplier is protected.'));
         return view('backend.suppliers.edit', compact('supplier'));
     }
 
@@ -110,8 +119,10 @@ class SupplierController extends Controller
     public function update(UpdateSupplierRequest $request, $id)
     {
         $supplier = Supplier::findOrFail($id);
+        abort_if($supplier->is_internal, 403, __('The internal supplier is protected.'));
 
-        $supplier->update($request->only(['name', 'phone', 'address']));
+        $supplier->update($request->safe()->only(['name', 'phone', 'address', 'is_active']));
+        if ($request->wantsJson()) return response()->json($supplier);
 
         session()->flash('success', __('Supplier updated successfully.'));
         return to_route('backend.admin.suppliers.index');
@@ -125,10 +136,11 @@ class SupplierController extends Controller
     {
         $result = DB::transaction(function () use ($id) {
             $supplier = Supplier::whereKey($id)->lockForUpdate()->firstOrFail();
-            if ($supplier->name === 'Own Supplier') {
+            if ($supplier->is_internal) {
                 return 'default';
             }
-            if (Purchase::where('supplier_id', $supplier->id)->exists()) {
+            if (Purchase::where('supplier_id', $supplier->id)->exists()
+                || \App\Models\Payment::where('supplier_id', $supplier->id)->exists()) {
                 return 'history';
             }
             $supplier->delete();
@@ -148,7 +160,7 @@ class SupplierController extends Controller
     {
         abort_if(!auth()->user()->can('supplier_view'), 403);
         if ($request->wantsJson()) {
-            return response()->json(Supplier::latest()->get());
+            return response()->json(Supplier::where('is_active', true)->latest()->get());
         }
     }
     //get orders by supplier id
@@ -156,7 +168,6 @@ class SupplierController extends Controller
     {
         abort_if(!auth()->user()->can('supplier_view'), 403);
         $supplier = Supplier::findOrFail($id);
-        $orders = $supplier->orders()->paginate(100);
-        return view('backend.orders.index', compact('orders'));
+        return to_route('backend.admin.suppliers.show', $supplier->id);
     }
 }

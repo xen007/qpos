@@ -5,9 +5,9 @@ REPRISE QPOS — PHASE 3 (DeepSeek Harness)
 
 Dépôt : C:\xampp\htdocs\qpos. Terminal PowerShell : Get-Content et Select-Object pour lectures bornées, rg pour recherches. Éviter les commandes mêlant CMD/PowerShell. Lire les gros fichiers par sections.
 
-ÉTAT CONSTATÉ LE 05/10/2026
+ÉTAT CONSTATÉ LE 06/10/2026
 - Branche main.
-- HEAD : `a65781a` (commit propriétaire 3.A), précédent commit Phase 2 : `9862796`. Groupes 3.B et 3.C préparés, commits propriétaire en attente ; ne pas supposer origin/main synchronisé. Aucun fetch réseau réalisé.
+- HEAD : `ad303b6` (3.C), précédent `be82e34` (3.B), `a65781a` (3.A), Phase 2 `9862796`. Commits 3.B/3.C et push confirmés par le propriétaire. 3.D implémenté et appliqué localement, application rouverte ; bilan dans docs/phase3-3d-report.md, un seul commit propriétaire en attente.
 - Laravel 12.69.3, PHP 8.2.12, XAMPP, MariaDB 10.4.32 ; OPcache actif, JIT off, APP_DEBUG=false.
 - Base locale qpos : socle 3.A et ouvertures 3.B appliqués ; 314 unités bloquées dans MAIN, données legacy préservées. Le raccordement 3.C est consigné séparément dans docs/phase3-3c-report.md ; lire ce bilan avant reprise.
 
@@ -44,13 +44,13 @@ RÈGLES ACTIVES
 - Arrêter et signaler un blocage réel.
 - Phase 2 validée par le propriétaire ; Phase 3 autorisée le 05/10/2026. Le propriétaire effectue les commits des sous-lots.
 
-MISSION IMMÉDIATE PHASE 3 APRÈS AUTORISATION
-1. Relever Git et migrations réellement appliquées ; confirmer validation de Phase 2, règles fractionnaires et affectations boutique.
-2. Lire les contrats et préparer le premier sous-lot journal/soldes/lots + StockService ; présenter les fichiers et choix avant modification.
-3. Confirmer boutique de reprise, provenance/coûts/expiration des stocks existants et traitement des inconnus ; ne pas répartir le stock global arbitrairement.
-4. Implémenter dans l’ordre roadmap : journal/soldes/lots et StockService ; mouvements d’ouverture ; raccordement des écrivains existants y compris POS ; fournisseurs/achats et PurchaseService ; imports/transferts/inventaires.
+MISSION À LA PROCHAINE REPRISE
+1. Relever Git et migrations réellement appliquées ; lire le bilan 3.D et vérifier sa validation/son commit propriétaire avant nouvelle passe achats.
+2. 3.A–3.C sont livrés ; 3.D est traité dans docs/phase3-3d-report.md. Ne pas relancer les ouvertures ni les anciens achats/ventes.
+3. MAIN est la boutique de reprise confirmée ; conserver les 314 unités bloquées sans preuve de lot/coût/péremption et les traces d'origine.
+4. Prochain sous-lot 3.E après frontière de commit 3.D : imports CSV/doublons/compte rendu, transferts avec transit et réceptions partielles, inventaires et ventes pendant comptage. Un seul commit propriétaire par sous-lot.
 5. products.quantity reste une source historique figée. Les consommateurs raccordés en 3.C utilisent le journal et les soldes par boutique ; pas de réécriture ni de nouvelle autorité de stock dans cette colonne.
-6. Corriger dans le lot fournisseurs le down() dangereux de create_suppliers_table, qui cible customers. Traiter les bugs achats D40–D41 (anciens D24–D25 Phase 0), D26–D27.
+6. Lire docs/phase3-3d-report.md pour les preuves et limites actuelles du lot fournisseurs/achats : correction du down() fournisseurs, journal de règlements, réceptions partielles et PurchaseService. Nouveaux documents XAF (D44), aucun montant historique converti.
 7. Les imports de stock ont encore quantités entières/coûts réels à deux décimales et traitement legacy des SKU doublons ; les reprendre avec les réceptions.
 8. Le calculateur natif Phase 2 n’est pas raccordé au checkout : intégration tarifs/promotions, paniers, caisse, paiements et arrondis finaux restent Phase 4.
 9. Fuseau actuel encore Asia/Dhaka : planifier les nouvelles journées Africa/Douala sans réécrire aveuglément l’historique.

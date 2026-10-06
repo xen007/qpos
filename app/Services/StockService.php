@@ -104,6 +104,7 @@ class StockService
                 'correlation_key' => $key,
                 'correlation_line' => $line,
                 'order_product_id' => null,
+                ...array_intersect_key($options, ['purchase_receipt_item_id' => true]),
                 'conversion_run_id' => $options['conversion_run_id'] ?? null,
                 'reversal_of_id' => $options['reversal_of_id'] ?? null,
                 'reason' => $options['reason'] ?? null,
@@ -332,6 +333,46 @@ class StockService
         ]);
     }
 
+    /** Compensate an untouched receipt in its original batch, including blocked expiry. */
+    public function reverseReceipt(int $shopId, int $sourceId, string $reason, string $key, int $userId): StockMovement
+    {
+        return DB::transaction(function () use ($shopId, $sourceId, $reason, $key, $userId) {
+            if (trim($reason) === '') throw ValidationException::withMessages(['reason'=>__('A reason is required for a stock adjustment.')]);
+            $key = $this->operationKey($key);
+            $source = StockMovement::query()->findOrFail($sourceId);
+            $this->lockProduct((int)$source->product_id);
+            $this->assertActiveShop($shopId);
+            $source = StockMovement::query()->whereKey($sourceId)->lockForUpdate()->firstOrFail();
+            if ((int)$source->point_of_sale_id !== $shopId || $source->type !== 'receipt' || !$source->product_batch_id || !$source->purchase_receipt_item_id)
+                throw ValidationException::withMessages(['purchase'=>__('Only a traced purchase receipt can be reversed.')]);
+            $this->assertBucket($source->bucket, [self::SALEABLE,self::UNSALEABLE]);
+            $existing = StockMovement::query()->where('reversal_of_id', $sourceId)->first();
+            if ($existing) {
+                if ($existing->correlation_key !== $key || $existing->reason !== trim($reason))
+                    throw ValidationException::withMessages(['purchase'=>__('This receipt was already reversed with different data.')]);
+                return $existing;
+            }
+            if (StockMovement::query()->where('product_batch_id', $source->product_batch_id)->whereKeyNot($sourceId)->exists())
+                throw ValidationException::withMessages(['purchase'=>__('A receipt whose lot has been used or transferred cannot be cancelled.')]);
+            $amount = BigDecimal::of($source->quantity_delta);
+            if (!$amount->isPositive()) throw ValidationException::withMessages(['purchase'=>__('Invalid receipt quantity.')]);
+            $stock = $this->lockProductStock($shopId, (int)$source->product_id);
+            $batch = $this->lockBatchStock($shopId, (int)$source->product_batch_id);
+            $field = $source->bucket.'_quantity';
+            if (!BigDecimal::of($batch->getAttribute($field))->isEqualTo($amount) || BigDecimal::of($stock->getAttribute($field))->isLessThan($amount))
+                throw ValidationException::withMessages(['purchase'=>__('The receipt lot no longer matches its opening quantity.')]);
+            $batch->setAttribute($field, '0.000000'); $batch->save();
+            $stock->setAttribute($field, (string)BigDecimal::of($stock->getAttribute($field))->minus($amount)->toScale(6)); $stock->save();
+            return $this->writeMovement([
+                'point_of_sale_id'=>$shopId, 'product_id'=>$source->product_id, 'product_batch_id'=>$source->product_batch_id,
+                'bucket'=>$source->bucket, 'quantity_delta'=>(string)$amount->negated()->toScale(6), 'type'=>'adjustment',
+                'occurred_at'=>now('Africa/Douala'), 'user_id'=>$userId, 'unit_cost'=>$source->unit_cost,
+                'correlation_key'=>$key, 'correlation_line'=>1, 'purchase_receipt_item_id'=>$source->purchase_receipt_item_id,
+                'reversal_of_id'=>$source->id, 'reason'=>trim($reason),
+            ]);
+        }, 3);
+    }
+
     public function getStock(int $shopId, int $productId): array
     {
         $stock = ProductStock::query()->where('point_of_sale_id', $shopId)->where('product_id', $productId)->first();
@@ -401,6 +442,7 @@ class StockService
                 'received_at' => $data['received_at'] ?? now('Africa/Douala'),
                 'unit_cost' => $cost,
                 'purchase_receipt_item_id' => $data['purchase_receipt_item_id'] ?? null,
+                ...array_intersect_key($data, ['currency_code'=>true]),
                 'provenance' => $data['provenance'] ?? $type,
             ]);
         }
@@ -524,7 +566,8 @@ class StockService
         if ((int) $existing->product_id !== $productId || $existing->type !== $type || $existing->bucket !== $bucket
             || BigDecimal::of($existing->quantity_delta)->compareTo($amount) !== 0
             || (array_key_exists('batch_id', $options) && (int) ($existing->product_batch_id ?? 0) !== (int) ($options['batch_id'] ?? 0))
-            || ($existing->reason ?? null) !== ($options['reason'] ?? null)) {
+            || ($existing->reason ?? null) !== ($options['reason'] ?? null)
+            || (isset($options['purchase_receipt_item_id']) && (int)$existing->purchase_receipt_item_id !== (int)$options['purchase_receipt_item_id'])) {
             throw ValidationException::withMessages(['correlation_key' => __('This stock operation key was already used for different values.')]);
         }
         if (array_key_exists('unit_cost', $options)) {
@@ -551,6 +594,7 @@ class StockService
                 && (($batch->unit_cost === null) !== ($batchData['unit_cost'] === null)
                     || ($batchData['unit_cost'] !== null
                         && BigDecimal::of($batch->unit_cost)->compareTo((string) MoneyDecimal::parse($batchData['unit_cost'], 'unit_cost')) !== 0)))
+            || (array_key_exists('currency_code',$batchData) && $batch->currency_code !== $batchData['currency_code'])
             || (array_key_exists('provenance', $batchData) && $batch->provenance !== $batchData['provenance'])) {
             throw ValidationException::withMessages(['correlation_key' => __('This stock operation key was already used for a different batch.')]);
         }

@@ -22,17 +22,18 @@ class UpdateSupplierRequest extends FormRequest
      */
     public function rules(): array
     {
-        $supplierId = $this->route('supplier');
+        $supplierId = $this->route('supplier') ?? $this->route('id');
 
         return [
             'name' => 'required|string|max:255',
             'phone' => [
-                'required',
+                'nullable',
                 'string',
-                'max:20',
+                'max:64',
                 Rule::unique('suppliers', 'phone')->ignore($supplierId),
             ],
             'address' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ];
     }
 }

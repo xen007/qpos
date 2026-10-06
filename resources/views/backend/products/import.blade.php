@@ -4,6 +4,8 @@
 
 @section('content')
     <x-backend.card>
+        <p class="mb-4 text-sm text-qpos-muted">{{ __('New stock receipt costs are expressed in XAF.') }}</p>
+        @cannot('purchase_receive')<p class="mb-4 text-sm text-qpos-muted">{{ __('Stock imports require receipt permission; catalogue-only imports remain available.') }}</p>@endcannot
         {{-- Page sans champ image ni select2 : les scripts que poussait l'ancienne
              version n'ont plus lieu d'etre charges. --}}
         <form action="{{ route('backend.admin.products.import') }}" method="post" class="accountForm"

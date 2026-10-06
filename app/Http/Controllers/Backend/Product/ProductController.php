@@ -113,7 +113,7 @@ class ProductController extends Controller
                     ->orWhere('sku', $request->search);
             });
             // Get the results
-            $products = $products->with('unit')->latest()->paginate(20);
+            $products = $products->with(['unit', 'productUnits' => fn ($q) => $q->where('is_active', true)->orderByDesc('is_reference')])->latest()->paginate(20);
             // Return the results as a JSON response
             return ProductResource::collection($products);
         }
@@ -296,7 +296,7 @@ class ProductController extends Controller
                 'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:5120'],
             ]);
 
-            $supplierId = Supplier::where('name', 'Own Supplier')->value('id');
+            $supplierId = Supplier::where('is_internal', true)->where('is_active', true)->value('id');
             $shopId = \App\Support\StockContext::shop($request)->id;
 
             \App\Support\CatalogueCodes::transaction(function () use ($validated, $supplierId, $shopId) {

@@ -24,16 +24,11 @@ class StoreSupplierRequest extends FormRequest
      */
     public function rules(): array
     {
-        if ($this->wantsJson()) {
-            return [
-                'name' => 'required|string',
-            ];
-        }
-
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:suppliers,phone',
+            'phone' => 'nullable|string|max:64|unique:suppliers,phone',
             'address' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ];
     }
 }

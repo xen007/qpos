@@ -27,7 +27,7 @@
                         <th data-orderable="false" class="px-3 py-3">{{ __('Line') }}</th>
                         <th class="px-3 py-3">{{ __('Supplier') }}</th>
                         <th class="px-3 py-3">{{ __('ID') }}</th>
-                        <th class="px-3 py-3">{{ __('Total') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Total') }}</th>
                         <th class="px-3 py-3">{{ __('Date') }}</th>
                         <th data-orderable="false" class="px-3 py-3 text-right">{{ __('Action') }}</th>
                     </tr>
@@ -48,7 +48,7 @@
                     'view' => route('backend.admin.purchase.products', ':id'),
                 ],
                 'labels' => [
-                    'edit' => __('Edit'),
+                    'edit' => __('Amend before receipt'),
                     'view' => __('View'),
                 ],
             ],
@@ -89,7 +89,7 @@
                     },
                     {
                         data: 'total',
-                        name: 'total'
+                        name: 'grand_total'
                     },
                     {
                         data: 'created_at',
@@ -104,7 +104,7 @@
                         render: (value, type, row) => {
                             const items = [];
 
-                            if (config.can.edit) {
+                            if (config.can.edit && row.can_amend) {
                                 items.push({
                                     type: 'link',
                                     url: row.edit_url,

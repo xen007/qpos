@@ -169,3 +169,15 @@ Arrondis finaux selon devise, taxes et répartition des remises en Phase 4 ; tau
 - `catalogue_conversion_runs`, `catalogue_conversion_issues`, `catalogue_conversion_mappings` sont les noms implémentés pour la reprise catalogue. Les noms génériques de la section 3.5 restent une cible pour les conversions ultérieures.
 - Les références, facteurs et codes-barres sont protégés par transactions et contraintes. Un verrou MariaDB commun sérialise les écritures SKU/codes-barres de l’application ; les imports respectent ce même verrou.
 - Une règle fractionnaire historique inconnue reste NULL et bloque le calcul natif jusqu’à décision explicite ; aucune règle métier n’est déduite du stock entier historique.
+
+## 9. Implémentation Phase 3.D — 06/10/2026
+
+Le bilan d'application et les preuves sont dans [phase3-3d-report.md](phase3-3d-report.md). La migration create_purchase_finance complète les tables existantes ; aucun second stock ni second jeu de lignes d'achat.
+
+- Fournisseurs : is_active, is_internal ; FK purchases vers suppliers restrictive. Désactivation possible pour un tiers utilisé ; fournisseur interne protégé. Le down historique supprime suppliers.
+- purchases : devise, échéance, état réception/paiement, clé/empreinte d'opération, annulation motivée. purchase_items : instantanés conditionnement/unité/facteur/règle fractionnaire, quantités commandées/base, coûts et montant source exact. Quantités et montants DECIMAL(20,6).
+- purchase_amendments : avant/après JSON, motif, auteur/date, clé/empreinte. Correction seulement avant la première réception et le premier règlement.
+- purchase_receipts/items : réceptions partielles avec instantanés des quantités/facteurs/coûts/péremption ; liens circulaires lot/ligne et stock_movements vers ligne de réception posés dans la transaction. Le FK lot nullable permet uniquement la création atomique, pas une réception terminée sans lot.
+- payments et payment_allocations sont créés dès 3.D pour les règlements fournisseurs : liens explicites fournisseur OU client, achat OU vente, contrôles SQL d'exclusivité et de montants. Correction par nouvelle entrée avec reversal_of_id unique. cash_session_id nullable réserve le raccordement Phase 4 ; sa FK sera ajoutée avec cash_sessions.
+- Nouveaux documents et lots XAF (D44). Devises/états historiques restent NULL/unknown : aucune monnaie, réception ou dette reconstituée. Le paramètre global BDT hérité ne convertit pas les documents.
+- Annulation d'achat : compensation ciblée seulement pour les lots intacts, et après correction/remboursement de tous les règlements. Journaux conservés.

@@ -14,7 +14,9 @@
                     :placeholder="__('Enter title')" required />
 
                 <x-backend.input name="phone" :label="__('Phone')" :value="$supplier->phone"
-                    :placeholder="__('Enter phone')" required />
+                    :placeholder="__('Enter phone')" />
+                <input type="hidden" name="is_active" value="0">
+                <label class="flex items-center gap-2"><input type="checkbox" name="is_active" value="1" @checked($supplier->is_active)> {{ __('Active') }}</label>
 
                 <x-backend.input name="address" :label="__('Address')" :value="$supplier->address"
                     :placeholder="__('Enter Address')" />

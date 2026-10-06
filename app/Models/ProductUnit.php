@@ -25,4 +25,9 @@ class ProductUnit extends Model
     {
         return $this->hasMany(ProductBarcode::class);
     }
+
+    public function purchaseItems(): HasMany
+    {
+        return $this->hasMany(PurchaseItem::class);
+    }
 }

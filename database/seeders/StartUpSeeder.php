@@ -19,6 +19,7 @@ class StartUpSeeder extends Seeder
         ]);
         Supplier::firstOrCreate(['name' => 'Own Supplier'], [
             'phone' => '012345678',
+            'is_internal' => true,
         ]);
 
         $this->call([
@@ -26,6 +27,7 @@ class StartUpSeeder extends Seeder
             CurrencySeeder::class,
             RolePermissionSeeder::class,
             PointOfSaleSeeder::class,
+            PurchasePermissionSeeder::class,
         ]);
     }
 }

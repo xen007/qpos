@@ -83,6 +83,11 @@ Le parcours de caisse (`/get/products`, `/cart`, `/cart/increment`, `/cart/decre
 | `PUT, PATCH` | `admin/purchase/{purchase}` | `backend.admin.purchase.update` | `purchase_update` | web, AdminMiddleware, PermissionMiddleware |
 | `DELETE` | `admin/purchase/{purchase}` | `backend.admin.purchase.destroy` | `purchase_delete` | web, AdminMiddleware, PermissionMiddleware |
 | `GET, HEAD` | `admin/purchase/{purchase}/edit` | `backend.admin.purchase.edit` | `purchase_update` | web, AdminMiddleware, PermissionMiddleware |
+| `POST` | `admin/purchase/{purchase}/amend` | `backend.admin.purchase.amend` | `purchase_update` | Modification motivée avant réception/paiement ; boutique autorisée |
+| `POST` | `admin/purchase/{purchase}/receive` | `backend.admin.purchase.receive` | `purchase_receive` | Réception partielle/totale ; boutique autorisée |
+| `POST` | `admin/purchase/{purchase}/payments` | `backend.admin.purchase.pay` | `purchase_pay` | Règlement fournisseur ; devise/solde contrôlés |
+| `POST` | `admin/purchase/{purchase}/payments/{payment}/reverse` | `backend.admin.purchase.payments.reverse` | `purchase_pay` | Nouvelle entrée motivée liée à l'original |
+| `POST` | `admin/purchase/{purchase}/cancel` | `backend.admin.purchase.cancel` | `purchase_cancel` | Compensation de lots intacts ; règlements nets nuls |
 | `GET, HEAD` | `admin/sale/report` | `backend.admin.sale.report` | `reports_sales` | web, AdminMiddleware, PermissionMiddleware |
 | `GET, HEAD` | `admin/sale/summery` | `backend.admin.sale.summery` | `reports_summary` | web, AdminMiddleware, PermissionMiddleware |
 | `GET, HEAD` | `admin/settings/website/general` | `backend.admin.settings.website.general` | `website_settings` | web, AdminMiddleware, PermissionMiddleware |

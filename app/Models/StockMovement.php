@@ -12,7 +12,7 @@ class StockMovement extends Model
     protected $fillable = [
         'point_of_sale_id', 'product_id', 'product_batch_id', 'bucket', 'quantity_delta',
         'type', 'occurred_at', 'user_id', 'unit_cost', 'correlation_key', 'correlation_line',
-        'order_product_id', 'conversion_run_id', 'reversal_of_id', 'reason',
+        'order_product_id', 'purchase_receipt_item_id', 'conversion_run_id', 'reversal_of_id', 'reason',
     ];
 
     protected $casts = [

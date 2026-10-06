@@ -9,10 +9,16 @@ class Supplier extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','phone', 'address'];
+    protected $fillable = ['name','phone', 'address', 'is_internal', 'is_active'];
+    protected $casts = ['is_internal' => 'boolean', 'is_active' => 'boolean'];
     protected $table = 'suppliers';
     public function orders()
     {
-        return $this->hasMany(Order::class);
+        return $this->purchases();
+    }
+
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class);
     }
 }

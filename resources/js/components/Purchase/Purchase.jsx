@@ -4,11 +4,11 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { toast } from "sonner";
 import translate from "../../utils/translate";
+import {parseDecimal, formatDecimal, lineAmount, purchaseTotals} from "./decimal";
 
 const localToday = () => {
-    const now = new Date();
-    const pad = value => String(value).padStart(2, "0");
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const parts = Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Douala",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+    return [parts.year,parts.month,parts.day].join("-");
 };
 
 import { Search, Package, Plus, Trash2, Check } from "lucide-react";
@@ -16,12 +16,14 @@ import { Field, EmptyState, WorkspaceToaster } from "../WorkspaceUI";
 
 
 export default function Purchase() {
+    const [operationKey] = useState(()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),byte=>byte.toString(16).padStart(2,"0")).join(""));
 
     const [searchTerm, setSearchTerm] = useState("");
     const [barcode, setBarcode] = useState("");
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [purchaseId, setPurchaseId] = useState(null);
     const [date, setDate] = useState(localToday);
+    const [dueDate, setDueDate] = useState("");
     const [supplierId, setSupplierId] = useState(null);
     const [tax, setTax] = useState("");
     const [discount, setDiscount] = useState("");
@@ -86,78 +88,35 @@ export default function Purchase() {
             return;
         }
 
-        // Optional: Uncomment if you want to show loading state
-        // setLoading(true);
-
         try {
             const res = await axios.get("/admin/products", {
                 params: { search: searchTerm },
             });
-
-            const productsData = res.data;
-
-            // Ensure productsData and productsData.data exist
-            if (productsData?.data && productsData.data.length) {
-                productsData.data.forEach((product) => {
-                    const existingProductIndex = products.findIndex(
-                        (p) => p.id === product.id
-                    );
-                    if (existingProductIndex !== -1) {
-                        // Product exists, increment qty
-                        setProducts((prevProducts) => {
-                            const updatedProducts = [...prevProducts];
-                            updatedProducts[existingProductIndex].qty += 1; // Increment qty
-                            updatedProducts[existingProductIndex].subTotal =
-                                updatedProducts[existingProductIndex]
-                                    .purchase_price *
-                                updatedProducts[existingProductIndex].qty; // Update subTotal
-                            return updatedProducts;
-                        });
-                    } else {
-                        // New product, add to the list
-                        const newProduct = {
-                            id: product.id,
-                            name: product.name,
-                            price: product.price,
-                            purchase_price: product.purchase_price,
-                            stock: product.quantity,
-                            qty: 1,
-                            subTotal: product.purchase_price,
-                        };
-                        setProducts((prevProducts) => [
-                            ...prevProducts,
-                            newProduct,
-                        ]);
-                    }
-                });
-            }
+            const product = res.data?.data?.[0];
+            if (product) handleProductSelect(product);
         } catch (error) {
             console.error("Error fetching products:", error);
         } finally {
-            // Optional: Uncomment if you want to hide loading state
-            // setLoading(false);
-
             // Clear searchTerm if needed
             setSearchTerm("");
         }
     }, [searchTerm]); // Don't forget to add searchTerm as a dependency
 
     // Handle deletion of a product
-    const handleDelete = (id) => {
-        setProducts(products.filter((product) => product.id !== id));
+    const lineKey = product => `${product.id}:${product.product_unit_id}`;
+    const handleDelete = (key) => {
+        setProducts(products.filter((product) => lineKey(product) !== key));
     };
 
     // Update quantity and recalculate subtotal
-    const handleQtyChange = (id, value) => {
+    const handleQtyChange = (key, value) => {
         const updatedProducts = products.map((product) => {
-            if (product.id === id) {
-                const newQty = parseInt(value) || 0;
+            if (lineKey(product) === key) {
+                const newQty = value;
                 return {
                     ...product,
                     qty: newQty,
-                    subTotal: parseFloat(
-                        (product.purchase_price * newQty).toFixed(2)
-                    ),
+                    received_qty: String(product.received_qty) === String(product.qty) ? newQty : product.received_qty,
                 };
             }
             return product;
@@ -166,20 +125,34 @@ export default function Purchase() {
     };
 
     // Update purchase price and recalculate subtotal
-    const handlePriceChange = (id, value) => {
+    const handlePriceChange = (key, value) => {
         const updatedProducts = products.map((product) => {
-            if (product.id === id) {
-                const newPrice = parseFloat(value) || 0;
+            if (lineKey(product) === key) {
+                const newPrice = value;
                 return {
                     ...product,
                     purchase_price: newPrice,
-                    subTotal: parseFloat((product.qty * newPrice).toFixed(2)),
                 };
             }
             return product;
         });
         setProducts(updatedProducts);
     };
+    const handlePackageChange = (key, unitId) => {
+        const line = products.find(item=>lineKey(item) === key);
+        if (products.some(item=>lineKey(item)!==key && item.id===line?.id && String(item.product_unit_id)===String(unitId))) {
+            toast.error(translate("This packaging is already present.")); return;
+        }
+        setProducts(current => current.map(line => {
+            if (lineKey(line) !== key) return line;
+            const unit = line.product_units.find(item => String(item.id) === String(unitId));
+            if (!unit) return line;
+            const cost = unit.unit_cost ?? (unit.is_reference ? line.reference_cost : "");
+            return {...line, product_unit_id: unit.id, unit_label: unit.label, factor: unit.factor,
+                purchase_price: String(cost), price: String(unit.sale_price ?? line.price)};
+        }));
+    };
+    const updateLine = (key, fields) => setProducts(current => current.map(line => lineKey(line) === key ? {...line,...fields} : line));
     // Add a new product by searching
     const handleSearchAdd = () => {
         getProducts();
@@ -187,35 +160,12 @@ export default function Purchase() {
 
     // Calculate totals with two decimal places
     const calculateTotals = () => {
-        const subTotal = products.reduce(
-            (sum, product) => sum + product.subTotal,
-            0
-        );
-        const formattedSubTotal = parseFloat(subTotal.toFixed(2));
-        const formattedTax = parseFloat((parseFloat(tax) || 0).toFixed(2));
-        const formattedDiscount = parseFloat((parseFloat(discount) || 0).toFixed(2));
-        const formattedShipping = parseFloat((parseFloat(shipping) || 0).toFixed(2));
-        const grandTotal = parseFloat(
-            (
-                formattedSubTotal +
-                formattedTax -
-                formattedDiscount +
-                formattedShipping
-            ).toFixed(2)
-        );
-
-        return {
-            subTotal: formattedSubTotal,
-            tax: formattedTax,
-            discount: formattedDiscount,
-            shipping: formattedShipping,
-            grandTotal,
-        };
+        return purchaseTotals(products,tax,discount,shipping) || {subTotal:"—",tax:"—",discount:"—",shipping:"—",grandTotal:"—"};
     };
 
     const totals = calculateTotals();
     const handleSubmit = async () => {
-        if (totals.grandTotal <= 0) {
+        if (!purchaseTotals(products,tax,discount,shipping) || !products.length) {
             //    toast.error("Total must be greater than zero.");
             return;
         }
@@ -249,11 +199,12 @@ export default function Purchase() {
                 //    }); return;
                 try {
                     const res = await axios.post("/admin/purchase", {
-                        purchase_id: purchaseId,
+                        idempotency_key:operationKey,
                         date,
-                        products,
+                        due_date: dueDate || null,
+                        products: products.map(line => ({id:line.id,product_unit_id:line.product_unit_id,qty:String(line.qty),received_qty:String(line.received_qty),purchase_price:String(line.purchase_price),price:String(line.price),expiry_status:line.expiry_status,expires_on:line.expires_on || null})),
                         supplierId,
-                        totals,
+                        totals: {tax:tax || "0",discount:discount || "0",shipping:shipping || "0"},
                     });
                     setProducts([]);
                     setDate(localToday());
@@ -305,33 +256,22 @@ export default function Purchase() {
     // Handle adding selected product to the products list
     // Handle adding selected product to the products list
     const handleProductSelect = (product) => {
-        const existingProductIndex = products.findIndex(
-            (p) => p.id === product.id
-        );
-
-        if (existingProductIndex !== -1) {
-            // If product exists, increment quantity
-            setProducts((prevProducts) => {
-                const updatedProducts = [...prevProducts];
-                updatedProducts[existingProductIndex].qty += 1;
-                updatedProducts[existingProductIndex].subTotal =
-                    updatedProducts[existingProductIndex].purchase_price *
-                    updatedProducts[existingProductIndex].qty;
-                return updatedProducts;
+        const units = product.product_units || [];
+        const unit = units.find(item => item.is_reference) || units[0];
+        if (!unit) { toast.error(translate("Configure an active purchase packaging first.")); return; }
+        const cost = unit.unit_cost ?? product.purchase_price;
+        const next = {id: product.id, name: product.name, price: String(unit.sale_price ?? product.price),
+            purchase_price: String(cost), reference_cost: String(product.purchase_price), product_units: units, product_unit_id: unit.id,
+            unit_label: unit.label, factor: unit.factor, stock: product.quantity,
+            qty: "1", received_qty: "1", expiry_status: "unknown", expires_on: ""};
+        setProducts(current => {
+            const existing = current.findIndex(line=>lineKey(line)===lineKey(next));
+            return existing < 0 ? [...current,next] : current.map((line,index) => {
+                if (index!==existing) return line;
+                const qty=parseDecimal(line.qty), received=parseDecimal(line.received_qty);
+                return qty===null || received===null ? line : {...line,qty:formatDecimal(qty+1000000n),received_qty:formatDecimal(received+1000000n)};
             });
-        } else {
-            // Add new product to the list
-            const newProduct = {
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                purchase_price: product.purchase_price,
-                stock: product.quantity,
-                qty: 1,
-                subTotal: product.purchase_price,
-            };
-            setProducts((prevProducts) => [...prevProducts, newProduct]);
-        }
+        });
 
         // Clear search term and results
         setSearchTerm("");
@@ -340,9 +280,10 @@ export default function Purchase() {
     return (
         <div className="qpos-purchase-workspace">
             <section className="qpos-card">
-                <header className="qpos-workspace-heading"><h2>{translate(purchaseId ? "Edit Purchase" : "Purchase Create")}</h2><Package size={24} aria-hidden="true" /></header>
+                <header className="qpos-workspace-heading"><h2>{translate(purchaseId ? "Edit Purchase" : "Purchase Create")}</h2><span className="qpos-badge qpos-badge-info">XAF</span><Package size={24} aria-hidden="true" /></header>
                 <div className="qpos-workspace-body qpos-search-grid">
                     <Field label={translate("Purchase Date")}><input id="date" type="date" className="qpos-control" required value={date || ''} onChange={e => setDate(e.target.value || null)} /></Field>
+                    <Field label={translate("Due date")}><input id="due-date" type="date" className="qpos-control" value={dueDate} onChange={e => setDueDate(e.target.value)} /></Field>
                     <div><label className="qpos-field-label" htmlFor="purchase-supplier">{translate("Supplier")}</label><Suppliers setSupplierId={setSupplierId} oldSupplier={selectedSupplier} /></div>
                 </div>
             </section>
@@ -352,11 +293,11 @@ export default function Purchase() {
                     <form className="qpos-purchase-search" onSubmit={e => { e.preventDefault(); handleSearchAdd(); }}><Field label={translate("Search products")}><span className="qpos-input-icon"><Search size={18} aria-hidden="true" /><input type="search" className="qpos-control" placeholder={translate("Enter product barcode/name")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></span></Field><button className="qpos-button qpos-button-md qpos-button-primary" type="submit"><Plus size={18} aria-hidden="true" />{translate("Add Product")}</button></form>
                     {!!searchResults.length && <ul className="qpos-search-results" aria-label={translate("Search products")}>{searchResults.map(product => <li key={product.id}><button type="button" onClick={() => handleProductSelect(product)}><span>{product.name}</span><strong>{product.price}</strong></button></li>)}</ul>}
                 </div>
-                {!products.length ? <EmptyState title={translate("Add products to your purchase")} description={translate("Enter product barcode/name")} /> : <div className="qpos-table-scroll" tabIndex="0" role="region" aria-label={translate("Purchase items")}><table className="qpos-table qpos-purchase-table"><thead><tr><th>{translate("Line")}</th><th>{translate("Product Name")}</th><th>{translate("Purchase Price")}</th><th>{translate("Current Stock")}</th><th>{translate("Qty")}</th><th>{translate("Sub Total")}</th><th>{translate("Action")}</th></tr></thead><tbody>{products.map((product,index) => <tr key={product.id}><td>{index+1}</td><td data-label={translate("Product Name")}><strong>{product.name}</strong></td><td data-label={translate("Purchase Price")}><input type="number" min="0" className="qpos-control" aria-label={translate("Purchase Price") + ': ' + product.name} value={product.purchase_price} onChange={e => handlePriceChange(product.id,e.target.value)} /></td><td data-label={translate("Current Stock")}>{product.stock}</td><td data-label={translate("Qty")}><input type="number" min="1" className="qpos-control" aria-label={translate("Qty") + ': ' + product.name} value={product.qty} onChange={e => handleQtyChange(product.id,e.target.value)} /></td><td data-label={translate("Sub Total")}>{product.subTotal.toFixed(2)}</td><td><button type="button" className="qpos-icon-button qpos-icon-button-danger" aria-label={translate("Delete") + ': ' + product.name} onClick={() => handleDelete(product.id)}><Trash2 size={18} aria-hidden="true" /></button></td></tr>)}</tbody></table></div>}
+                {!products.length ? <EmptyState title={translate("Add products to your purchase")} description={translate("Enter product barcode/name")} /> : <div className="qpos-table-scroll" tabIndex="0" role="region" aria-label={translate("Purchase items")}><table className="qpos-table qpos-purchase-table"><thead><tr><th>{translate("Line")}</th><th>{translate("Product Name")}</th><th>{translate("Packaging")}</th><th>{translate("Purchase Price")}</th><th>{translate("Ordered / receive now")}</th><th>{translate("Expiry")}</th><th>{translate("Sub Total")}</th><th>{translate("Action")}</th></tr></thead><tbody>{products.map((product,index) => { const key=lineKey(product); return <tr key={key}><td>{index+1}</td><td><strong>{product.name}</strong></td><td data-label={translate("Packaging")}><select className="qpos-control" aria-label={translate("Packaging") + ': ' + product.name} value={product.product_unit_id} onChange={e => handlePackageChange(key,e.target.value)}>{product.product_units.map(unit => <option key={unit.id} value={unit.id}>{unit.label} × {unit.factor}</option>)}</select></td><td data-label={translate("Purchase Price")}><input type="number" min="0" step="any" className="qpos-control" value={product.purchase_price} onChange={e => handlePriceChange(key,e.target.value)} aria-label={translate("Purchase Price") + ': ' + product.name}/></td><td><label>{translate("Ordered")}</label><input type="number" min="0.000001" step="any" className="qpos-control" aria-label={translate("Ordered") + ': ' + product.name} value={product.qty} onChange={e => handleQtyChange(key,e.target.value)}/><label>{translate("Receive now")}</label><input type="number" min="0" step="any" className="qpos-control" aria-label={translate("Receive now") + ': ' + product.name} value={product.received_qty} onChange={e => updateLine(key,{received_qty:e.target.value})}/></td><td data-label={translate("Expiry")}><select className="qpos-control" aria-label={translate("Expiry") + ': ' + product.name} value={product.expiry_status} onChange={e => updateLine(key,{expiry_status:e.target.value,expires_on:""})}><option value="unknown">{translate("Unknown (blocked)")}</option><option value="dated">{translate("Dated")}</option><option value="not_applicable">{translate("Not applicable")}</option></select>{product.expiry_status==="dated" && <input type="date" className="qpos-control" aria-label={translate("Dated") + ': ' + product.name} value={product.expires_on} onChange={e => updateLine(key,{expires_on:e.target.value})}/>}</td><td data-label={translate("Sub Total")}>{lineAmount(product) === null ? "—" : formatDecimal(lineAmount(product))}</td><td><button type="button" className="qpos-icon-button qpos-icon-button-danger" aria-label={translate("Delete") + ': ' + product.name} onClick={() => handleDelete(key)}><Trash2 size={18} aria-hidden="true" /></button></td></tr>;})}</tbody></table></div>}
             </section>
             <div className="qpos-search-grid">
                 <section className="qpos-card"><header className="qpos-workspace-heading"><h2>{translate("Information")}</h2></header><div className="qpos-workspace-body qpos-field-stack"><Field label={translate("Tax")}><input type="number" className="qpos-control" min="0" value={tax} onChange={e => setTax(e.target.value)} /></Field><Field label={translate("Discount")}><input type="number" className="qpos-control" min="0" value={discount} onChange={e => setDiscount(e.target.value)} /></Field><Field label={translate("Shipping")}><input type="number" className="qpos-control" min="0" value={shipping} onChange={e => setShipping(e.target.value)} /></Field></div></section>
-                <section className="qpos-card"><header className="qpos-workspace-heading"><h2>{translate("Order summary")}</h2></header><div className="qpos-totals">{[['Subtotal:',totals.subTotal],['Tax:',totals.tax],['Discount:',totals.discount],['Shipping:',totals.shipping]].map(([label,value]) => <div key={label}><span>{translate(label)}</span><strong>{value.toFixed(2)}</strong></div>)}<div className="qpos-total-highlight"><span>{translate("Grand Total:")}</span><strong>{totals.grandTotal.toFixed(2)}</strong></div></div><div className="qpos-workspace-footer"><button type="button" className="qpos-button qpos-button-lg qpos-button-primary" disabled={totals.grandTotal<=0} onClick={handleSubmit}><Check size={20} aria-hidden="true" />{translate(purchaseId ? "Update" : "Create")}</button></div></section>
+                <section className="qpos-card"><header className="qpos-workspace-heading"><h2>{translate("Order summary")}</h2></header><div className="qpos-totals">{[['Subtotal:',totals.subTotal],['Tax:',totals.tax],['Discount:',totals.discount],['Shipping:',totals.shipping]].map(([label,value]) => <div key={label}><span>{translate(label)}</span><strong>{value}</strong></div>)}<div className="qpos-total-highlight"><span>{translate("Grand Total:")}</span><strong>{totals.grandTotal}</strong></div></div><div className="qpos-workspace-footer"><button type="button" className="qpos-button qpos-button-lg qpos-button-primary" disabled={!products.length || !purchaseTotals(products,tax,discount,shipping) || totals.grandTotal.startsWith("-")} onClick={handleSubmit}><Check size={20} aria-hidden="true" />{translate(purchaseId ? "Update" : "Create")}</button></div></section>
             </div>
             <WorkspaceToaster />
         </div>

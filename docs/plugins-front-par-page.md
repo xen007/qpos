@@ -119,6 +119,7 @@ redéfinir un bloc `language` (la liste des commandes le faisait en double).
 | `backend/products/index.blade.php` | `datatables` | **migrée** |
 | `backend/purchase/index.blade.php` | `datatables` | **migrée** |
 | `backend/purchase/products.blade.php` | aucun (lignes rendues par le serveur ; l'ancienne table portait un `id="datatables"` sans initialisation) | **migrée** |
+| Achats 3.D, création et détail | Création React avec conditionnements, dates HTML natives et calcul décimal BigInt ; détail Blade, réceptions et règlements HTML/CSRF | 06/10/2026 : pas de Moment/datepicker pour ces nouvelles dates ; portée boutique conservée |
 | `backend/reports/inventory.blade.php` | `datatables-export` (DataTables + boutons Excel/PDF/Impression, **fichiers locaux** au lieu des CDN) | **migrée** |
 | `backend/settings/currencies/index.blade.php` | `datatables` | **migrée** |
 | `backend/settings/role/index.blade.php` | aucun (modale native `<dialog>`) | **migrée** |

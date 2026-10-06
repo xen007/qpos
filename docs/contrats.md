@@ -1,6 +1,6 @@
 # QPOS — Contrats communs
 
-Date : 01/10/2026. Statut : proposition documentaire du sous-lot 2, à valider avant implémentation.
+Date initiale : 01/10/2026. Les contrats initiaux restent proposés sauf décisions validées ; sections 4–6 et 8 complétées selon les validations et implémentations Phases 2–3.D, jusqu'au 06/10/2026.
 
 Références : [roadmap.md](roadmap.md), [schema-cible.md](schema-cible.md), [conversion-strategie.md](conversion-strategie.md). Ce document ne crée aucun service ni automatisation. Aucun nouvel ID Dxx. Les paramètres non fixés restent **à proposer**, même si une valeur indicative est présentée.
 
@@ -143,3 +143,13 @@ Les colonnes monétaires natives sont la source exacte du catalogue. La copie DO
 | Synthèse | Borne journée, sessions ouvertes, opérations tardives et corrections/version |
 
 La validation des trois documents approuve une architecture de travail ; elle ne tranche pas automatiquement ces valeurs ni les décisions métier réservées aux phases suivantes.
+
+## 8. Achats et règlements — Phase 3.D
+
+PurchaseService contrôle boutique, fournisseur, conditionnements, quantités exactes et clés d'idempotence. Les empreintes comprennent auteur, boutique, document et contenu ; un rejeu différent est refusé. Réception et mouvement/lot/soldes sont atomiques via StockService, sans modification de products.quantity ni rejeu d'anciens achats.
+
+Le coût réel par conditionnement est confirmé sur la commande. Il peut être corrigé avec avant/après motivé avant réception ou paiement ; la réception utilise cette valeur, conserve la source exacte et calcule le coût de base HALF_UP à six décimales (D45). Les quantités/facteurs ne sont pas arrondis. Une différence constatée après réception nécessite une correction explicite, pas une réécriture de dette.
+
+Chaque nouveau document porte XAF, confirmé par le propriétaire le 06/10/2026 (D44). Les historiques ne sont pas convertis ; devise et règlements sans preuve restent inconnus. L'arrondi final XAF à zéro décimale reste Phase 4. Les anciens imports de stock restent limités aux quantités entières/coûts à deux décimales jusqu'à leur reprise complète 3.E ; les réceptions natives 3.D utilisent six décimales.
+
+Le journal commun utilise des FKs explicites et des affectations achat/vente. Solde fournisseur = total confirmé moins affectations sortantes plus remboursements entrants, sous verrou du document. Paiements immuables ; correction par nouvelle entrée liée et motivée. Aucun encaissement, remboursement bancaire ou notification externe automatique. Le fournisseur interne ne produit pas de dette externe. Les sessions de caisse et règlements clients restent Phase 4.

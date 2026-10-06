@@ -10,7 +10,7 @@ class ProductBatch extends Model
 {
     protected $fillable = [
         'product_id', 'batch_number', 'expiry_status', 'expires_on', 'received_at', 'unit_cost',
-        'purchase_receipt_item_id', 'provenance',
+        'purchase_receipt_item_id', 'provenance', 'currency_code',
     ];
 
     protected $casts = [

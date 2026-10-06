@@ -87,6 +87,11 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         'update' => 'purchase_update',
         'destroy' => 'purchase_delete',
     ]);
+    Route::post('purchase/{purchase}/amend', [PurchaseController::class, 'amend'])->whereNumber('purchase')->name('purchase.amend')->middleware('permission:purchase_update');
+    Route::post('purchase/{purchase}/receive', [PurchaseController::class, 'receive'])->whereNumber('purchase')->name('purchase.receive')->middleware('permission:purchase_receive');
+    Route::post('purchase/{purchase}/payments', [PurchaseController::class, 'pay'])->whereNumber('purchase')->name('purchase.pay')->middleware('permission:purchase_pay');
+    Route::post('purchase/{purchase}/payments/{payment}/reverse', [PurchaseController::class, 'reversePayment'])->whereNumber(['purchase','payment'])->name('purchase.payments.reverse')->middleware('permission:purchase_pay');
+    Route::post('purchase/{purchase}/cancel', [PurchaseController::class, 'cancel'])->whereNumber('purchase')->name('purchase.cancel')->middleware('permission:purchase_cancel');
     PermissionRoutes::resource('suppliers', SupplierController::class, 'supplier');
     PermissionRoutes::resource('customers', CustomerController::class, 'customer');
     PermissionRoutes::resource('products', ProductController::class, [

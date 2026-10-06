@@ -36,10 +36,12 @@
                 'ajax' => route('backend.admin.suppliers.index'),
                 'csrf' => csrf_token(),
                 'routes' => [
+                    'view' => route('backend.admin.suppliers.show', ':id'),
                     'edit' => route('backend.admin.suppliers.edit', ':id'),
                     'destroy' => route('backend.admin.suppliers.destroy', ':id'),
                 ],
                 'labels' => [
+                    'view' => __('Purchases and balances'),
                     'edit' => __('Edit'),
                     'delete' => __('Delete'),
                     'confirm' => __('Are you sure you want to delete this item?'),
@@ -100,6 +102,11 @@
                         render: (value, type, row) => window.qposTableActions.buttons({
                             csrf: config.csrf,
                             items: [{
+                                    type: 'link',
+                                    url: withId(config.routes.view, row.id),
+                                    label: config.labels.view,
+                                    icon: 'fas fa-eye',
+                                }, {
                                     type: 'link',
                                     url: withId(config.routes.edit, row.id),
                                     label: config.labels.edit,

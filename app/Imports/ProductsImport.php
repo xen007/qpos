@@ -145,6 +145,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'discount' => (string) $row['discount'], 'discount_type' => $row['discount_type'],
         ], true);
         if ((int) $row['quantity'] === 0) { return null; }
+        abort_unless(\App\Models\User::findOrFail($this->userId)->can('purchase_receive'),403);
         if (!$this->supplierId) { throw ValidationException::withMessages(['quantity' => __('The default supplier is not configured.')]); }
         $lineTotal = (string) \Brick\Math\BigDecimal::of((string) $row['purchase_price'])->multipliedBy((string) $row['quantity'])->toScale(2);
         if (\Brick\Math\BigDecimal::of($lineTotal)->isGreaterThan('99999999.99')) {
@@ -152,6 +153,9 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
         }
         $purchase = Purchase::create([
             'point_of_sale_id'=>$this->shopId,
+            'receipt_status'=>'pending',
+            'payment_status'=>\App\Models\Supplier::findOrFail($this->supplierId)->is_internal ? 'not_applicable' : 'unknown',
+            'currency_code'=>'XAF',
             'supplier_id' => $this->supplierId,
             'user_id' => $this->userId,
             'sub_total' => $lineTotal,
@@ -161,7 +165,7 @@ class ProductsImport implements ToModel, WithHeadingRow, WithValidation, SkipsEm
             'shipping' => 0,
             'grand_total' => $lineTotal,
             'status' => 1,
-            'date' => now(),
+            'date' => now('Africa/Douala'),
         ]);
 
         $receiptItem = PurchaseItem::create([

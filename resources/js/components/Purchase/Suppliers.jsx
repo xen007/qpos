@@ -9,9 +9,9 @@ export default function Suppliers({ setSupplierId, oldSupplier }) {
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     useEffect(() => {
         axios.get("/admin/suppliers").then(response => {
-            const options=response.data.map(supplier => ({value:supplier.id,label:supplier.name}));
+            const options=response.data.map(supplier => ({value:supplier.id,label:supplier.is_internal ? translate("Own Supplier") : supplier.name,isInternal:supplier.is_internal}));
             setSuppliers(options);
-            if(!oldSupplier) setSelectedSupplier(options.find(supplier => supplier.label === "Own Supplier") || null);
+            if(!oldSupplier) setSelectedSupplier(options.find(supplier => supplier.isInternal) || null);
         });
     }, []);
     useEffect(() => { setSupplierId(selectedSupplier?.value); }, [selectedSupplier]);
