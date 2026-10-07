@@ -1,6 +1,22 @@
 # Phase 3 — suivi d'exécution
 
-Date : 05/10/2026. Le propriétaire effectue les commits. Aucun commit ni push exécuté par l'agent.
+Mise à jour : 07/10/2026. Le propriétaire effectue les commits. Aucun commit ni push exécuté par l'agent.
+
+## Bilan global avant validation Phase 3
+
+| Sous-lot | Livraison | État |
+|---|---|---|
+| 3.A | Journal, soldes, lots, StockService, FEFO/FIFO | Commit propriétaire a65781a ; migration et contrôles manuels consignés ci-dessous |
+| 3.B | Reprise explicite MAIN, ouvertures inconnues bloquées | Commit propriétaire be82e34 ; 314 unités, 52 produits, aucun historique rejoué |
+| 3.C | POS, achats et imports raccordés au stock commun | Commit propriétaire ad303b6 ; détails dans phase3-3c-report.md |
+| 3.D | Fournisseurs, achats/réceptions, dettes, PurchaseService, journal commun de règlements | Commit propriétaire f957c1e ; détails dans phase3-3d-report.md |
+| 3.E | CSV strict/dry-run, transferts, inventaires, validations motivées d'ouvertures | Migration locale appliquée ; bilan dans phase3-3e-report.md ; un seul commit propriétaire attendu |
+
+Contrôle source final 3.E : **314.000000 unités bloquées dans MAIN ID 1, 52 produits, 23 mouvements d'ouverture ; disponible, non vendable brut et transit à zéro.** Aucun import/transfert/inventaire/validation fictif sur la source. Empreintes des 35 tables métier de la sauvegarde fraîche identiques. Application rouverte ; contrôles de parcours et écrans authentifiés confinés aux copies.
+
+Limites avant validation globale : concurrence réelle entre deux checkouts et refonte POS en Phase 4 ; raccordement tarifs/promotions/conditionnements au checkout, arrondi final XAF et journées métier globales encore à traiter. Historiques BDT et fuseau global hérités conservés. Téléchargement du fichier CSV final à confirmer dans le navigateur du propriétaire malgré corps CSV et réponse HTTP vérifiés. Preuves de validation des 314 unités à fournir avant vente ; aucune valeur inventée. Externalisation et sauvegarde quotidienne planifiée restent au lot exploitation.
+
+Incident de connexion DDL et quarantaine Avast : nettoyage limité aux deux tables vides créées par erreur, données métier inchangées, correction de bootstrap et répétition réussie avant application. Voir le bilan 3.E pour la procédure restaurable et les limites exactes.
 
 ## 3.A — socle et contrôles après commit
 

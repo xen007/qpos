@@ -1,6 +1,6 @@
 # QPOS — Contrats communs
 
-Date initiale : 01/10/2026. Les contrats initiaux restent proposés sauf décisions validées ; sections 4–6 et 8 complétées selon les validations et implémentations Phases 2–3.D, jusqu'au 06/10/2026.
+Date initiale : 01/10/2026. Les contrats initiaux restent proposés sauf décisions validées ; sections 4–6 et 8–9 complétées selon les validations et implémentations Phases 2–3.E, jusqu'au 07/10/2026.
 
 Références : [roadmap.md](roadmap.md), [schema-cible.md](schema-cible.md), [conversion-strategie.md](conversion-strategie.md). Ce document ne crée aucun service ni automatisation. Aucun nouvel ID Dxx. Les paramètres non fixés restent **à proposer**, même si une valeur indicative est présentée.
 
@@ -129,7 +129,7 @@ Prix TTC natifs et coûts de référence : DECIMAL(20,6), calcul exact. Tarifs :
 
 Les promotions quantité et lot portent un même conditionnement : groupes complets, reliquat au tarif unitaire. Pour N achetés + M offerts, la quantité saisie comprend les M offerts. Le moteur expose les paramètres appliqués et instantanés ; le checkout Phase 4 doit les conserver, sans recalcul historique.
 
-Les colonnes monétaires natives sont la source exacte du catalogue. La copie DOUBLE(10,2) reste une compatibilité temporaire pour les anciens écrans et opérations ; voir schema-cible section 8. Un import de stock reste limité à des quantités entières et coûts réels à deux décimales tant que les réceptions Phase 3 ne sont pas raccordées. Un import catalogue sans stock ne nécessite pas de fournisseur ni de référence fictive.
+Les colonnes monétaires natives sont la source exacte du catalogue. La copie DOUBLE(10,2) reste une compatibilité temporaire pour les anciens écrans et opérations ; voir schema-cible section 8. Depuis 3.E, l'import de stock utilise les réceptions communes : quantités/coûts natifs à six décimales, fractions uniquement si autorisées. Un import catalogue sans stock ne nécessite pas de fournisseur ni de référence fictive.
 
 ## 7. Paramètres encore à proposer
 
@@ -150,6 +150,16 @@ PurchaseService contrôle boutique, fournisseur, conditionnements, quantités ex
 
 Le coût réel par conditionnement est confirmé sur la commande. Il peut être corrigé avec avant/après motivé avant réception ou paiement ; la réception utilise cette valeur, conserve la source exacte et calcule le coût de base HALF_UP à six décimales (D45). Les quantités/facteurs ne sont pas arrondis. Une différence constatée après réception nécessite une correction explicite, pas une réécriture de dette.
 
-Chaque nouveau document porte XAF, confirmé par le propriétaire le 06/10/2026 (D44). Les historiques ne sont pas convertis ; devise et règlements sans preuve restent inconnus. L'arrondi final XAF à zéro décimale reste Phase 4. Les anciens imports de stock restent limités aux quantités entières/coûts à deux décimales jusqu'à leur reprise complète 3.E ; les réceptions natives 3.D utilisent six décimales.
+Chaque nouveau document porte XAF, confirmé par le propriétaire le 06/10/2026 (D44). Les historiques ne sont pas convertis ; devise et règlements sans preuve restent inconnus. L'arrondi final XAF à zéro décimale reste Phase 4. Les réceptions natives 3.D et les imports repris en 3.E utilisent six décimales ; aucun ancien achat/import n'est rejoué contre les ouvertures.
 
 Le journal commun utilise des FKs explicites et des affectations achat/vente. Solde fournisseur = total confirmé moins affectations sortantes plus remboursements entrants, sous verrou du document. Paiements immuables ; correction par nouvelle entrée liée et motivée. Aucun encaissement, remboursement bancaire ou notification externe automatique. Le fournisseur interne ne produit pas de dette externe. Les sessions de caisse et règlements clients restent Phase 4.
+
+## 9. Opérations stock — Phase 3.E
+
+Import : UTF-8, CSV séparateur virgule/point-virgule/tabulation détecté, maximum 5 Mo et 2 000 lignes. En-têtes contrôlés ; SKU/nom/prix obligatoires. Une erreur refuse tout le fichier. SKU existant et doublon interne, y compris équivalence selon collation MariaDB, refusés sans renommage ni mise à jour. Prévisualisation sans écriture métier ; application sérialisée par le verrou catalogue commun et transaction. Rapport d'erreurs CSV avec neutralisation des formules. Réception exige unité/règle fractionnaire connues, fournisseur, preuve, lot et coût explicite ; aucune création implicite d'unité.
+
+Transfert : source/destination explicites et distinctes, acteur autorisé dans la boutique concernée ; expédition sous StockService, transit par allocation de lot. Réception/retour/perte motivés portent seulement sur le reliquat. Même clé et même contenu : rejeu ; contenu différent : refus. Une réception ne régénère ni coût ni péremption.
+
+Inventaire : comptage physique des buckets locaux, transit exclu. Une portée produit/boutique ne peut avoir deux inventaires actifs. Verrou et repère journal au début ; mouvement pendant comptage impose recomptage. Validation applique l'écart à la quantité actuelle et conserve les mouvements postérieurs. Ajustement impossible sans tous les comptages ; quantité vide n'est pas zéro. Aucun gain dans une ouverture inconnue ni déblocage implicite par reclassement.
+
+Ouverture : autorisation administrative et affectation boutique active ; quantité, lot, coût/devise, péremption, motif et preuve obligatoires. Reclassement atomique du stock existant, partiel possible ; le reliquat reste `unallocated_opening`. FIFO utilise la date de coupure, sans prétendre connaître une réception historique. Inconnus et expirés restent indisponibles.

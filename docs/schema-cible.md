@@ -1,6 +1,6 @@
 # QPOS — Schéma cible
 
-Date initiale : 01/10/2026. Mise à jour Phase 2 : 05/10/2026. Les parties catalogue/boutiques/prix décrivent l’implémentation autorisée ; les phases suivantes restent proposées.
+Date initiale : 01/10/2026. Mise à jour Phase 3.E : 07/10/2026. Catalogue/boutiques/prix et opérations stock décrivent l'implémentation autorisée ; les parties des phases suivantes restent proposées.
 
 Référence : [roadmap.md](roadmap.md), sections 3.5, 4 et 5. Documents associés : [conversion-strategie.md](conversion-strategie.md) et [contrats.md](contrats.md).
 
@@ -67,7 +67,7 @@ Phase 1 implémente seulement les structures minimales boutiques/affectations da
 | `stock_movements` | Boutique, produit, lot nullable, `bucket`, `quantity_delta`, `type`, `occurred_at`, auteur nullable, `unit_cost` nullable, `correlation_key` + ligne, motif nullable, références opérationnelles, mouvement compensé nullable, conversion nullable | Delta signé non nul ; mouvement d'ouverture sans lot explicitement admis ; lot obligatoire pour les réceptions ; journal immuable |
 | `order_stock_allocations` | `order_product_id`, mouvement de sortie, lot nullable, quantité de base, coût unitaire/total nullable, provenance | Quantité positive ; somme égale à la quantité de base vendue pour les nouvelles ventes ; coût inconnu signalé |
 | `stock_transfers`, `stock_transfer_items`, `stock_transfer_receipts`, `stock_transfer_receipt_items` | Boutiques source/destination, états, auteurs, dates ; produit/lot/quantités ; réception et reliquats | Source différente de destination ; liens expédition/réception ; transit réconcilié, annulations compensées |
-| `stock_counts`, `stock_count_items` | Boutique, état, début/fin, auteur ; produit, quantité comptée, instant de comptage, repère de mouvement | Une ligne par produit/comptage ; ajustement basé sur les mouvements entre comptage et validation |
+| `inventories`, `inventory_items` | Boutique, état, auteur/validateur, motif ; produit, repère journal, comptage et ajustements JSON | Portée produit/boutique active unique ; recomptage si mouvement pendant comptage, ajustement par écart ensuite |
 
 `stock_movements` utilise des FK explicites nullable vers `purchase_receipt_items`, `order_products`, `return_items`, lignes de transfert et de comptage. Une seule origine opérationnelle pour un mouvement normal ; une ouverture référence sa conversion. Les liens circulaires seront ajoutés après création des tables dépendantes.
 
@@ -181,3 +181,11 @@ Le bilan d'application et les preuves sont dans [phase3-3d-report.md](phase3-3d-
 - payments et payment_allocations sont créés dès 3.D pour les règlements fournisseurs : liens explicites fournisseur OU client, achat OU vente, contrôles SQL d'exclusivité et de montants. Correction par nouvelle entrée avec reversal_of_id unique. cash_session_id nullable réserve le raccordement Phase 4 ; sa FK sera ajoutée avec cash_sessions.
 - Nouveaux documents et lots XAF (D44). Devises/états historiques restent NULL/unknown : aucune monnaie, réception ou dette reconstituée. Le paramètre global BDT hérité ne convertit pas les documents.
 - Annulation d'achat : compensation ciblée seulement pour les lots intacts, et après correction/remboursement de tous les règlements. Journaux conservés.
+
+## 10. Implémentation Phase 3.E — 07/10/2026
+
+- `product_import_runs` : clé unique, empreinte de requête, boutique, auteur, rapport. Prévisualisation sans écriture métier, application atomique. Le stock importé est une réception PurchaseService/StockService, sans modification de `products.quantity`.
+- `stock_transfers`, `stock_transfer_items`, `stock_transfer_allocations`, `stock_transfer_receipts`, `stock_transfer_receipt_items` : expédition, lots, transit, réceptions partielles, retours physiques et pertes. Les quantités reçues/retournées/perdues ne dépassent pas l'allocation ; motifs et clés documentent chaque traitement.
+- `inventories`, `inventory_items` remplacent les noms proposés `stock_counts`/`stock_count_items` : repère journal, début du comptage, comptage JSON, ajustements et portée active unique produit/boutique. Mouvement pendant comptage : recomptage ; après comptage : conservation lors de l'application de l'écart.
+- `stock_opening_approvals` : auteur, boutique, produit, lot, quantité, coût/devise, motif et preuve. Deux reclassements du journal ; aucun gain physique. Validation partielle, reliquat bloqué ; lot expiré/inconnu toujours exclu du disponible.
+- Quantités/coûts DECIMAL(20,6), FK restrictives, rollback interdit dès présence de preuves. Migration appliquée sur copie puis source ; résultats et incident de connexion dans `phase3-3e-report.md`.

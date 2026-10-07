@@ -184,7 +184,7 @@ final class PurchaseService
                 $movement = app(StockService::class)->increase((int)$shop->id, (int)$item->product_id, (string)$base, [
                     'correlation_key' => 'purchase-receipt:'.$receipt->id, 'correlation_line' => $i + 1, 'user_id' => $userId,
                     'purchase_receipt_item_id' => $receiptItem->id,
-                    'batch' => ['expiry_status' => $expiryStatus, 'expires_on' => $expiresOn, 'received_at' => $receipt->received_at,
+                    'batch' => ['expiry_status' => $expiryStatus, 'expires_on' => $expiresOn, 'batch_number'=>$line['batch_number'] ?? null, 'received_at' => $receipt->received_at,
                         'purchase_receipt_item_id'=>$receiptItem->id, 'unit_cost' => (string)$baseCost, 'provenance' => 'purchase','currency_code'=>$purchase->currency_code],
                 ]);
                 $receiptItem->forceFill(['product_batch_id'=>$movement->product_batch_id])->save();

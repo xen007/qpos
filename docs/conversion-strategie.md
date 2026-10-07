@@ -49,6 +49,12 @@ Créer un lot uniquement si quantité restante, produit, expiration et provenanc
 
 ### Achats et imports
 
+Mise à jour 3.E — 07/10/2026 : ProductsImport est désormais un adaptateur du service CSV commun. Nouveaux stocks uniquement par réception PurchaseService/StockService ; aucune écriture dans le solde global historique et aucun ancien import rejoué. Les descriptions historiques ci-dessous ne sont pas une instruction de réexécution.
+
+Les ouvertures bloquées sont reclassées uniquement par validation administrative motivée et prouvée ; validation partielle, reliquat bloqué. Le lot prend la date de coupure pour FIFO, sans inventer une ancienne réception. Imports/inventaires ne constituent pas une validation de provenance.
+
+Avant toute DDL de répétition, choisir la connexion isolée avant les providers puis vérifier les noms SQL réels des connexions de données et Schema. Un changement après bootstrap peut laisser un builder Schema lié à la source. L'incident 3.E et son nettoyage limité aux tables vides sont consignés dans `phase3-3e-report.md`.
+
 Conserver achats et lignes actuelles avec leurs IDs, prix et dates brutes. PurchaseController remplace les lignes lors des modifications : les versions effacées ne sont pas récupérables depuis ces tables seules. La présence d'un achat ne suffit pas à prouver la répartition des lots encore présents. Préserver l'achat sans générer une deuxième réception physique.
 
 ProductsImport crée un produit et un achat par ligne ; mapper ces enregistrements comme sources, sans déduire un deuxième stock d'ouverture. Le modèle PurchaseItem mentionne des champs de remise absents de la migration lue : vérifier le schéma réel avant toute reprise de ces champs.

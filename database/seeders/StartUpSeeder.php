@@ -28,6 +28,7 @@ class StartUpSeeder extends Seeder
             RolePermissionSeeder::class,
             PointOfSaleSeeder::class,
             PurchasePermissionSeeder::class,
+            StockOperationPermissionSeeder::class,
         ]);
     }
 }

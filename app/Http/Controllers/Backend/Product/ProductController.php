@@ -288,22 +288,6 @@ class ProductController extends Controller
     }
     public function import(Request $request)
     {
-        if ($request->query('download-demo')) {
-            return Excel::download(new DemoProductsExport, 'demo_products.xlsx');
-        }
-        if ($request->isMethod('post')) {
-            $validated = $request->validate([
-                'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:5120'],
-            ]);
-
-            $supplierId = Supplier::where('is_internal', true)->where('is_active', true)->value('id');
-            $shopId = \App\Support\StockContext::shop($request)->id;
-
-            \App\Support\CatalogueCodes::transaction(function () use ($validated, $supplierId, $shopId) {
-                Excel::import(new ProductsImport($supplierId ? (int) $supplierId : null, (int) auth()->id(),$shopId), $validated['file']);
-            });
-            return redirect()->back()->with('success', __('Products imported successfully.'));
-        }
-        return view('backend.products.import');
+        return app(\App\Http\Controllers\Backend\ProductImportController::class)->index($request, app(\App\Services\ProductImportService::class));
     }
 }

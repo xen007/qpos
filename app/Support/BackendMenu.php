@@ -133,6 +133,12 @@ class BackendMenu
                 : null,
         ]);
 
+        $items[] = self::group('Stock operations','fas fa-box',[
+            $user->can('stock_view') ? self::item('Stock transfers','fas fa-circle','backend.admin.stock.transfers',['backend.admin.stock.transfers.*']) : null,
+            $user->can('stock_inventory') ? self::item('Physical inventories','fas fa-circle','backend.admin.stock.inventories',['backend.admin.stock.inventories.*']) : null,
+            $user->can('stock_opening_approve') ? self::item('Openings awaiting approval','fas fa-circle','backend.admin.stock.openings',['backend.admin.stock.openings.*']) : null,
+        ]);
+
         // --- Rapports -------------------------------------------------------
         $items[] = self::group('Reports', 'fas fa-chart-bar', [
             $user->can('reports_summary')

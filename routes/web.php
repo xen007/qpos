@@ -115,6 +115,23 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::put('/{productUnit}/barcodes/{barcode}', [ProductUnitController::class, 'barcodeStatus'])->whereNumber(['productUnit', 'barcode'])->name('barcodes.update');
     });
     Route::get('catalogue-conversion', [\App\Http\Controllers\Backend\CatalogueConversionController::class, 'index'])->name('catalogue-conversion.index')->middleware(['permission:pricing_view', 'permission:point_of_sale_manage_all']);
+    Route::prefix('stock')->name('stock.')->controller(\App\Http\Controllers\Backend\StockOperationController::class)->group(function () {
+        Route::get('transfers','transfers')->name('transfers')->middleware('permission:stock_view');
+        Route::post('transfers','createTransfer')->name('transfers.create')->middleware('permission:stock_transfer_dispatch');
+        Route::get('transfers/{id}','transfer')->whereNumber('id')->name('transfers.show')->middleware('permission:stock_view');
+        Route::post('transfers/{id}/dispatch','dispatch')->whereNumber('id')->name('transfers.dispatch')->middleware('permission:stock_transfer_dispatch');
+        Route::post('transfers/{id}/settle','settle')->whereNumber('id')->name('transfers.settle')->middleware('permission:stock_transfer_dispatch|stock_transfer_receive');
+        Route::post('transfers/{id}/cancel','cancelTransfer')->whereNumber('id')->name('transfers.cancel')->middleware('permission:stock_transfer_dispatch');
+        Route::get('inventories','inventories')->name('inventories')->middleware('permission:stock_inventory');
+        Route::post('inventories','createInventory')->name('inventories.create')->middleware('permission:stock_inventory');
+        Route::get('inventories/{id}','inventory')->whereNumber('id')->name('inventories.show')->middleware('permission:stock_inventory');
+        Route::post('inventories/{id}/items/{item}/count','count')->whereNumber(['id','item'])->name('inventories.count')->middleware('permission:stock_inventory');
+        Route::post('inventories/{id}/validate','validateInventory')->whereNumber('id')->name('inventories.validate')->middleware('permission:stock_inventory');
+        Route::post('inventories/{id}/cancel','cancelInventory')->whereNumber('id')->name('inventories.cancel')->middleware('permission:stock_inventory');
+        Route::get('openings','openings')->name('openings')->middleware('permission:stock_opening_approve');
+        Route::get('openings/{product}','opening')->whereNumber('product')->name('openings.show')->middleware('permission:stock_opening_approve');
+        Route::post('openings/{product}','approveOpening')->whereNumber('product')->name('openings.approve')->middleware('permission:stock_opening_approve');
+    });
     Route::get('catalogue-pricing', [\App\Http\Controllers\Backend\PricingController::class, 'index'])->name('pricing.index')->middleware('permission:pricing_view');
     Route::post('catalogue-pricing/quote', [\App\Http\Controllers\Backend\PricingController::class, 'quote'])->name('pricing.quote')->middleware('permission:pricing_view');
     Route::put('catalogue-pricing/packaging/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'packaging'])->whereNumber('id')->name('pricing.packaging')->middleware('permission:pricing_update');
@@ -122,7 +139,7 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     Route::put('catalogue-pricing/{entity}/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'update'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.update')->middleware('permission:pricing_update');
     Route::delete('catalogue-pricing/{entity}/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'destroy'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.destroy')->middleware('permission:pricing_delete');
     PermissionRoutes::resource('currencies', CurrencyController::class, 'currency');
-    Route::match(['get', 'post'], 'import/products', [ProductController::class,'import'])->name('products.import')->middleware('permission:product_import');
+    Route::match(['get', 'post'], 'import/products', [\App\Http\Controllers\Backend\ProductImportController::class,'index'])->name('products.import')->middleware('permission:product_import');
     Route::post('currencies/default/{id}', [CurrencyController::class, 'setDefault'])->name('currencies.setDefault')->middleware('permission:currency_set_default');
     Route::get('customers/orders/{id}', [CustomerController::class, 'orders'])->name('customers.orders')->middleware('permission:customer_sales');
     Route::get('purchase/products/{id}', [PurchaseController::class, 'purchaseProducts'])->name('purchase.products')->middleware('permission:purchase_view');

@@ -261,7 +261,11 @@ class StockService
         }, 3);
     }
 
-    /** Atomically move stock between active shops, preserving batch identity. */
+    /**
+     * Internal atomic relocation primitive, preserving batch identity.
+     * Physical dispatch/receipt must use StockTransferService and its transit
+     * documents; application screens must not bypass that lifecycle.
+     */
     public function transfer(int $sourceShopId, int $destinationShopId, int $productId, mixed $quantity, string $correlationKey, array $options = []): array
     {
         if ($sourceShopId === $destinationShopId) {
@@ -412,6 +416,106 @@ class StockService
     public function unsellable(int $shopId, int $productId): string
     {
         return $this->getStock($shopId, $productId)['unsaleable'];
+    }
+
+    /**
+     * Target one physical bucket/lot. Unlike FEFO consumption, an inventory or
+     * transit settlement must never silently take units from another lot.
+     * Positive unallocated openings are deliberately not supported here.
+     */
+    public function correctBucket(int $shopId, int $productId, ?int $batchId, string $bucket, string $delta, string $type, string $key, string $reason, int $userId, int $line = 1): StockMovement
+    {
+        return DB::transaction(function () use ($shopId,$productId,$batchId,$bucket,$delta,$type,$key,$reason,$userId,$line) {
+            $product = $this->lockProduct($productId); $this->assertActiveShop($shopId);
+            $this->assertBucket($bucket,[self::SALEABLE,self::UNSALEABLE,self::IN_TRANSIT,self::UNALLOCATED_OPENING]);
+            $this->assertType($type);
+            if (!in_array($type,['inventory_adjustment','opening_approved','transfer_in','transfer_out','loss'],true) || trim($reason)==='')
+                throw ValidationException::withMessages(['reason'=>__('A reason is required for a stock adjustment.')]);
+            $amount = $this->signedQuantityDelta($delta);
+            $this->baseQuantity($product,(string)$amount->abs());
+            if ($bucket===self::UNALLOCATED_OPENING && ($batchId!==null || $amount->isPositive()))
+                throw ValidationException::withMessages(['bucket'=>__('Opening stock without provenance must remain unallocated until explicitly approved.')]);
+            if ($bucket===self::IN_TRANSIT && !$batchId)
+                throw ValidationException::withMessages(['batch'=>__('Transit requires a traced batch.')]);
+            if ($type==='inventory_adjustment' && $bucket===self::IN_TRANSIT)
+                throw ValidationException::withMessages(['bucket'=>__('Settle transit through its transfer document.')]);
+            $key=$this->operationKey($key); $line=$this->lineNumber($line);
+            $existing=StockMovement::where('point_of_sale_id',$shopId)->where('correlation_key',$key)->where('correlation_line',$line)->first();
+            if ($existing) {
+                $this->assertReplayMatches($existing,$productId,$amount,$type,$bucket,['batch_id'=>$batchId,'reason'=>trim($reason)]);
+                return $existing;
+            }
+            $batch=$batchId ? ProductBatch::whereKey($batchId)->lockForUpdate()->firstOrFail() : null;
+            if ($batch && (int)$batch->product_id!==$productId) throw ValidationException::withMessages(['batch'=>__('The stock batch does not belong to this product.')]);
+            $stock=$this->lockProductStock($shopId,$productId); $field=$bucket.'_quantity';
+            if ($batch && in_array($bucket,[self::SALEABLE,self::UNSALEABLE],true)) {
+                $lot=$this->lockBatchStock($shopId,$batchId);
+                $lot->setAttribute($field,$this->add($lot->getAttribute($field),(string)$amount)); $lot->save();
+            } elseif ($batch && $bucket===self::IN_TRANSIT) {
+                $balance=StockMovement::where('point_of_sale_id',$shopId)->where('product_batch_id',$batchId)->where('bucket',$bucket)->sum('quantity_delta');
+                if (BigDecimal::of($balance)->plus($amount)->isNegative()) throw ValidationException::withMessages(['quantity'=>__('Insufficient transit stock for this lot.')]);
+            } elseif (in_array($bucket,[self::SALEABLE,self::UNSALEABLE],true)) {
+                // Never create a saleable lot without evidence or consume someone else's lot.
+                if ($amount->isPositive()) throw ValidationException::withMessages(['batch'=>__('Positive physical corrections require a documented batch.')]);
+                $assigned=BatchStock::where('point_of_sale_id',$shopId)->whereHas('batch',fn($q)=>$q->where('product_id',$productId))->sum($field);
+                if (BigDecimal::of($stock->getAttribute($field))->minus($assigned)->plus($amount)->isNegative())
+                    throw ValidationException::withMessages(['batch'=>__('Insufficient lotless stock.')]);
+            }
+            $stock->setAttribute($field,$this->add($stock->getAttribute($field),(string)$amount)); $stock->save();
+            return $this->writeMovement([
+                'point_of_sale_id'=>$shopId,'product_id'=>$productId,'product_batch_id'=>$batchId,'bucket'=>$bucket,
+                'quantity_delta'=>(string)$amount->toScale(6),'type'=>$type,'occurred_at'=>now('Africa/Douala'),
+                'user_id'=>$userId,'unit_cost'=>$batch?->unit_cost,'correlation_key'=>$key,'correlation_line'=>$line,'reason'=>trim($reason),
+            ]);
+        },3);
+    }
+
+    public function approveOpening(int $shopId, int $productId, array $data, int $userId): object
+    {
+        return DB::transaction(function () use ($shopId,$productId,$data,$userId) {
+            $actor=\App\Models\User::findOrFail($userId);
+            abort_unless($actor->can('stock_opening_approve') && PointOfSale::accessibleBy($actor)->whereKey($shopId)->exists(),403);
+            \Illuminate\Support\Facades\Validator::make($data,[
+                'quantity'=>'required|string','unit_cost'=>'required|string','batch_number'=>'required|string|max:255',
+                'expiry_status'=>'required|in:dated,not_applicable','expires_on'=>'nullable|date_format:Y-m-d',
+                'reason'=>'required|string|max:5000','evidence'=>'required|string|max:5000','currency_code'=>'required|in:XAF,BDT','operation_key'=>'required|string|max:64',
+            ])->validate();
+            $product=$this->lockProduct($productId); $this->assertActiveShop($shopId);
+            $key=$this->operationKey($data['operation_key']);
+            $hash=hash('sha256',json_encode([$shopId,$productId,$userId,$data],JSON_THROW_ON_ERROR));
+            $existing=DB::table('stock_opening_approvals')->where('operation_key',$key)->first();
+            if ($existing) {
+                if (!hash_equals($existing->request_hash,$hash)) throw ValidationException::withMessages(['operation_key'=>__('This operation key was already used with different data.')]);
+                return $existing;
+            }
+            $amount=$this->baseQuantity($product,$data['quantity']);
+            if (trim($data['reason'] ?? '')==='' || trim($data['evidence'] ?? '')==='' || trim($data['batch_number'] ?? '')==='')
+                throw ValidationException::withMessages(['evidence'=>__('Provide a reason, lot identifier and documentary evidence.')]);
+            $cost=(string)MoneyDecimal::parse($data['unit_cost'],'unit_cost');
+            if (!in_array($data['currency_code'] ?? '',['XAF','BDT'],true)) throw ValidationException::withMessages(['currency_code'=>__('Specify the evidenced cost currency.')]);
+            if (!in_array($data['expiry_status'] ?? '',['dated','not_applicable'],true))
+                throw ValidationException::withMessages(['expiry_status'=>__('Unknown expiry cannot be approved.')]);
+            $batch=$this->resolveBatch($product,'opening_approved',['batch'=>[
+                'batch_number'=>$data['batch_number'],'unit_cost'=>$cost,'currency_code'=>$data['currency_code'],
+                'expiry_status'=>$data['expiry_status'],'expires_on'=>$data['expires_on'] ?? null,'provenance'=>'documented_opening',
+                // Opening cutover is a known FIFO boundary, not an invented
+                // supplier receipt date. Late approval must not age old stock
+                // behind purchases made after that cutover.
+                'received_at'=>StockMovement::where('point_of_sale_id',$shopId)->where('product_id',$productId)
+                    ->where('type','opening')->orderBy('id')->first()?->occurred_at ?? now('Africa/Douala'),
+            ]]);
+            $this->correctBucket($shopId,$productId,null,self::UNALLOCATED_OPENING,(string)$amount->negated(),'opening_approved',$key,trim($data['reason']),$userId,1);
+            $this->increase($shopId,$productId,(string)$amount,[
+                'type'=>'opening_approved','batch_id'=>$batch->id,'correlation_key'=>$key,'correlation_line'=>2,'user_id'=>$userId,'reason'=>trim($data['reason']),
+            ]);
+            $id=DB::table('stock_opening_approvals')->insertGetId([
+                'point_of_sale_id'=>$shopId,'product_id'=>$productId,'user_id'=>$userId,'product_batch_id'=>$batch->id,
+                'quantity'=>(string)$amount,'unit_cost'=>$cost,'currency_code'=>$data['currency_code'],
+                'operation_key'=>$key,'request_hash'=>$hash,'reason'=>$data['reason'],'evidence'=>$data['evidence'],
+                'approved_at'=>now('Africa/Douala'),'created_at'=>now(),'updated_at'=>now(),
+            ]);
+            return DB::table('stock_opening_approvals')->find($id);
+        },3);
     }
 
     private function resolveBatch(Product $product, string $type, array $options): ?ProductBatch
