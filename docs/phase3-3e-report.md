@@ -56,6 +56,10 @@ Le premier fichier d'erreurs téléchargé comportait un avertissement PHP de do
 
 ## Limites restantes
 
+### Addendum de décision du 07/10/2026
+
+Les décisions D46/D48 et la règle de péremption de ce rapport sont remplacées par la nouvelle politique : les lots d'ouverture automatiques sont vendables et corrigibles; les doublons SKU demandent une décision par ligne; les catégories non périssables sont le défaut et les ventes expirées passent par confirmation motivée. Vérification de conversion sur la copie fraîche `qpos_phase2_probe_20261008_032509_2a514ab3`; migration et conversion locale effectuées sous maintenance après sauvegarde restaurable `flexibility-cutover-20261007-2224`, puis application rouverte. Tests de l'intégration complète des imports, estimations d'expiration et confirmations checkout restent limités aux vérifications décrites dans le rapport de souplesse.
+
 - Concurrence réelle entre deux checkouts non testée : Phase 4.
 - Moteur natif tarifs/promotions/conditionnements au checkout, caisse/paiements et arrondis finaux XAF : Phase 4.
 - Les inconnus restent bloqués ; preuves métier de validation à fournir par le propriétaire, aucune valeur inventée.

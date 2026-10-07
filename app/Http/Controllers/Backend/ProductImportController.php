@@ -23,9 +23,11 @@ class ProductImportController extends Controller
                 'file'=>'required|file|mimes:csv,txt|max:5120','action'=>'required|in:preview,apply,errors',
                 'import_mode'=>'required|in:catalogue,receipt','supplier_id'=>'nullable|integer',
                 'evidence'=>'nullable|string|max:5000','operation_key'=>'required|string|max:64','preview_hash'=>'nullable|string|size:64',
+                'resolutions'=>'nullable|array','resolutions.*'=>'in:ignore,suffix,update',
             ]);
             $context=['shop_id'=>(int)StockContext::shop($request)->id,'user_id'=>(int)$request->user()->id,
-                'mode'=>$data['import_mode'],'supplier_id'=>empty($data['supplier_id']) ? null : (int)$data['supplier_id'],'evidence'=>$data['evidence'] ?? ''];
+                'mode'=>$data['import_mode'],'supplier_id'=>empty($data['supplier_id']) ? null : (int)$data['supplier_id'],'evidence'=>$data['evidence'] ?? '',
+                'resolutions'=>$data['resolutions'] ?? []];
             $path=$request->file('file')->getRealPath();
             $report=$service->preview($path,$context);
             if ($data['action']==='errors') {

@@ -77,6 +77,8 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
             'category_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|boolean',
+            'expiry_policy' => 'required|in:perishable,non_perishable',
+            'expiry_months' => 'nullable|integer|min:1|max:120',
         ]);
         $category = Category::create(collect($validated)->except('category_image')->all());
         if ($request->hasFile("category_image")) {
@@ -115,6 +117,8 @@ class CategoryController extends Controller
             'description' => 'nullable|string',
             'category_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|boolean',
+            'expiry_policy' => 'required|in:perishable,non_perishable',
+            'expiry_months' => 'nullable|integer|min:1|max:120',
         ]);
         $category = Category::findOrFail($id);
         $oldImage = $category->image;

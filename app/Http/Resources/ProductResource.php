@@ -25,6 +25,7 @@ class ProductResource extends JsonResource
             'purchase_price' => $this->purchase_price,
             'discounted_price' => $this->discounted_price,
             'quantity' => $this->quantity,
+            'expired_quantity' => $this->when(isset($this->stock_expired), $this->stock_expired),
             'allows_fractional' => $this->allows_fractional,
             'product_units' => $this->whenLoaded('productUnits', fn () => $this->productUnits
                 ->where('is_active', true)->values()->map(fn ($unit) => [

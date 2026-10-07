@@ -51,7 +51,7 @@ final class ProductImportService
 
     public function previewRows(array $rows, array $context): array
     {
-        $errors=[]; $seen=[]; $normalized=[];
+        $errors=[]; $warnings=[]; $seen=[]; $normalized=[];
         $user=User::findOrFail($context['user_id']);
         abort_unless($user->can('product_import'),403);
         $shop=PointOfSale::accessibleBy($user)->find($context['shop_id']);
@@ -77,11 +77,31 @@ final class ProductImportService
                 $skuKey=DB::getDriverName()==='mysql'
                     ? DB::selectOne('SELECT HEX(WEIGHT_STRING(CAST(? AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci)) AS sku_weight',[$row['sku']])->sku_weight
                     : mb_strtolower($row['sku'],'UTF-8');
-                if (isset($seen[$skuKey])) throw ValidationException::withMessages(['sku'=>__('Duplicate SKU in this file.')]);
-                $seen[$skuKey]=true;
-                if (Product::where('sku',$row['sku'])->exists())
-                    throw ValidationException::withMessages(['sku'=>__('This SKU already exists. It will not be renamed or updated.')]);
-                CatalogueCodes::validateSku($row['sku']);
+                $duplicateInFile=isset($seen[$skuKey]); $seen[$skuKey]=true;
+                $existing=Product::where('sku',$row['sku'])->first();
+                if ($duplicateInFile || $existing) {
+                    $resolution=$context['resolutions'][$line] ?? null;
+                    $warnings[]=['line'=>$line,'sku'=>$row['sku'],'existing_product'=>$existing?->name,'choices'=>['ignore','suffix',...($existing?['update']:[])]];
+                    if (!in_array($resolution,['ignore','suffix','update'],true) || ($resolution==='update' && !$existing)) {
+                        $errors[]=['line'=>$line,'sku'=>$row['sku'],'field'=>'sku','message'=>__('Choose ignore, suffix, or update for this duplicate SKU.')];
+                        continue;
+                    }
+                    if ($resolution==='ignore') continue;
+                    if ($resolution==='suffix') {
+                        $baseSku=mb_substr($row['sku'],0,245,'UTF-8'); $suffix=1;
+                        do {
+                            $row['sku']=$baseSku.'-'.$suffix++;
+                            $candidateKey=DB::getDriverName()==='mysql'
+                                ? DB::selectOne('SELECT HEX(WEIGHT_STRING(CAST(? AS CHAR CHARACTER SET utf8mb4) COLLATE utf8mb4_unicode_ci)) AS sku_weight',[$row['sku']])->sku_weight
+                                : mb_strtolower($row['sku'],'UTF-8');
+                        } while (Product::where('sku',$row['sku'])->exists() || isset($seen[$candidateKey]));
+                        $seen[$candidateKey]=true;
+                        $row['sku_auto_suffix']=true;
+                        CatalogueCodes::validateSku($row['sku']);
+                    } else {
+                        $row['existing_product_id']=$existing->id;
+                    }
+                } else CatalogueCodes::validateSku($row['sku']);
                 $units=empty($row['unit']) ? collect() : Unit::where('title',$row['unit'])->where('is_active',true)->get();
                 if (!empty($row['unit']) && $units->count()!==1) throw ValidationException::withMessages(['unit'=>__('Choose one existing active unit with an unambiguous name.')]);
                 $fractional=$units->isNotEmpty() ? FractionalQuantityRule::classify($units->first()) : null;
@@ -117,7 +137,7 @@ final class ProductImportService
             }
         }
         if (!$rows) $errors[]=['line'=>1,'sku'=>'','field'=>'file','message'=>__('The CSV contains no product rows.')];
-        return ['valid'=>$errors===[],'errors'=>$errors,'rows'=>$normalized,'line_count'=>count($rows)];
+        return ['valid'=>$errors===[],'errors'=>$errors,'warnings'=>$warnings,'rows'=>$normalized,'line_count'=>count($rows)];
     }
 
     public function apply(string $path, array $context, string $operationKey): object
@@ -146,11 +166,26 @@ final class ProductImportService
 
     private function createRow(array $row, array $context, PointOfSale $shop, string $key): void
     {
+        if (!empty($row['existing_product_id'])) {
+            $product=Product::query()->whereKey($row['existing_product_id'])->lockForUpdate()->firstOrFail();
+            $brand=empty($row['brand']) ? null : Brand::firstOrCreate(['name'=>$row['brand']]);
+            $category=empty($row['category']) ? null : Category::firstOrCreate(['name'=>$row['category']]);
+            $product->fill(['name'=>$row['name'],'unit_id'=>$row['unit_id'],'allows_fractional'=>$row['allows_fractional'],
+                'brand_id'=>$brand?->id,'category_id'=>$category?->id,'description'=>$row['description'] ?? null,
+                'price'=>(string)BigDecimal::of($row['price'])->toScale(2,RoundingMode::HalfUp),
+                'purchase_price'=>(string)BigDecimal::of($row['purchase_price'])->toScale(2,RoundingMode::HalfUp),
+                'discount'=>(string)BigDecimal::of($row['discount'])->toScale(2,RoundingMode::HalfUp),
+                'discount_type'=>$row['discount_type'],'status'=>$row['status']==='1']);
+            $product->save();
+            app(ReferencePricingService::class)->sync($product,$row,true);
+            return;
+        }
         $brand=empty($row['brand']) ? null : Brand::firstOrCreate(['name'=>$row['brand']]);
         $category=empty($row['category']) ? null : Category::firstOrCreate(['name'=>$row['category']]);
         $product=new Product([
             'sku'=>$row['sku'],'name'=>$row['name'],'unit_id'=>$row['unit_id'],'allows_fractional'=>$row['allows_fractional'],
             'brand_id'=>$brand?->id,'category_id'=>$category?->id,'description'=>$row['description'] ?? null,'quantity'=>0,
+            'sku_auto_suffix'=>(bool)($row['sku_auto_suffix'] ?? false),
             'price'=>(string)BigDecimal::of($row['price'])->toScale(2,RoundingMode::HalfUp),
             'purchase_price'=>(string)BigDecimal::of($row['purchase_price'])->toScale(2,RoundingMode::HalfUp),
             'discount'=>(string)BigDecimal::of($row['discount'])->toScale(2,RoundingMode::HalfUp),'discount_type'=>$row['discount_type'],'status'=>$row['status']==='1',
@@ -203,6 +238,6 @@ final class ProductImportService
 
     private function failure(int $line,string $field,string $message): array
     {
-        return ['valid'=>false,'errors'=>[['line'=>$line,'sku'=>'','field'=>$field,'message'=>$message]],'rows'=>[],'line_count'=>0];
+        return ['valid'=>false,'errors'=>[['line'=>$line,'sku'=>'','field'=>$field,'message'=>$message]],'warnings'=>[],'rows'=>[],'line_count'=>0];
     }
 }

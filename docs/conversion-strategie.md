@@ -1,6 +1,10 @@
 # QPOS — Stratégie de conversion
 
-Date initiale : 01/10/2026. Mise à jour : 05/10/2026. La reprise catalogue Phase 2 est implémentée ; les reprises stock et financières restent dans leurs phases.
+Date initiale : 01/10/2026. Mise à jour : 07/10/2026. La reprise catalogue Phase 2 est implémentée; la décision de souplesse stock post-Phase 3 est consignée ci-dessous.
+
+## Mise à jour souplesse stock — 07/10/2026
+
+Les 314 unités d'ouverture restent attribuées à MAIN et ne sont pas réparties. Elles sont converties sous sauvegarde vérifiée en lots `LOT-AUTO-OUVERTURE` vendables; coût nul marqué inconnu, péremption inconnue conservée. Le mouvement source demeure et les mouvements de reclassement sont idempotents. Une correction exige un motif et un audit avant/après. Cette décision remplace le blocage historique décrit dans les procédures antérieures.
 
 Références : [roadmap.md](roadmap.md), [schema-cible.md](schema-cible.md), [contrats.md](contrats.md). Le document ne s’exécute pas lui-même ; les opérations réellement effectuées le 05/10/2026 sont consignées dans `phase2-report.md`.
 

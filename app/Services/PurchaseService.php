@@ -71,8 +71,8 @@ final class PurchaseService
                 ]);
                 $received = $input['received_quantity'] ?? (string)$quantity;
                 if (BigDecimal::of((string)$received)->isGreaterThan('0')) {
-                    $lines[] = ['purchase_item_id' => $item->id, 'quantity' => (string)$received, 'unit_cost' => (string)$sourceCost,
-                        'expiry_status' => $input['expiry_status'] ?? 'unknown', 'expires_on' => $input['expires_on'] ?? null];
+                    $expiry = $this->expiryFor($product, $input['expiry_status'] ?? 'unknown', $input['expires_on'] ?? null, now('Africa/Douala'));
+                    $lines[] = ['purchase_item_id' => $item->id, 'quantity' => (string)$received, 'unit_cost' => (string)$sourceCost, ...$expiry];
                 }
             }
             $tax = MoneyDecimal::parse($data['tax'] ?? '0', 'tax');
@@ -169,8 +169,10 @@ final class PurchaseService
                 }
                 $baseCost = MoneyDecimal::rounded($sourceCost->dividedBy((string)$factor, 6, RoundingMode::HalfUp));
                 $lineAmount = MoneyDecimal::rounded($sourceCost->multipliedBy($qty));
-                $expiryStatus = $line['expiry_status'] ?? 'unknown';
-                $expiresOn = $line['expires_on'] ?? null;
+                $expiry = $this->expiryFor($item->product()->with('category')->firstOrFail(), $line['expiry_status'] ?? 'unknown', $line['expires_on'] ?? null, $receipt->received_at);
+                if (!empty($line['estimated_expiry'])) $expiry['estimated_expiry']=true;
+                $expiryStatus = $expiry['expiry_status'];
+                $expiresOn = $expiry['expires_on'];
                 $receiptItem = PurchaseReceiptItem::create([
                     'purchase_receipt_id' => $receipt->id, 'purchase_item_id' => $item->id, 'product_id' => $item->product_id,
                     'product_batch_id' => null, 'product_unit_id' => $item->product_unit_id,
@@ -184,7 +186,7 @@ final class PurchaseService
                 $movement = app(StockService::class)->increase((int)$shop->id, (int)$item->product_id, (string)$base, [
                     'correlation_key' => 'purchase-receipt:'.$receipt->id, 'correlation_line' => $i + 1, 'user_id' => $userId,
                     'purchase_receipt_item_id' => $receiptItem->id,
-                    'batch' => ['expiry_status' => $expiryStatus, 'expires_on' => $expiresOn, 'batch_number'=>$line['batch_number'] ?? null, 'received_at' => $receipt->received_at,
+                    'batch' => ['expiry_status' => $expiryStatus, 'expires_on' => $expiresOn, 'estimated_expiry'=>$expiry['estimated_expiry'], 'batch_number'=>$line['batch_number'] ?? null, 'received_at' => $receipt->received_at,
                         'purchase_receipt_item_id'=>$receiptItem->id, 'unit_cost' => (string)$baseCost, 'provenance' => 'purchase','currency_code'=>$purchase->currency_code],
                 ]);
                 $receiptItem->forceFill(['product_batch_id'=>$movement->product_batch_id])->save();
@@ -241,6 +243,16 @@ final class PurchaseService
             else { $started = true; if (!$received->isEqualTo($ordered)) $complete = false; }
         }
         $purchase->forceFill(['receipt_status' => $complete ? 'received' : ($started ? 'partial' : 'pending')])->save();
+    }
+
+    private function expiryFor(Product $product, string $status, ?string $date, $receivedAt): array
+    {
+        if ($status === 'dated' && $date) return ['expiry_status'=>'dated','expires_on'=>$date,'estimated_expiry'=>false];
+        if ($status === 'not_applicable') return ['expiry_status'=>'not_applicable','expires_on'=>null,'estimated_expiry'=>false];
+        $policy = $product->expiry_policy_override ?: $product->category?->expiry_policy ?: 'non_perishable';
+        if ($policy !== 'perishable') return ['expiry_status'=>'not_applicable','expires_on'=>null,'estimated_expiry'=>false];
+        $months = (int)($product->category?->expiry_months ?: config('system.default_expiry_months', 12));
+        return ['expiry_status'=>'dated','expires_on'=>\Illuminate\Support\Carbon::parse($receivedAt, 'Africa/Douala')->addMonths($months)->toDateString(),'estimated_expiry'=>true];
     }
 
     public function reversePayment(Purchase $purchase, Payment $source, array $data, PointOfSale $shop, int $userId): Payment

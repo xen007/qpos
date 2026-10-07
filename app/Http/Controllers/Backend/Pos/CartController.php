@@ -46,7 +46,7 @@ class CartController extends Controller
     {
         $this->authorizePos();
 
-        $products = app(StockAvailability::class)->attach(Product::query()->active(), StockContext::shop($request)->id)
+        $products = app(StockAvailability::class)->attach(Product::query()->active(), StockContext::shop($request)->id, true)
             ->having('stock_available', '>=', 1);
         // Search by name if provided
         $products->when($request->search, function ($query, $search) {
@@ -108,7 +108,7 @@ class CartController extends Controller
             if (!$product->status) {
                 return response()->json(['message' => __('Product is not available')], 400);
             }
-            $available = BigDecimal::of(app(StockService::class)->available($shopId, (int)$product_id));
+            $available = BigDecimal::of(app(StockService::class)->available($shopId, (int)$product_id, true));
             if ($available->isLessThan('1')) {
                 return response()->json(['message' => __('Insufficient stock available')], 400);
             }
@@ -143,7 +143,7 @@ class CartController extends Controller
             $cartSnapshot = PosCart::where('user_id', $userId)->where('point_of_sale_id',$shopId)->whereKey($request->id)->firstOrFail();
             $product = Product::whereKey($cartSnapshot->product_id)->lockForUpdate()->firstOrFail();
             $cart = PosCart::where('user_id', $userId)->where('point_of_sale_id',$shopId)->whereKey($request->id)->lockForUpdate()->firstOrFail();
-            $available = BigDecimal::of(app(StockService::class)->available($shopId,(int)$product->id));
+            $available = BigDecimal::of(app(StockService::class)->available($shopId,(int)$product->id,true));
             if (!$product->status || $available->isLessThan('1')) {
                 return response()->json(['message' => __('Insufficient stock available')], 400);
             }

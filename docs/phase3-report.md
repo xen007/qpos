@@ -2,6 +2,10 @@
 
 Mise à jour : 07/10/2026. Le propriétaire effectue les commits. Aucun commit ni push exécuté par l'agent.
 
+## Addendum — souplesse stock, 07/10/2026
+
+La décision propriétaire après la Phase 3 remplace le blocage systématique des 314 unités : elles sont converties en 23 lots automatiques vendables à coût nul marqué inconnu. Le mouvement d'ouverture original demeure; les corrections sont auditées. La péremption et l'accès mono/multi deviennent configurables; les protections d'intégrité restent. Sous maintenance, sauvegarde restaurable vérifiée (`storage/app/backups/flexibility-cutover-20261007-2224`), migrations appliquées à la copie fraîche puis à qpos, conversion rejouée sans doublon, vérification des disponibilités par produit réussie et application rouverte. Changements non commités, propriétaire seul commite. Les anciennes sections ci-dessous décrivent fidèlement l'état avant cet addendum.
+
 ## Bilan global avant validation Phase 3
 
 | Sous-lot | Livraison | État |

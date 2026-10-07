@@ -77,7 +77,7 @@ class PurchaseController extends Controller
             'products.*.received_qty' => ['nullable', 'string', 'regex:/\A(?:0|[1-9][0-9]{0,13})(?:\.[0-9]{1,6})?\z/D'],
             'products.*.purchase_price' => ['required', 'string', 'regex:/\A\d{1,14}(?:\.\d{1,6})?\z/D'],
             'products.*.price' => ['required', 'string', 'regex:/\A\d{1,14}(?:\.\d{1,6})?\z/D'],
-            'products.*.expiry_status' => ['required', 'in:dated,not_applicable,unknown'],
+            'products.*.expiry_status' => ['nullable', 'in:dated,not_applicable,unknown'],
             'products.*.expires_on' => ['nullable', 'date_format:Y-m-d'],
             'totals' => ['nullable', 'array'],
             'totals.tax' => ['nullable', 'string', 'regex:/\A\d{1,14}(?:\.\d{1,6})?\z/D'],
@@ -96,7 +96,7 @@ class PurchaseController extends Controller
             'product_id' => $line['id'], 'product_unit_id' => $line['product_unit_id'],
             'quantity' => $line['qty'], 'received_quantity' => $line['received_qty'] ?? $line['qty'],
             'unit_cost' => $line['purchase_price'], 'sale_price' => $line['price'],
-            'expiry_status' => $line['expiry_status'], 'expires_on' => $line['expires_on'] ?? null,
+            'expiry_status' => $line['expiry_status'] ?? 'unknown', 'expires_on' => $line['expires_on'] ?? null,
         ], $validated['products']);
         if (collect($items)->contains(fn($line)=>\Brick\Math\BigDecimal::of($line['received_quantity'])->isPositive())) {
             abort_unless($request->user()->can('purchase_receive'),403);
@@ -139,7 +139,7 @@ class PurchaseController extends Controller
             'items.*.purchase_item_id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['required', 'string', 'regex:/\A(?:0|[1-9][0-9]{0,13})(?:\.[0-9]{1,6})?\z/D'],
             'items.*.unit_cost' => ['nullable', 'string', 'regex:/\A\d{1,14}(?:\.\d{1,6})?\z/D'],
-            'items.*.expiry_status' => ['required', 'in:dated,not_applicable,unknown'],
+            'items.*.expiry_status' => ['nullable', 'in:dated,not_applicable,unknown'],
             'items.*.expires_on' => ['nullable', 'date_format:Y-m-d'],
         ]);
         foreach ($data['items'] as $i => $item) {

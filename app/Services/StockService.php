@@ -32,6 +32,134 @@ class StockService
     private const IN_TRANSIT = 'in_transit';
     private const UNALLOCATED_OPENING = 'unallocated_opening';
 
+    /** Convert one confirmed opening balance into an auditable automatic lot. */
+    public function convertOpeningToAutomaticLot(int $shopId, int $productId): ProductBatch
+    {
+        if (!config('system.auto_generate_lots', true)) {
+            throw ValidationException::withMessages(['stock' => __('Automatic lot generation is disabled in system settings.')]);
+        }
+        return DB::transaction(function () use ($shopId, $productId) {
+            $product = $this->lockProduct($productId);
+            $this->assertActiveShop($shopId);
+            $key = 'auto-opening-v1-'.$productId;
+            $prior = ProductBatch::query()->where('product_id', $productId)->where('provenance', 'auto_opening')->first();
+            if ($prior) {
+                $movements = StockMovement::query()->where('point_of_sale_id', $shopId)->where('correlation_key', $key)->orderBy('correlation_line')->get();
+                $source = StockMovement::query()->where('point_of_sale_id', $shopId)->where('product_id', $productId)
+                    ->where('type', 'opening')->where('bucket', self::UNALLOCATED_OPENING)->first();
+                $original = $source ? BigDecimal::of($source->quantity_delta)->abs() : BigDecimal::zero();
+                $validPair = $movements->count() === 2
+                    && (int) $movements[0]->correlation_line === 1 && (int) $movements[1]->correlation_line === 2
+                    && $movements[0]->bucket === self::UNALLOCATED_OPENING && $movements[1]->bucket === self::SALEABLE
+                    && BigDecimal::of($movements[0]->quantity_delta)->abs()->compareTo($original) === 0
+                    && BigDecimal::of($movements[1]->quantity_delta)->compareTo($original) === 0
+                    && (int) ($movements[1]->product_batch_id ?? 0) === (int) $prior->id;
+                if (!$validPair || (int) $prior->auto_generated !== 1 || (int) $prior->cost_unknown !== 1) {
+                    throw ValidationException::withMessages(['stock' => __('Automatic opening conversion evidence is incomplete.')]);
+                }
+                return $prior;
+            }
+
+            $stock = $this->lockProductStock($shopId, $productId);
+            $quantity = BigDecimal::of((string) $stock->unallocated_opening_quantity)->toScale(6);
+            if (!$quantity->isPositive()) {
+                throw ValidationException::withMessages(['stock' => __('No unallocated opening quantity remains for this product.')]);
+            }
+            $opening = StockMovement::query()->where('point_of_sale_id', $shopId)->where('product_id', $productId)
+                ->where('type', 'opening')->where('bucket', self::UNALLOCATED_OPENING)->orderBy('occurred_at')->firstOrFail();
+
+            $batch = ProductBatch::query()->create([
+                'product_id' => $product->id, 'batch_number' => config('system.default_lot_prefix', 'LOT-AUTO').'-OUVERTURE',
+                'expiry_status' => 'unknown', 'expires_on' => null, 'received_at' => $opening->occurred_at,
+                'unit_cost' => '0.000000', 'currency_code' => null, 'purchase_receipt_item_id' => null,
+                'provenance' => 'auto_opening', 'auto_generated' => true, 'cost_unknown' => true, 'estimated_expiry' => false,
+            ]);
+            $batchStock = $this->lockBatchStock($shopId, $batch->id);
+            $batchStock->saleable_quantity = (string) $quantity;
+            $batchStock->unsaleable_quantity = '0.000000';
+            $batchStock->save();
+
+            $stock->unallocated_opening_quantity = (string) BigDecimal::of($stock->unallocated_opening_quantity)->minus($quantity)->toScale(6);
+            $stock->saleable_quantity = $this->add($stock->saleable_quantity, $quantity);
+            $stock->save();
+
+            $occurredAt = now('Africa/Douala');
+            $this->writeMovement([
+                'point_of_sale_id' => $shopId, 'product_id' => $productId, 'product_batch_id' => null,
+                'bucket' => self::UNALLOCATED_OPENING, 'quantity_delta' => (string) $quantity->negated(),
+                'type' => 'opening_approved', 'occurred_at' => $occurredAt, 'user_id' => null, 'unit_cost' => null,
+                'correlation_key' => $key, 'correlation_line' => 1, 'reason' => 'Automatic, traceable opening lot conversion.',
+            ]);
+            $this->writeMovement([
+                'point_of_sale_id' => $shopId, 'product_id' => $productId, 'product_batch_id' => $batch->id,
+                'bucket' => self::SALEABLE, 'quantity_delta' => (string) $quantity,
+                'type' => 'opening_approved', 'occurred_at' => $occurredAt, 'user_id' => null, 'unit_cost' => '0.000000',
+                'correlation_key' => $key, 'correlation_line' => 2, 'reason' => 'Automatic, traceable opening lot conversion.',
+            ]);
+            DB::table('product_batch_amendments')->insert([
+                'product_batch_id' => $batch->id, 'user_id' => null, 'operation_key' => 'auto-opening-'.$productId,
+                'kind' => 'automatic_opening', 'before_values' => json_encode(['unallocated_opening_quantity' => (string) $quantity]),
+                'after_values' => json_encode(['batch_number' => $batch->batch_number, 'quantity' => (string) $quantity,
+                    'unit_cost' => '0.000000', 'cost_unknown' => true, 'expiry_status' => 'unknown', 'auto_generated' => true]),
+                'reason' => 'Traceable conversion of the confirmed MAIN opening balance.', 'occurred_at' => $occurredAt,
+                'created_at' => $occurredAt, 'updated_at' => $occurredAt,
+            ]);
+            return $batch;
+        }, 3);
+    }
+
+    /** Record a reasoned correction while retaining the lot's automatic origin. */
+    public function amendAutomaticLot(int $batchId, array $data, int $userId): ProductBatch
+    {
+        return DB::transaction(function () use ($batchId, $data, $userId) {
+            $batch = ProductBatch::query()->whereKey($batchId)->lockForUpdate()->firstOrFail();
+            if (!$batch->auto_generated) throw ValidationException::withMessages(['batch' => __('Only automatic lots can be amended here.')]);
+            $reason = trim((string) ($data['reason'] ?? ''));
+            if ($reason === '') throw ValidationException::withMessages(['reason' => __('A reason is required.')]);
+            $key = $this->operationKey($data['operation_key'] ?? null);
+            $after = [
+                'batch_number' => trim((string) ($data['batch_number'] ?? '')),
+                'unit_cost' => (string) MoneyDecimal::parse($data['unit_cost'] ?? '0', 'unit_cost'),
+                'cost_unknown' => filter_var($data['cost_unknown'] ?? false, FILTER_VALIDATE_BOOL),
+                'currency_code' => $data['currency_code'] ?? null,
+                'expiry_status' => $data['expiry_status'] ?? null,
+                'expires_on' => $data['expires_on'] ?? null,
+                'estimated_expiry' => filter_var($data['estimated_expiry'] ?? false, FILTER_VALIDATE_BOOL),
+            ];
+            if ($after['batch_number'] === '' || strlen($after['batch_number']) > 255
+                || ($after['cost_unknown'] && (!BigDecimal::of($after['unit_cost'])->isZero() || $after['currency_code'] !== null))
+                || (!$after['cost_unknown'] && !in_array($after['currency_code'], ['XAF', 'BDT'], true))
+                || !in_array($after['expiry_status'], ['dated', 'not_applicable', 'unknown'], true)
+                || ($after['expiry_status'] === 'dated' ? !$after['expires_on'] : (bool) $after['expires_on'])
+                || ($after['estimated_expiry'] && $after['expiry_status'] !== 'dated')) {
+                throw ValidationException::withMessages(['batch' => __('The corrected lot details are inconsistent.')]);
+            }
+            $existing = DB::table('product_batch_amendments')->where('operation_key', $key)->first();
+            if ($existing) {
+                if ((int) $existing->product_batch_id !== $batchId || $existing->reason !== $reason
+                    || json_decode($existing->after_values, true) !== $after) {
+                    throw ValidationException::withMessages(['operation_key' => __('This amendment key was already used with different data.')]);
+                }
+                return $batch;
+            }
+            $before = [
+                'batch_number' => $batch->batch_number, 'unit_cost' => (string) $batch->unit_cost,
+                'cost_unknown' => (bool) $batch->cost_unknown, 'currency_code' => $batch->currency_code,
+                'expiry_status' => $batch->expiry_status, 'expires_on' => $batch->expires_on?->toDateString(),
+                'estimated_expiry' => (bool) $batch->estimated_expiry,
+            ];
+            $batch->forceFill(collect($after)->except('reason', 'operation_key')->all())->save();
+            $now = now('Africa/Douala');
+            DB::table('product_batch_amendments')->insert([
+                'product_batch_id' => $batchId, 'user_id' => $userId, 'operation_key' => $key,
+                'kind' => 'admin_correction', 'before_values' => json_encode($before, JSON_THROW_ON_ERROR),
+                'after_values' => json_encode($after, JSON_THROW_ON_ERROR), 'reason' => $reason,
+                'occurred_at' => $now, 'created_at' => $now, 'updated_at' => $now,
+            ]);
+            return $batch->refresh();
+        }, 3);
+    }
+
     public function increase(int $shopId, int $productId, mixed $quantity, array $options = []): StockMovement
     {
         return DB::transaction(function () use ($shopId, $productId, $quantity, $options) {
@@ -148,11 +276,15 @@ class StockService
             $stock = $this->lockProductStock($shopId, $productId);
             $today = now('Africa/Douala')->toDateString();
             $includeBlockedBatches = in_array($type, ['adjustment', 'loss', 'inventory_adjustment'], true);
+            $includeExpired = $type === 'sale' && filter_var($options['confirm_expired'] ?? false, FILTER_VALIDATE_BOOL);
+            if ($includeExpired && (trim((string)($options['reason'] ?? '')) === '' || empty($options['user_id']))) {
+                throw ValidationException::withMessages(['confirm_expired'=>__('Confirm the expired sale with a reason and acting user.')]);
+            }
             $stockField = $bucket.'_quantity';
             $available = BigDecimal::of($stock->getAttribute($stockField));
             if ($bucket === self::SALEABLE && !$includeBlockedBatches) {
-                $available = $available->minus($this->expiredBatchTotal($shopId, $productId, $today))
-                    ->minus($this->unknownExpiryTotal($shopId, $productId));
+                $available = $available->minus($includeExpired ? BigDecimal::zero() : $this->expiredBatchTotal($shopId, $productId, $today))
+                    ->minus($this->unknownExpiryTotal($shopId, $productId, true));
             }
             if ($available->isLessThan($amount)) {
                 throw ValidationException::withMessages(['quantity' => __('Insufficient available stock.')]);
@@ -161,7 +293,7 @@ class StockService
             $remaining = $amount;
             $created = new Collection();
             $line = (int) ($options['correlation_line'] ?? 1);
-            $batches = $this->lockAvailableBatches($shopId, $productId, $today, $bucket, $includeBlockedBatches);
+            $batches = $this->lockAvailableBatches($shopId, $productId, $today, $bucket, $includeBlockedBatches, $includeExpired);
             $initialBatchQuantity = $batches->reduce(
                 fn (BigDecimal $sum, BatchStock $batchStock) => $sum->plus($batchStock->getAttribute($stockField)),
                 BigDecimal::zero()
@@ -205,11 +337,14 @@ class StockService
                 $lotlessAvailable = BigDecimal::of($stock->getAttribute($stockField))->minus($initialBatchQuantity);
                 if ($bucket === self::SALEABLE && !$includeBlockedBatches) {
                     $lotlessAvailable = $lotlessAvailable
-                        ->minus($this->expiredBatchTotal($shopId, $productId, $today))
-                        ->minus($this->unknownExpiryTotal($shopId, $productId));
+                        ->minus($includeExpired ? BigDecimal::zero() : $this->expiredBatchTotal($shopId, $productId, $today))
+                        ->minus($this->unknownExpiryTotal($shopId, $productId, true));
                 }
                 if ($lotlessAvailable->isLessThan($remaining)) {
                     throw ValidationException::withMessages(['quantity' => __('Stock balance does not match its available batches.')]);
+                }
+                if ($type === 'sale' && $bucket === self::SALEABLE && !config('system.allow_sale_without_lot', true)) {
+                    throw ValidationException::withMessages(['batch' => __('Sale without a traced stock lot is disabled.')]);
                 }
                 $movement = $this->writeMovement([
                     'point_of_sale_id' => $shopId,
@@ -253,7 +388,7 @@ class StockService
             $stock = $this->lockProductStock($shopId, $productId);
             if (BigDecimal::of($stock->saleable_quantity)
                 ->minus($this->expiredBatchTotal($shopId, $productId, now('Africa/Douala')->toDateString()))
-                ->minus($this->unknownExpiryTotal($shopId, $productId))->isLessThan($amount)) {
+                ->minus($this->unknownExpiryTotal($shopId, $productId, true))->isLessThan($amount)) {
                 throw ValidationException::withMessages(['quantity' => __('Insufficient available stock.')]);
             }
             $batches = $this->lockAvailableBatches($shopId, $productId, now('Africa/Douala')->toDateString());
@@ -383,7 +518,7 @@ class StockService
         $expired = $stock
             ? $this->expiredBatchTotal($shopId, $productId, now('Africa/Douala')->toDateString())
             : BigDecimal::zero();
-        $unknownExpiry = $stock ? $this->unknownExpiryTotal($shopId, $productId) : BigDecimal::zero();
+        $unknownExpiry = $stock ? $this->unknownExpiryTotal($shopId, $productId, true) : BigDecimal::zero();
         $saleable = BigDecimal::of($stock?->saleable_quantity ?? '0.000000');
         return [
             'saleable' => (string) $saleable->toScale(6),
@@ -396,15 +531,15 @@ class StockService
         ];
     }
 
-    public function available(int $shopId, int $productId): string
+    public function available(int $shopId, int $productId, bool $includeExpired = false): string
     {
         $stock = ProductStock::query()->where('point_of_sale_id', $shopId)->where('product_id', $productId)->first();
         if (!$stock) {
             return '0.000000';
         }
         $available = BigDecimal::of($stock->saleable_quantity)
-            ->minus($this->expiredBatchTotal($shopId, $productId, now('Africa/Douala')->toDateString()))
-            ->minus($this->unknownExpiryTotal($shopId, $productId));
+            ->minus($includeExpired ? BigDecimal::zero() : $this->expiredBatchTotal($shopId, $productId, now('Africa/Douala')->toDateString()))
+            ->minus($this->unknownExpiryTotal($shopId, $productId, true));
         return (string) ($available->isNegative() ? BigDecimal::zero() : $available)->toScale(6);
     }
 
@@ -546,7 +681,7 @@ class StockService
                 'received_at' => $data['received_at'] ?? now('Africa/Douala'),
                 'unit_cost' => $cost,
                 'purchase_receipt_item_id' => $data['purchase_receipt_item_id'] ?? null,
-                ...array_intersect_key($data, ['currency_code'=>true]),
+                ...array_intersect_key($data, ['currency_code'=>true, 'auto_generated'=>true, 'cost_unknown'=>true, 'estimated_expiry'=>true]),
                 'provenance' => $data['provenance'] ?? $type,
             ]);
         }
@@ -604,7 +739,7 @@ class StockService
             ->lockForUpdate()->firstOrFail();
     }
 
-    private function lockAvailableBatches(int $shopId, int $productId, string $today, string $bucket = self::SALEABLE, bool $includeBlocked = false): Collection
+    private function lockAvailableBatches(int $shopId, int $productId, string $today, string $bucket = self::SALEABLE, bool $includeBlocked = false, bool $includeExpired = false): Collection
     {
         $query = BatchStock::query()->select('batch_stock.*')
             ->join('product_batches', 'product_batches.id', '=', 'batch_stock.product_batch_id')
@@ -612,10 +747,11 @@ class StockService
             ->where('product_batches.product_id', $productId)
             ->where('batch_stock.'.$bucket.'_quantity', '>', 0);
         if ($bucket === self::SALEABLE && !$includeBlocked) {
-            $query->where('product_batches.expiry_status', '<>', 'unknown')
-                ->where(fn ($q) => $q->where('product_batches.expiry_status', '<>', 'dated')->orWhere('product_batches.expires_on', '>=', $today))
+            $query->where(fn ($q) => $q->where('product_batches.expiry_status', '<>', 'unknown')->orWhere('product_batches.auto_generated', true));
+            if (!$includeExpired) $query->where(fn ($q) => $q->where('product_batches.expiry_status', '<>', 'dated')->orWhere('product_batches.expires_on', '>=', $today));
+            else $query->where(fn ($q) => $q->where('product_batches.expiry_status', '<>', 'unknown')->orWhere('product_batches.auto_generated', true));
                 // Dated batches are FEFO; explicitly non-expiring batches follow FIFO.
-                ->orderByRaw("CASE WHEN product_batches.expiry_status = 'dated' THEN 0 ELSE 1 END")
+            $query->orderByRaw("CASE WHEN product_batches.expiry_status = 'dated' THEN 0 ELSE 1 END")
                 ->orderBy('product_batches.expires_on');
         }
         return $query->orderBy('product_batches.received_at')->orderBy('product_batches.id')
@@ -631,11 +767,13 @@ class StockService
         return BigDecimal::of((string) ($total ?? '0'));
     }
 
-    private function unknownExpiryTotal(int $shopId, int $productId): BigDecimal
+    private function unknownExpiryTotal(int $shopId, int $productId, bool $excludeAuto = false): BigDecimal
     {
         $total = BatchStock::query()->join('product_batches', 'product_batches.id', '=', 'batch_stock.product_batch_id')
             ->where('batch_stock.point_of_sale_id', $shopId)->where('product_batches.product_id', $productId)
-            ->where('product_batches.expiry_status', 'unknown')->sum('batch_stock.saleable_quantity');
+            ->where('product_batches.expiry_status', 'unknown')
+            ->when($excludeAuto, fn ($q) => $q->where('product_batches.auto_generated', false))
+            ->sum('batch_stock.saleable_quantity');
         return BigDecimal::of((string) ($total ?? '0'));
     }
 

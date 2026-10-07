@@ -41,4 +41,9 @@
   'is_show_note_invoice' => '1',
   'receiptMaxwidth' => '300px',
   'site_palette' => 'teal',
+  'multi_shop_enabled' => true,
+  'default_expiry_months' => 12,
+  'auto_generate_lots' => true,
+  'default_lot_prefix' => 'LOT-AUTO',
+  'allow_sale_without_lot' => true,
 );

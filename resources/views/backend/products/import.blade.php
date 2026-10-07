@@ -2,7 +2,7 @@
 @section('title', __('Product Import'))
 @section('content')
 <x-backend.card>
-    <p class="mb-4 text-sm text-qpos-muted">{{ __('Preview writes no business data. One error blocks the entire import. Existing SKUs are rejected.') }}</p>
+    <p class="mb-4 text-sm text-qpos-muted">{{ __('Preview writes no business data. One error blocks the entire import. Duplicate SKUs require your choice.') }}</p>
     <form method="post" enctype="multipart/form-data" class="space-y-4">
         @csrf
         <input type="hidden" name="operation_key" value="{{ $operationKey }}">
@@ -29,6 +29,7 @@
         </div>
     </form>
     @if($report)
+        @if(!empty($report['warnings']))<div class="my-4 rounded-lg border border-orange-300 p-3"><strong>{{ __('Duplicate SKU decisions') }}</strong>@foreach($report['warnings'] as $warning)<div class="mt-2 grid gap-2 md:grid-cols-3"><span>{{ __('Line') }} {{ $warning['line'] }} · {{ $warning['sku'] }} @if($warning['existing_product']) — {{ $warning['existing_product'] }} @endif</span><select class="qpos-control" name="resolutions[{{ $warning['line'] }}]"><option value="">{{ __('Choose an action') }}</option><option value="ignore" @selected(request('resolutions.'.$warning['line'])==='ignore')>{{ __('Ignore row') }}</option><option value="suffix" @selected(request('resolutions.'.$warning['line'])==='suffix')>{{ __('Create with suffix') }}</option>@if($warning['existing_product'])<option value="update" @selected(request('resolutions.'.$warning['line'])==='update')>{{ __('Update existing catalogue fields') }}</option>@endif</select></div>@endforeach</div>@endif
         <p class="my-4 font-semibold">{{ $report['valid'] ? __('Ready to apply') : __('Import blocked') }} · {{ $report['line_count'] }} {{ __('rows') }}</p>
         <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>{{ __('Line') }}</th><th>SKU</th><th>{{ __('Field') }}</th><th>{{ __('Error') }}</th></tr></thead><tbody>
             @foreach($report['errors'] as $error)<tr><td class="p-2">{{ $error['line'] }}</td><td class="p-2">{{ $error['sku'] }}</td><td class="p-2">{{ $error['field'] }}</td><td class="p-2">{{ $error['message'] }}</td></tr>@endforeach

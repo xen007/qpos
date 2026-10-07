@@ -25,6 +25,9 @@ PHASE 2 LIVRÉE
 - Sauvegarde privée : C:\qpos-backups\phase2-20261005-b3e84b6f ; manifest.json et rapports conversion-probe/source.json. Ne pas exposer .env ou archives.
 - Copie finale : qpos_phase2_probe_20261005_160804_59f78aa1. Anciennes copies partielles conservées ; consulter le rapport pour choisir la bonne.
 
+MISE À JOUR DE RÈGLES — 07/10/2026
+Ce document conserve un état historique avant la politique de souplesse : les 314 unités ne sont plus obligatoirement bloquées. La sauvegarde `flexibility-cutover-20261007-2224` a été vérifiée; migrations et conversion locale ont été appliquées sous maintenance, puis l'application rouverte. Les règles de commit et de test sont celles expressément autorisées dans les messages de mission courants. Se reporter aux décisions D42/D46/D48 et aux addenda des rapports Phase 3.
+
 DOCUMENTS À LIRE
 docs/roadmap.md : sections 3, 4, 5 et registre 3.5.
 docs/phase2-report.md, docs/schema-cible.md, docs/contrats.md, docs/conversion-strategie.md.

@@ -104,6 +104,7 @@ class PointOfSaleAccessTest extends TestCase
     {
         $user = $this->makeUser('Admin');
         $store = PointOfSale::create(['code' => 'ADMIN-SHOP', 'name' => 'Admin Shop']);
+        PointOfSale::create(['code' => 'OTHER-SHOP', 'name' => 'Other Shop']);
 
         $this->assertFalse(Gate::forUser($user)->allows('view', $store));
 
@@ -112,6 +113,15 @@ class PointOfSaleAccessTest extends TestCase
         $user->save();
 
         $this->assertFalse(Gate::forUser($user)->allows('view', $store));
+    }
+
+    public function test_one_active_store_is_available_without_creating_user_assignments(): void
+    {
+        $user = $this->makeUser('Admin');
+        $store = PointOfSale::create(['code' => 'MAIN-ONLY', 'name' => 'MAIN']);
+
+        $this->assertTrue(Gate::forUser($user)->allows('view', $store));
+        $this->assertSame(0, $user->pointOfSales()->count());
     }
 
     public function test_default_store_seeder_is_idempotent_and_does_not_assign_users(): void

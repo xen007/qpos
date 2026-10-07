@@ -27,17 +27,22 @@ final class StockAvailability
         return $purchase;
     }
 
-    public function attach(Builder $products, int $shopId): Builder
+    public function attach(Builder $products, int $shopId, bool $includeExpired = false): Builder
     {
         $blocked = DB::table('batch_stock')->join('product_batches', 'product_batches.id', '=', 'batch_stock.product_batch_id')
             ->whereColumn('product_batches.product_id', 'products.id')->where('batch_stock.point_of_sale_id', $shopId)
-            ->where(fn ($q) => $q->where('product_batches.expiry_status', 'unknown')
-                ->orWhere(fn ($q) => $q->where('product_batches.expiry_status', 'dated')
-                    ->where('product_batches.expires_on', '<', now('Africa/Douala')->toDateString())))
+            ->where(function ($q) use ($includeExpired) {
+                $q->where(fn ($q) => $q->where('product_batches.expiry_status', 'unknown')->where('product_batches.auto_generated', false));
+                if (!$includeExpired) $q->orWhere(fn ($q) => $q->where('product_batches.expiry_status', 'dated')->where('product_batches.expires_on', '<', now('Africa/Douala')->toDateString()));
+            })
             ->selectRaw('COALESCE(SUM(batch_stock.saleable_quantity), 0)');
         $available = DB::table('product_stock')->whereColumn('product_stock.product_id','products.id')
             ->where('product_stock.point_of_sale_id',$shopId)
             ->selectRaw('GREATEST(0, product_stock.saleable_quantity - ('.$blocked->toSql().'))', $blocked->getBindings());
-        return $products->addSelect('products.*')->selectSub($available, 'stock_available');
+        $expired = DB::table('batch_stock')->join('product_batches','product_batches.id','=','batch_stock.product_batch_id')
+            ->whereColumn('product_batches.product_id','products.id')->where('batch_stock.point_of_sale_id',$shopId)
+            ->where('product_batches.expiry_status','dated')->where('product_batches.expires_on','<',now('Africa/Douala')->toDateString())
+            ->selectRaw('COALESCE(SUM(batch_stock.saleable_quantity),0)');
+        return $products->addSelect('products.*')->selectSub($available, 'stock_available')->selectSub($expired,'stock_expired');
     }
 }

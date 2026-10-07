@@ -185,6 +185,9 @@ Le bilan d'application et les preuves sont dans [phase3-3d-report.md](phase3-3d-
 ## 10. Implémentation Phase 3.E — 07/10/2026
 
 - `product_import_runs` : clé unique, empreinte de requête, boutique, auteur, rapport. Prévisualisation sans écriture métier, application atomique. Le stock importé est une réception PurchaseService/StockService, sans modification de `products.quantity`.
+- Mise à jour 07/10/2026 : `product_batches.auto_generated`, `cost_unknown`, `estimated_expiry`; journal d'amendements immuable avec valeurs avant/après, motif, auteur et clé.
+- `categories.expiry_policy` (`non_perishable` par défaut ou `perishable`) et `expiry_months`; `products.expiry_policy_override` nullable. `products.sku_auto_suffix` rend visible un suffixe décidé à l'import. Contrainte unique SKU conservée.
+- Le paramétrage système ajoute délai d'expiration estimé, génération automatique de lots, préfixe, autorisation vente sans lot et mode multi-boutique. Les stocks inconnus repris dans MAIN deviennent des lots auto avec coût nul marqué inconnu.
 - `stock_transfers`, `stock_transfer_items`, `stock_transfer_allocations`, `stock_transfer_receipts`, `stock_transfer_receipt_items` : expédition, lots, transit, réceptions partielles, retours physiques et pertes. Les quantités reçues/retournées/perdues ne dépassent pas l'allocation ; motifs et clés documentent chaque traitement.
 - `inventories`, `inventory_items` remplacent les noms proposés `stock_counts`/`stock_count_items` : repère journal, début du comptage, comptage JSON, ajustements et portée active unique produit/boutique. Mouvement pendant comptage : recomptage ; après comptage : conservation lors de l'application de l'écart.
 - `stock_opening_approvals` : auteur, boutique, produit, lot, quantité, coût/devise, motif et preuve. Deux reclassements du journal ; aucun gain physique. Validation partielle, reliquat bloqué ; lot expiré/inconnu toujours exclu du disponible.

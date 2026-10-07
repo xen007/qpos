@@ -82,7 +82,11 @@ class OrderController extends Controller
             'customer_id' => ['required', 'integer', 'exists:customers,id'],
             'order_discount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'paid' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'confirm_expired_sale' => ['nullable','boolean'], 'expired_sale_reason'=>['nullable','string','max:500'],
         ]);
+        if (($validated['confirm_expired_sale'] ?? false) && trim((string)($validated['expired_sale_reason'] ?? ''))==='') {
+            throw ValidationException::withMessages(['expired_sale_reason'=>__('Enter a reason to confirm an expired product sale.')]);
+        }
 
         $shopId = StockContext::shop($request)->id;
         $order = DB::transaction(function () use ($request, $validated, $shopId) {
@@ -112,7 +116,14 @@ class OrderController extends Controller
             foreach ($carts as $cart) {
                 $product = Product::whereKey($cart->product_id)->lockForUpdate()->firstOrFail();
 
-                if (!$product->status || BigDecimal::of(app(StockService::class)->available($shopId,(int)$product->id))->isLessThan((string)$cart->quantity)) {
+                $stockService=app(StockService::class);
+                $normalAvailable=BigDecimal::of($stockService->available($shopId,(int)$product->id));
+                $confirmedExpired=BigDecimal::of($stockService->available($shopId,(int)$product->id,true));
+                $confirmedSale=$validated['confirm_expired_sale'] ?? false;
+                if (!$product->status || ($confirmedSale ? $confirmedExpired : $normalAvailable)->isLessThan((string)$cart->quantity)) {
+                    if ($product->status && $confirmedExpired->isGreaterThanOrEqualTo((string)$cart->quantity) && !($validated['confirm_expired_sale'] ?? false)) {
+                        throw ValidationException::withMessages(['expired_confirmation_required'=>__('An expired batch is available. Confirm the sale and provide a reason to continue.')]);
+                    }
                     throw ValidationException::withMessages([
                         'cart' => __('A product is no longer available in the requested quantity.'),
                     ]);
@@ -146,10 +157,12 @@ class OrderController extends Controller
                     'product_id' => $product->id,
                 ]);
 
-                app(StockService::class)->decrease($shopId,(int)$product->id,(string)$cart->quantity,[
+                $stockService->decrease($shopId,(int)$product->id,(string)$cart->quantity,[
                     'correlation_key'=>'sale:line:'.$line->id,
                     'order_product_id'=>$line->id,
                     'user_id'=>$userId,
+                    'confirm_expired'=>(bool)($validated['confirm_expired_sale'] ?? false),
+                    'reason'=>$validated['expired_sale_reason'] ?? null,
                 ]);
                 $productTotal += $lineTotal;
                 $subTotal += $lineSubTotal;

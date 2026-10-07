@@ -180,23 +180,33 @@ export default function Pos() {
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                axios
-                    .put("/admin/order/create", {
+                const payload = {
                         customer_id: customerId,
                         order_discount: parseFloat(orderDiscount) || 0,
                         paid: parseFloat(paid) || 0,
-                    })
-                    .then((res) => {
+                    };
+                const complete = (values) => axios.put("/admin/order/create", values).then((res) => {
                         setCartUpdated(previous => !previous);
                         setProductUpdated(previous => !previous);
                         toast.success(res?.data?.message);
                         // window.location.href = `orders/invoice/${res?.data?.order?.id}`;
                         window.location.href = `orders/pos-invoice/${res?.data?.order?.id}`;
-                    })
-                    .catch((err) => {
+                    }).catch(async (err) => {
+                        if (err?.response?.data?.errors?.expired_confirmation_required) {
+                            const confirmation = await Swal.fire({
+                                title: translate('Expired product'),
+                                text: translate('This sale includes stock past its expiry date. Confirm only if authorized.'),
+                                input: 'text', inputLabel: translate('Reason'), inputPlaceholder: translate('Enter a reason'),
+                                inputValidator: value => !value?.trim() ? translate('A reason is required') : undefined,
+                                showCancelButton: true, confirmButtonText: translate('Confirm sale'), cancelButtonText: translate('Cancel'),
+                            });
+                            if (confirmation.isConfirmed) return complete({...payload,confirm_expired_sale:true,expired_sale_reason:confirmation.value.trim()});
+                            return;
+                        }
                         playSound(WarningSound);
                         toast.error(getErrorMessage(err), { duration: 6000 });
                     });
+                complete(payload);
             } else if (result.isDenied) {
                 return;
             }
@@ -225,6 +235,7 @@ export default function Pos() {
                         <img src={window.qposStorageUrl + '/' + product.image} alt="" loading="lazy" width="160" height="128" onError={e => { e.target.onerror=null; e.target.src=window.qposFallbackImage; }} />
                         <span className="qpos-product-name">{product.name}</span>
                         <span className="qpos-product-stock">{translate("Stock")}: {product.quantity}</span>
+                        {Number(product.expired_quantity || 0) > 0 && <span className="qpos-product-stock qpos-expiry-warning">{translate("Expired stock may require confirmation")}: {product.expired_quantity}</span>}
                         <strong>{product.discounted_price}</strong>
                     </button>)}
                 </div>

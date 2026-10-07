@@ -16,7 +16,12 @@
     @else
         <span class="text-sm font-medium">{{ $selectedPointOfSale?->name }}</span>
     @endif
+    @if(config('system.multi_shop_enabled', true))
     @can('viewAny', \App\Models\PointOfSale::class)
         <a class="qpos-button qpos-button-sm qpos-button-secondary" href="{{ route('backend.admin.shops.index') }}">{{ __('Manage stores') }}</a>
     @endcan
+    @else
+        @php($mainShop = \App\Models\PointOfSale::find(1))
+        @if($mainShop && auth()->user()->can('update',$mainShop))<a class="qpos-button qpos-button-sm qpos-button-secondary" href="{{ route('backend.admin.shops.edit',$mainShop) }}">{{ __('Edit MAIN') }}</a>@endif
+    @endif
 </div>

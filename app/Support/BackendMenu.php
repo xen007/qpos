@@ -134,9 +134,11 @@ class BackendMenu
         ]);
 
         $items[] = self::group('Stock operations','fas fa-box',[
-            $user->can('stock_view') ? self::item('Stock transfers','fas fa-circle','backend.admin.stock.transfers',['backend.admin.stock.transfers.*']) : null,
+            (bool)config('system.multi_shop_enabled', true) && $user->can('stock_view') ? self::item('Stock transfers','fas fa-circle','backend.admin.stock.transfers',['backend.admin.stock.transfers.*']) : null,
             $user->can('stock_inventory') ? self::item('Physical inventories','fas fa-circle','backend.admin.stock.inventories',['backend.admin.stock.inventories.*']) : null,
             $user->can('stock_opening_approve') ? self::item('Openings awaiting approval','fas fa-circle','backend.admin.stock.openings',['backend.admin.stock.openings.*']) : null,
+            $user->can('stock_auto_lots_manage') ? self::item('Lots automatiques','fas fa-circle','backend.admin.stock.automatic-lots',['backend.admin.stock.automatic-lots*']) : null,
+            $user->can('stock_view') ? self::item('Expiry alerts','fas fa-circle','backend.admin.stock.expiry-alerts') : null,
         ]);
 
         // --- Rapports -------------------------------------------------------
@@ -167,6 +169,7 @@ class BackendMenu
                     '?active-tab=website-info'
                 )
                 : null,
+            $user->can('website_settings') ? self::item('System Settings', 'fas fa-sliders-h', 'backend.admin.settings.system') : null,
             $user->hasAnyPermission([
                 'currency_create', 'currency_view', 'currency_update', 'currency_delete',
             ])

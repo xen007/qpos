@@ -28,6 +28,8 @@ class Product extends Model
         'quantity',
         'expire_date',
         'status',
+        'sku_auto_suffix',
+        'expiry_policy_override',
     ];
     protected $appends = ['discounted_price'];
     protected $casts = ['allows_fractional' => 'boolean', 'catalogue_price_ttc' => 'decimal:6', 'catalogue_reference_cost' => 'decimal:6', 'catalogue_discount' => 'decimal:6'];

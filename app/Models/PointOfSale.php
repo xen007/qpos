@@ -50,8 +50,14 @@ class PointOfSale extends Model
 
     public function scopeAccessibleBy(Builder $query, User $user): Builder
     {
-        return $query->where('points_of_sale.is_active', true)
-            ->whereHas('users', function (Builder $users) use ($user) {
+        $query->where('points_of_sale.is_active', true);
+        if (!config('system.multi_shop_enabled', true)) {
+            return $query->where('points_of_sale.id', 1);
+        }
+        if (static::active()->count() === 1) {
+            return $query;
+        }
+        return $query->whereHas('users', function (Builder $users) use ($user) {
                 $users->whereKey($user->getKey())
                     ->where('point_of_sale_user.is_active', true);
             });

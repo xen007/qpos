@@ -24,6 +24,8 @@
                 <div class="lg:col-span-2">
                     <x-backend.switch name="status" :label="__('Active')" :checked="$category->status == 1" />
                 </div>
+                <div><label for="expiry_policy" class="qpos-label">{{ __('Expiry policy') }}</label><select id="expiry_policy" name="expiry_policy" class="qpos-input"><option value="non_perishable" @selected($category->expiry_policy==='non_perishable')>{{ __('Non-perishable') }}</option><option value="perishable" @selected($category->expiry_policy==='perishable')>{{ __('Perishable') }}</option></select></div>
+                <x-backend.input name="expiry_months" type="number" min="1" max="120" :value="$category->expiry_months" :label="__('Default expiry months (optional)')" />
             </div>
 
             <div class="mt-6">

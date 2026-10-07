@@ -116,6 +116,9 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     });
     Route::get('catalogue-conversion', [\App\Http\Controllers\Backend\CatalogueConversionController::class, 'index'])->name('catalogue-conversion.index')->middleware(['permission:pricing_view', 'permission:point_of_sale_manage_all']);
     Route::prefix('stock')->name('stock.')->controller(\App\Http\Controllers\Backend\StockOperationController::class)->group(function () {
+        Route::get('expiry-alerts', [\App\Http\Controllers\Backend\ExpiryAlertController::class, 'index'])->name('expiry-alerts')->middleware('permission:stock_view');
+        Route::get('automatic-lots', [\App\Http\Controllers\Backend\AutomaticLotController::class, 'index'])->name('automatic-lots')->middleware('permission:stock_auto_lots_manage');
+        Route::put('automatic-lots/{batch}', [\App\Http\Controllers\Backend\AutomaticLotController::class, 'update'])->whereNumber('batch')->name('automatic-lots.update')->middleware('permission:stock_auto_lots_manage');
         Route::get('transfers','transfers')->name('transfers')->middleware('permission:stock_view');
         Route::post('transfers','createTransfer')->name('transfers.create')->middleware('permission:stock_transfer_dispatch');
         Route::get('transfers/{id}','transfer')->whereNumber('id')->name('transfers.show')->middleware('permission:stock_view');
@@ -185,6 +188,8 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     });
 
     // settings
+    Route::get('settings/system', [\App\Http\Controllers\Backend\SystemSettingsController::class, 'edit'])->name('settings.system')->middleware('permission:website_settings');
+    Route::post('settings/system', [\App\Http\Controllers\Backend\SystemSettingsController::class, 'update'])->name('settings.system.update')->middleware('permission:website_settings');
     Route::prefix('settings')->group(function () {
         // website settings
         Route::prefix('website')->group(function () {

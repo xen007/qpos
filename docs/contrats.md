@@ -163,3 +163,11 @@ Transfert : source/destination explicites et distinctes, acteur autorisé dans l
 Inventaire : comptage physique des buckets locaux, transit exclu. Une portée produit/boutique ne peut avoir deux inventaires actifs. Verrou et repère journal au début ; mouvement pendant comptage impose recomptage. Validation applique l'écart à la quantité actuelle et conserve les mouvements postérieurs. Ajustement impossible sans tous les comptages ; quantité vide n'est pas zéro. Aucun gain dans une ouverture inconnue ni déblocage implicite par reclassement.
 
 Ouverture : autorisation administrative et affectation boutique active ; quantité, lot, coût/devise, péremption, motif et preuve obligatoires. Reclassement atomique du stock existant, partiel possible ; le reliquat reste `unallocated_opening`. FIFO utilise la date de coupure, sans prétendre connaître une réception historique. Inconnus et expirés restent indisponibles.
+
+## 10. Flexibilité stock — décision du 07/10/2026
+
+- Les lots automatiques d'ouverture sont vendables, portent `auto_generated=true`, coût zéro marqué `cost_unknown=true`, et conservent le mouvement source. Une correction exige un motif et produit une ligne avant/après avec auteur et clé idempotente.
+- Les catégories non périssables restent le défaut. Les catégories périssables et les dérogations produit peuvent estimer une péremption depuis le délai configuré; l'indicateur reste visible dans les alertes/listes. Les ventes expirées exigent confirmation et motif au checkout.
+- Chaque doublon SKU d'import requiert un choix utilisateur : ignorer, suffixer explicitement, ou mettre à jour les seuls champs catalogue. Stock, achats reçus, commandes et journal financier ne sont pas modifiés par l'option de mise à jour.
+- Une seule boutique active masque le sélecteur et donne accès opérationnel à celle-ci aux utilisateurs habilités; plusieurs boutiques gardent l'affectation stricte. Le mode mono cible MAIN et bloque la transition si une autre boutique possède des données métier. Aucun droit de rôle/capacité n'est contourné.
+- Les protections de droits, survente, quantités négatives, montants, erreurs de rejeu et conflits de clés restent bloquantes.
