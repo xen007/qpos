@@ -14,10 +14,11 @@
                     :placeholder="__('Enter title')" required />
 
                 <x-backend.input name="phone" :label="__('Phone')" :value="$customer->phone"
-                    :placeholder="__('Enter phone')" required />
+                    :placeholder="__('Enter phone')" />
 
                 <x-backend.input name="address" :label="__('Address')" :value="$customer->address"
                     :placeholder="__('Enter Address')" />
+                <label><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" @checked(old('is_active',$customer->is_active))> {{ __('Active') }}</label>
             </div>
 
             <div class="mt-6">

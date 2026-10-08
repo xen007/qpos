@@ -1,29 +1,38 @@
 <?php
 
-use App\Http\Controllers\Backend\CurrencyController;
-use App\Http\Controllers\Backend\Pos\CartController;
-use App\Http\Controllers\Backend\Product\ProductController;
-use App\Http\Controllers\Backend\Report\ReportController;
-use App\Http\Controllers\Backend\SupplierController;
-use App\Http\Controllers\CustomerController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\LanguageController;
-use App\Http\Controllers\Backend\Product\CategoryController;
-use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\Backend\AutomaticLotController;
+use App\Http\Controllers\Backend\CatalogueConversionController;
+use App\Http\Controllers\Backend\CurrencyController;
 use App\Http\Controllers\Backend\DashboardController;
-use App\Http\Controllers\Backend\RolePermission\PermissionController;
+use App\Http\Controllers\Backend\ExpiryAlertController;
+use App\Http\Controllers\Backend\PointOfSaleController;
+use App\Http\Controllers\Backend\Pos\CartController;
 use App\Http\Controllers\Backend\Pos\OrderController;
+use App\Http\Controllers\Backend\PriceLabelController;
+use App\Http\Controllers\Backend\PricingController;
 use App\Http\Controllers\Backend\Product\BrandController;
-use App\Http\Controllers\Backend\Product\PurchaseController;
-use App\Http\Controllers\Backend\RolePermission\RoleController;
-use App\Http\Controllers\Backend\Product\UnitController;
+use App\Http\Controllers\Backend\Product\CategoryController;
+use App\Http\Controllers\Backend\Product\ProductController;
 use App\Http\Controllers\Backend\Product\ProductUnitController;
+use App\Http\Controllers\Backend\Product\PurchaseController;
+use App\Http\Controllers\Backend\Product\UnitController;
+use App\Http\Controllers\Backend\ProductImportController;
+use App\Http\Controllers\Backend\Report\ReportController;
+use App\Http\Controllers\Backend\RolePermission\PermissionController;
+use App\Http\Controllers\Backend\RolePermission\RoleController;
+use App\Http\Controllers\Backend\SaleWorkflowController;
+use App\Http\Controllers\Backend\StockOperationController;
+use App\Http\Controllers\Backend\SupplierController;
+use App\Http\Controllers\Backend\SystemSettingsController;
 use App\Http\Controllers\Backend\UserManagementController;
 use App\Http\Controllers\Backend\WebsiteSettingController;
-use App\Support\PermissionRoutes;
-use App\Http\Controllers\Backend\PointOfSaleController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\LanguageController;
 use App\Http\Middleware\SetPointOfSaleContext;
+use App\Support\PermissionRoutes;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,7 +56,7 @@ Route::post('/language', [LanguageController::class, 'update'])
     ->middleware('throttle:30,1')
     ->name('language.update');
 
-//authentication
+// authentication
 Route::match(['get', 'post'], 'login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
@@ -65,17 +74,30 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+    Route::get('cash', [SaleWorkflowController::class, 'cash'])->name('cash.index')->middleware('permission:cash_session_manage');
+    Route::get('cash/state', [SaleWorkflowController::class, 'cashState'])->name('cash.state')->middleware('permission:sale_create');
+    Route::post('cash/open', [SaleWorkflowController::class, 'open'])->name('cash.open')->middleware('permission:cash_session_manage');
+    Route::post('cash/{session}/close', [SaleWorkflowController::class, 'close'])->whereNumber('session')->name('cash.close')->middleware('permission:cash_session_manage');
+    Route::post('cash/movements', [SaleWorkflowController::class, 'movement'])->name('cash.movements')->middleware('permission:cash_movement_create');
+    Route::get('customers/{customer}/finance', [SaleWorkflowController::class, 'finance'])->whereNumber('customer')->name('customers.finance')->middleware('permission:customer_sales');
+    Route::post('sales/{order}/due-date', [SaleWorkflowController::class, 'dueDate'])->whereNumber('order')->name('sales.due-date')->middleware('permission:customer_credit_manage');
+    Route::post('sales/{order}/reminders', [SaleWorkflowController::class, 'reminder'])->whereNumber('order')->name('sales.reminder')->middleware('permission:customer_credit_manage');
+    Route::get('payments/{payment}/receipt', [SaleWorkflowController::class, 'receipt'])->whereNumber('payment')->name('payments.receipt')->middleware('permission:sale_view');
+    Route::get('sales/{order}/returns', [SaleWorkflowController::class, 'returns'])->whereNumber('order')->name('sales.returns')->middleware('permission:sale_return');
+    Route::post('sales/{order}/corrections', [SaleWorkflowController::class, 'correct'])->whereNumber('order')->name('sales.correct')->middleware('permission:sale_return');
+    Route::post('sales/{order}/exchange-preview', [SaleWorkflowController::class, 'exchangePreview'])->whereNumber('order')->name('sales.exchange-preview')->middleware('permission:sale_return');
+    Route::get('sale-corrections/{correction}', [SaleWorkflowController::class, 'correctionDocument'])->whereNumber('correction')->name('corrections.document')->middleware('permission:sale_view');
+    Route::get('expenses', [SaleWorkflowController::class, 'expenses'])->name('expenses.index')->middleware('permission:expense_view');
+    Route::post('expenses', [SaleWorkflowController::class, 'expense'])->name('expenses.store')->middleware('permission:expense_manage');
+    Route::post('expense-categories', [SaleWorkflowController::class, 'category'])->name('expense-categories.store')->middleware('permission:expense_manage');
+    Route::get('price-labels', [PriceLabelController::class, 'index'])->name('labels.index')->middleware('permission:price_labels');
+    Route::post('price-labels/pdf', [PriceLabelController::class, 'pdf'])->name('labels.pdf')->middleware('permission:price_labels');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('permission:dashboard_view');
     PermissionRoutes::resource('brands', BrandController::class, 'brand');
-    PermissionRoutes::resource('orders', OrderController::class, [
-        'index' => 'sale_view',
-        'create' => 'sale_create',
-        'store' => 'sale_create',
-        'show' => 'sale_view',
-        'edit' => 'sale_update',
-        'update' => 'sale_update',
-        'destroy' => 'sale_delete',
-    ]);
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index')->middleware('permission:sale_view');
+    Route::get('orders/create', fn () => to_route('backend.admin.cart.index'))->name('orders.create')->middleware('permission:sale_create');
+    Route::post('orders', [OrderController::class, 'store'])->name('orders.store')->middleware('permission:sale_create');
+    Route::get('orders/{order}', [OrderController::class, 'invoice'])->whereNumber('order')->name('orders.show')->middleware('permission:sale_view');
     PermissionRoutes::resource('purchase', PurchaseController::class, [
         'index' => 'purchase_view',
         // create et store verifient purchase_create OU purchase_update selon la
@@ -90,7 +112,7 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     Route::post('purchase/{purchase}/amend', [PurchaseController::class, 'amend'])->whereNumber('purchase')->name('purchase.amend')->middleware('permission:purchase_update');
     Route::post('purchase/{purchase}/receive', [PurchaseController::class, 'receive'])->whereNumber('purchase')->name('purchase.receive')->middleware('permission:purchase_receive');
     Route::post('purchase/{purchase}/payments', [PurchaseController::class, 'pay'])->whereNumber('purchase')->name('purchase.pay')->middleware('permission:purchase_pay');
-    Route::post('purchase/{purchase}/payments/{payment}/reverse', [PurchaseController::class, 'reversePayment'])->whereNumber(['purchase','payment'])->name('purchase.payments.reverse')->middleware('permission:purchase_pay');
+    Route::post('purchase/{purchase}/payments/{payment}/reverse', [PurchaseController::class, 'reversePayment'])->whereNumber(['purchase', 'payment'])->name('purchase.payments.reverse')->middleware('permission:purchase_pay');
     Route::post('purchase/{purchase}/cancel', [PurchaseController::class, 'cancel'])->whereNumber('purchase')->name('purchase.cancel')->middleware('permission:purchase_cancel');
     PermissionRoutes::resource('suppliers', SupplierController::class, 'supplier');
     PermissionRoutes::resource('customers', CustomerController::class, 'customer');
@@ -114,50 +136,50 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::post('/{productUnit}/barcodes', [ProductUnitController::class, 'barcode'])->whereNumber('productUnit')->name('barcodes.store');
         Route::put('/{productUnit}/barcodes/{barcode}', [ProductUnitController::class, 'barcodeStatus'])->whereNumber(['productUnit', 'barcode'])->name('barcodes.update');
     });
-    Route::get('catalogue-conversion', [\App\Http\Controllers\Backend\CatalogueConversionController::class, 'index'])->name('catalogue-conversion.index')->middleware(['permission:pricing_view', 'permission:point_of_sale_manage_all']);
-    Route::prefix('stock')->name('stock.')->controller(\App\Http\Controllers\Backend\StockOperationController::class)->group(function () {
-        Route::get('expiry-alerts', [\App\Http\Controllers\Backend\ExpiryAlertController::class, 'index'])->name('expiry-alerts')->middleware('permission:stock_view');
-        Route::get('automatic-lots', [\App\Http\Controllers\Backend\AutomaticLotController::class, 'index'])->name('automatic-lots')->middleware('permission:stock_auto_lots_manage');
-        Route::put('automatic-lots/{batch}', [\App\Http\Controllers\Backend\AutomaticLotController::class, 'update'])->whereNumber('batch')->name('automatic-lots.update')->middleware('permission:stock_auto_lots_manage');
-        Route::get('transfers','transfers')->name('transfers')->middleware('permission:stock_view');
-        Route::post('transfers','createTransfer')->name('transfers.create')->middleware('permission:stock_transfer_dispatch');
-        Route::get('transfers/{id}','transfer')->whereNumber('id')->name('transfers.show')->middleware('permission:stock_view');
-        Route::post('transfers/{id}/dispatch','dispatch')->whereNumber('id')->name('transfers.dispatch')->middleware('permission:stock_transfer_dispatch');
-        Route::post('transfers/{id}/settle','settle')->whereNumber('id')->name('transfers.settle')->middleware('permission:stock_transfer_dispatch|stock_transfer_receive');
-        Route::post('transfers/{id}/cancel','cancelTransfer')->whereNumber('id')->name('transfers.cancel')->middleware('permission:stock_transfer_dispatch');
-        Route::get('inventories','inventories')->name('inventories')->middleware('permission:stock_inventory');
-        Route::post('inventories','createInventory')->name('inventories.create')->middleware('permission:stock_inventory');
-        Route::get('inventories/{id}','inventory')->whereNumber('id')->name('inventories.show')->middleware('permission:stock_inventory');
-        Route::post('inventories/{id}/items/{item}/count','count')->whereNumber(['id','item'])->name('inventories.count')->middleware('permission:stock_inventory');
-        Route::post('inventories/{id}/validate','validateInventory')->whereNumber('id')->name('inventories.validate')->middleware('permission:stock_inventory');
-        Route::post('inventories/{id}/cancel','cancelInventory')->whereNumber('id')->name('inventories.cancel')->middleware('permission:stock_inventory');
-        Route::get('openings','openings')->name('openings')->middleware('permission:stock_opening_approve');
-        Route::get('openings/{product}','opening')->whereNumber('product')->name('openings.show')->middleware('permission:stock_opening_approve');
-        Route::post('openings/{product}','approveOpening')->whereNumber('product')->name('openings.approve')->middleware('permission:stock_opening_approve');
+    Route::get('catalogue-conversion', [CatalogueConversionController::class, 'index'])->name('catalogue-conversion.index')->middleware(['permission:pricing_view', 'permission:point_of_sale_manage_all']);
+    Route::prefix('stock')->name('stock.')->controller(StockOperationController::class)->group(function () {
+        Route::get('expiry-alerts', [ExpiryAlertController::class, 'index'])->name('expiry-alerts')->middleware('permission:stock_view');
+        Route::get('automatic-lots', [AutomaticLotController::class, 'index'])->name('automatic-lots')->middleware('permission:stock_auto_lots_manage');
+        Route::put('automatic-lots/{batch}', [AutomaticLotController::class, 'update'])->whereNumber('batch')->name('automatic-lots.update')->middleware('permission:stock_auto_lots_manage');
+        Route::get('transfers', 'transfers')->name('transfers')->middleware('permission:stock_view');
+        Route::post('transfers', 'createTransfer')->name('transfers.create')->middleware('permission:stock_transfer_dispatch');
+        Route::get('transfers/{id}', 'transfer')->whereNumber('id')->name('transfers.show')->middleware('permission:stock_view');
+        Route::post('transfers/{id}/dispatch', 'dispatch')->whereNumber('id')->name('transfers.dispatch')->middleware('permission:stock_transfer_dispatch');
+        Route::post('transfers/{id}/settle', 'settle')->whereNumber('id')->name('transfers.settle')->middleware('permission:stock_transfer_dispatch|stock_transfer_receive');
+        Route::post('transfers/{id}/cancel', 'cancelTransfer')->whereNumber('id')->name('transfers.cancel')->middleware('permission:stock_transfer_dispatch');
+        Route::get('inventories', 'inventories')->name('inventories')->middleware('permission:stock_inventory');
+        Route::post('inventories', 'createInventory')->name('inventories.create')->middleware('permission:stock_inventory');
+        Route::get('inventories/{id}', 'inventory')->whereNumber('id')->name('inventories.show')->middleware('permission:stock_inventory');
+        Route::post('inventories/{id}/items/{item}/count', 'count')->whereNumber(['id', 'item'])->name('inventories.count')->middleware('permission:stock_inventory');
+        Route::post('inventories/{id}/validate', 'validateInventory')->whereNumber('id')->name('inventories.validate')->middleware('permission:stock_inventory');
+        Route::post('inventories/{id}/cancel', 'cancelInventory')->whereNumber('id')->name('inventories.cancel')->middleware('permission:stock_inventory');
+        Route::get('openings', 'openings')->name('openings')->middleware('permission:stock_opening_approve');
+        Route::get('openings/{product}', 'opening')->whereNumber('product')->name('openings.show')->middleware('permission:stock_opening_approve');
+        Route::post('openings/{product}', 'approveOpening')->whereNumber('product')->name('openings.approve')->middleware('permission:stock_opening_approve');
     });
-    Route::get('catalogue-pricing', [\App\Http\Controllers\Backend\PricingController::class, 'index'])->name('pricing.index')->middleware('permission:pricing_view');
-    Route::post('catalogue-pricing/quote', [\App\Http\Controllers\Backend\PricingController::class, 'quote'])->name('pricing.quote')->middleware('permission:pricing_view');
-    Route::put('catalogue-pricing/packaging/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'packaging'])->whereNumber('id')->name('pricing.packaging')->middleware('permission:pricing_update');
-    Route::post('catalogue-pricing/{entity}', [\App\Http\Controllers\Backend\PricingController::class, 'store'])->whereIn('entity', ['rules', 'promotions'])->name('pricing.store')->middleware('permission:pricing_create');
-    Route::put('catalogue-pricing/{entity}/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'update'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.update')->middleware('permission:pricing_update');
-    Route::delete('catalogue-pricing/{entity}/{id}', [\App\Http\Controllers\Backend\PricingController::class, 'destroy'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.destroy')->middleware('permission:pricing_delete');
+    Route::get('catalogue-pricing', [PricingController::class, 'index'])->name('pricing.index')->middleware('permission:pricing_view');
+    Route::post('catalogue-pricing/quote', [PricingController::class, 'quote'])->name('pricing.quote')->middleware('permission:pricing_view');
+    Route::put('catalogue-pricing/packaging/{id}', [PricingController::class, 'packaging'])->whereNumber('id')->name('pricing.packaging')->middleware('permission:pricing_update');
+    Route::post('catalogue-pricing/{entity}', [PricingController::class, 'store'])->whereIn('entity', ['rules', 'promotions'])->name('pricing.store')->middleware('permission:pricing_create');
+    Route::put('catalogue-pricing/{entity}/{id}', [PricingController::class, 'update'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.update')->middleware('permission:pricing_update');
+    Route::delete('catalogue-pricing/{entity}/{id}', [PricingController::class, 'destroy'])->whereIn('entity', ['rules', 'promotions'])->whereNumber('id')->name('pricing.destroy')->middleware('permission:pricing_delete');
     PermissionRoutes::resource('currencies', CurrencyController::class, 'currency');
-    Route::match(['get', 'post'], 'import/products', [\App\Http\Controllers\Backend\ProductImportController::class,'index'])->name('products.import')->middleware('permission:product_import');
+    Route::match(['get', 'post'], 'import/products', [ProductImportController::class, 'index'])->name('products.import')->middleware('permission:product_import');
     Route::post('currencies/default/{id}', [CurrencyController::class, 'setDefault'])->name('currencies.setDefault')->middleware('permission:currency_set_default');
     Route::get('customers/orders/{id}', [CustomerController::class, 'orders'])->name('customers.orders')->middleware('permission:customer_sales');
     Route::get('purchase/products/{id}', [PurchaseController::class, 'purchaseProducts'])->name('purchase.products')->middleware('permission:purchase_view');
-    Route::get('orders/invoice/{id}', [OrderController::class,'invoice'])->name('orders.invoice')->middleware('permission:sale_view');
+    Route::get('orders/invoice/{id}', [OrderController::class, 'invoice'])->name('orders.invoice')->middleware('permission:sale_view');
     Route::get('orders/pos-invoice/{id}', [OrderController::class, 'posInvoice'])->name('orders.pos-invoice')->middleware('permission:sale_view');
     Route::get('orders/transactions/{id}', [OrderController::class, 'transactions'])->name('orders.transactions')->middleware('permission:sale_view');
-    Route::match(['get', 'post'], 'orders/due/collection/{id}', [OrderController::class, 'collection'])->name('due.collection')->middleware('permission:sale_update');
+    Route::match(['get', 'post'], 'orders/due/collection/{id}', [OrderController::class, 'collection'])->name('due.collection')->middleware('permission:sale_collect');
     Route::get('collection/invoice/{id}', [OrderController::class, 'collectionInvoice'])->name('collectionInvoice')->middleware('permission:sale_view');
     PermissionRoutes::resource('categories', CategoryController::class, 'category');
-    //start report
+    // start report
 
     Route::get('/sale/summery', [ReportController::class, 'saleSummery'])->name('sale.summery')->middleware('permission:reports_summary');
     Route::get('/sale/report', [ReportController::class, 'saleReport'])->name('sale.report')->middleware('permission:reports_sales');
     Route::get('/inventory/report', [ReportController::class, 'inventoryReport'])->name('inventory.report')->middleware('permission:reports_inventory');
-    //end report
+    // end report
     // start pos
     // Le parcours de vente (caisse) est protege en bloc : sans sale_create, ces
     // endpoints n'ont pas de sens. Aucun changement d'acces aujourd'hui, les trois
@@ -168,13 +190,14 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
         Route::put('/cart/increment', [CartController::class, 'increment']);
         Route::put('/cart/decrement', [CartController::class, 'decrement']);
+        Route::put('/cart/quantity', [CartController::class, 'quantity']);
         Route::put('/cart/delete', [CartController::class, 'delete']);
         Route::put('/cart/empty', [CartController::class, 'empty']);
         Route::put('/order/create', [OrderController::class, 'store']);
     });
-    Route::get('/get/customers',[CustomerController::class,'getCustomers'])->middleware('permission:customer_view');
+    Route::get('/get/customers', [CustomerController::class, 'getCustomers'])->middleware('permission:customer_view');
     Route::post('/create/customers', [CustomerController::class, 'store'])->middleware('permission:customer_create');
-    //end pos
+    // end pos
     Route::get('profile', [DashboardController::class, 'profile'])->name('profile');
     Route::post('profile/update', [AuthController::class, 'update'])->name('profile.update');
 
@@ -188,8 +211,8 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     });
 
     // settings
-    Route::get('settings/system', [\App\Http\Controllers\Backend\SystemSettingsController::class, 'edit'])->name('settings.system')->middleware('permission:website_settings');
-    Route::post('settings/system', [\App\Http\Controllers\Backend\SystemSettingsController::class, 'update'])->name('settings.system.update')->middleware('permission:website_settings');
+    Route::get('settings/system', [SystemSettingsController::class, 'edit'])->name('settings.system')->middleware('permission:website_settings');
+    Route::post('settings/system', [SystemSettingsController::class, 'update'])->name('settings.system.update')->middleware('permission:website_settings');
     Route::prefix('settings')->group(function () {
         // website settings
         Route::prefix('website')->group(function () {

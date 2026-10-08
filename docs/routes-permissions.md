@@ -177,3 +177,24 @@ recalculée après le sous-lot boutiques.
 - `purchase.create` et `purchase.store` reçoivent une autorisation **dynamique** dans le
   contrôleur (`purchase_update` si la requête porte un `purchase_id`, `purchase_create` sinon),
   car la même URL sert la création et la modification.
+
+## Complément Phase 4 — 08/10/2026
+
+Les chiffres en tête décrivent l'inventaire historique de 2026 ; ce complément décrit les nouvelles routes sous `/admin`, authentifiées et soumises à la portée boutique.
+
+| Opération | Permission |
+|---|---|
+| Caisse : consultation, ouverture, clôture/passation | cash_session_manage |
+| État caisse au POS | sale_create |
+| Mouvement manuel caisse | cash_movement_create |
+| Finance client | customer_sales |
+| Échéance/relance client et autorisation dette | customer_credit_manage |
+| Règlement ultérieur | sale_collect |
+| Remise manuelle checkout | sale_discount |
+| Retour, correction, préparation d'échange | sale_return |
+| Vente, ticket, reçu, document correctif | sale_view |
+| Liste dépenses | expense_view |
+| Création dépense/catégorie | expense_manage |
+| Liste étiquettes et PDF | price_labels |
+
+`SaleWorkflowPermissionSeeder` ajoute neuf permissions à Admin ; les rôles existants `sale_create` obtiennent leur caisse, ceux `sale_update` l'encaissement. Il ne crée pas d'affectation boutique. Les routes destructives historiques de vente sont supprimées ; correction explicite à la place. `route:cache` réussi à la clôture.

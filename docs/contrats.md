@@ -131,12 +131,23 @@ Les promotions quantité et lot portent un même conditionnement : groupes compl
 
 Les colonnes monétaires natives sont la source exacte du catalogue. La copie DOUBLE(10,2) reste une compatibilité temporaire pour les anciens écrans et opérations ; voir schema-cible section 8. Depuis 3.E, l'import de stock utilise les réceptions communes : quantités/coûts natifs à six décimales, fractions uniquement si autorisées. Un import catalogue sans stock ne nécessite pas de fournisseur ni de référence fictive.
 
+## 6.1 Vente, arrondi et paiements — D53–D57 validées le 08/10/2026
+
+- **D53 — Arrondi XAF :** les calculs et prix intermédiaires conservent leur précision ; l'arrondi à zéro décimale s'applique une seule fois au total final, jamais ligne par ligne.
+- **D54 — Client de passage :** le client Walking est comptant uniquement ; aucune dette ni aucun avoir ne peut lui être attribué. Le serveur refuse une vente non réglée qui lui est associée.
+- **D55 — Paiements mixtes :** les espèces, la carte externe et les autres moyens sont enregistrés séparément. La monnaie rendue est imputée uniquement à la part espèces, plafonnée par celle-ci ; aucune monnaie n'est rendue sur carte.
+- **D56 — Avoirs :** un avoir est limité à la boutique qui l'a émis, n'expire pas par défaut et peut être utilisé en plusieurs fois. Le solde et chaque utilisation restent historisés.
+- **D57 — Concurrence :** au checkout, verrouiller avec `FOR UPDATE` les ressources utilisateur et produits dans un ordre stable et contrôler de nouveau le stock dans la transaction. Une vérification explicite de deux checkouts concurrents sur copie est requise en 4.B.
+- **Atomicité vente/paiement :** une validation du panier crée la vente, ses lignes, les mouvements de stock, les paiements du checkout et toute dette éventuelle dans une transaction unique. Toute erreur annule l'ensemble. Le règlement ultérieur d'une dette est une opération distincte, rattachée à la session de caisse active au moment du règlement.
+
+Les remboursements, paiements carte et autres mouvements externes restent des opérations enregistrées dans QPOS ; aucun débit ou remboursement bancaire n'est déclenché par l'application.
+
 ## 7. Paramètres encore à proposer
 
 | Paramètre | Validation attendue avant mise en service |
 |---|---|
-| Paiements et factures (Phase 4) | Arrondi final selon devise (FCFA : zéro décimale), taxes et répartition des remises |
-| Taxes et précision | Taux/exemptions, précision par devise, arrondi ligne/document et répartition des remises |
+| Paiements et factures (Phase 4) | Arrondi final XAF HALF_UP à zéro décimale appliqué ; taxes détaillées encore à décider |
+| Taxes et précision | Taux/exemptions et devises autres que XAF ; prix TTC natifs, instantané fiscal non configuré en attendant décision |
 | Audit | Durées, archivage/purge, accès, collecte technique éventuelle |
 | Sauvegardes | Heure/responsable, outil, support/capacité, copie externe, chiffrement, durées, exercices et monitoring |
 | Notifications | Canaux, destinataires, horaires, seuils, retries, rattrapage et rétention |
@@ -171,3 +182,11 @@ Ouverture : autorisation administrative et affectation boutique active ; quantit
 - Chaque doublon SKU d'import requiert un choix utilisateur : ignorer, suffixer explicitement, ou mettre à jour les seuls champs catalogue. Stock, achats reçus, commandes et journal financier ne sont pas modifiés par l'option de mise à jour.
 - Une seule boutique active masque le sélecteur et donne accès opérationnel à celle-ci aux utilisateurs habilités; plusieurs boutiques gardent l'affectation stricte. Le mode mono cible MAIN et bloque la transition si une autre boutique possède des données métier. Aucun droit de rôle/capacité n'est contourné.
 - Les protections de droits, survente, quantités négatives, montants, erreurs de rejeu et conflits de clés restent bloquantes.
+
+## 11. Vente et caisse — réalisation Phase 4
+
+Les règles D53–D57 sont réalisées dans les services de vente/caisse/correction. HALF_UP à zéro décimale au total XAF ; prix intermédiaires inchangés. Session individuelle obligatoire, journal financier partagé avec les achats, reçus avec solde figé après chaque paiement. Verrous et transactions READ COMMITTED autour des opérations natives ; isolation précédente rétablie ensuite.
+
+Échéances et relances manuelles sont journalisées par clé idempotente, sans envoyer de message externe. Échange : correctif et remplacement atomiques, compensation dédiée, règlement de la différence ; Walking intégralement réglé et sans avoir. Retour partiel limité aux quantités restantes, lots d'origine tracés et inspection avant remise en vendable. Annulation produit un correctif, sans effacer la vente originale.
+
+Les taxes détaillées ne sont pas configurées tant que taux/exemptions ne sont pas décidés. Les historiques BDT et leur fuseau ne sont pas convertis. Les encaissements natifs d'une dette historique exigent une réconciliation préalable explicite. Les anciens reçus sans instantané annoncent leur limite. Voir [bilan et vérifications](phase4-report.md).

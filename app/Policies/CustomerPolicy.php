@@ -34,12 +34,12 @@ class CustomerPolicy
 
     public function update(User $user, Customer $customer): bool
     {
-        return $user->can('customer_update');
+        return ! $customer->isWalking() && $user->can('customer_update');
     }
 
     public function delete(User $user, Customer $customer): bool
     {
-        return $user->can('customer_delete');
+        return ! $customer->isWalking() && $user->can('customer_delete');
     }
 
     /**

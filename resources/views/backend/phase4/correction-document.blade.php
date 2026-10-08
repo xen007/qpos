@@ -1,0 +1,8 @@
+<!doctype html><html lang="{{ app()->getLocale() }}"><head><meta charset="utf-8"><title>{{ __('Corrective document') }} #{{ $doc->id }}</title><style>@page{size:A4;margin:15mm}body{font:13px Arial;max-width:700px;margin:auto}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}tr{break-inside:avoid}@media print{button{display:none}}</style></head><body>
+<h1>{{ __('Corrective document') }} #{{ $doc->id }}</h1><p>{{ __($doc->kind) }} · {{ __('Original sale') }} #{{ $order->id }} · {{ Illuminate\Support\Carbon::parse($doc->created_at,'UTC')->timezone('Africa/Douala')->format('d/m/Y H:i') }}</p><p>{{ $doc->reason }}</p>
+<table><thead><tr><th>{{ __('Product') }}</th><th>{{ __('Quantity') }}</th><th>{{ __('Amount') }}</th><th>{{ __('Saleable') }}</th></tr></thead><tbody>@foreach($items as $i)<tr><td>{{ $i->product_label_snapshot }}</td><td>{{ $i->quantity }}</td><td>{{ $i->amount }}</td><td>{{ $i->saleable?__('Yes'):__('No') }}</td></tr>@endforeach</tbody></table>
+@php($snapshot=json_decode($doc->snapshot,true))
+<p>{{ __('Cash session') }} #{{ $doc->cash_session_id }}</p>
+<p>{{ __('Total correction') }}: {{ App\Support\SaleFormat::xaf($doc->amount) }} XAF<br>{{ __('Debt reduction') }}: {{ App\Support\SaleFormat::xaf($doc->debt_reduction) }} XAF<br>{{ __('Exchange settlement') }}: {{ App\Support\SaleFormat::xaf($snapshot['exchange_value']??0) }} XAF<br>{{ __('Refund or credit') }}: {{ App\Support\SaleFormat::xaf($snapshot['remainder_amount']??$doc->settled_amount) }} XAF · {{ __($snapshot['settlement_method']??$doc->kind) }}</p>
+@if($doc->exchange_order_id)<p>{{ __('Exchange sale') }} #{{ $doc->exchange_order_id }}</p>@endif
+<button onclick="window.print()">{{ __('Print') }}</button></body></html>

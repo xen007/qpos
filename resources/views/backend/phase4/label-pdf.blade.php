@@ -1,0 +1,6 @@
+<!doctype html><html><head><meta charset="utf-8"><style>@page{margin:0}body{margin:0;font-family:DejaVu Sans;font-size:8px}.page{position:relative;page-break-after:always}.page.last{page-break-after:auto}.label{position:absolute;text-align:center;overflow:hidden;box-sizing:border-box;padding:2mm}.name{height:{{ $format['height']<30?'7':'10' }}mm;overflow:hidden;line-height:1.15}.price{font-weight:bold;font-size:13px;margin:1mm 0}.barcode{width:95%;height:{{ $format['height']<30?'5':'9' }}mm}.code{font-size:7px;margin-top:0.5mm}</style></head><body>
+@foreach(array_chunk($labels,$format['columns']*$format['rows']) as $chunk)
+<div class="page {{ $loop->last?'last':'' }}" style="height:{{ $format['page'][1]-0.2 }}mm;width:{{ $format['page'][0] }}mm">
+@foreach($chunk as $i=>$label)<div class="label" style="left:{{ $format['left']+($i%$format['columns'])*($format['width']+$format['gap']) }}mm;top:{{ $format['top']+intdiv($i,$format['columns'])*$format['height'] }}mm;width:{{ $format['width'] }}mm;height:{{ $format['height'] }}mm"><div class="name">{{ $label['name'] }}</div><div class="price">{{ $label['price'] }} XAF</div><img class="barcode" src="{{ $label['barcode'] }}"><div class="code">{{ $label['code'] }}</div></div>@endforeach
+</div>@endforeach
+</body></html>

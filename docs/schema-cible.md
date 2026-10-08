@@ -192,3 +192,18 @@ Le bilan d'application et les preuves sont dans [phase3-3d-report.md](phase3-3d-
 - `inventories`, `inventory_items` remplacent les noms proposés `stock_counts`/`stock_count_items` : repère journal, début du comptage, comptage JSON, ajustements et portée active unique produit/boutique. Mouvement pendant comptage : recomptage ; après comptage : conservation lors de l'application de l'écart.
 - `stock_opening_approvals` : auteur, boutique, produit, lot, quantité, coût/devise, motif et preuve. Deux reclassements du journal ; aucun gain physique. Validation partielle, reliquat bloqué ; lot expiré/inconnu toujours exclu du disponible.
 - Quantités/coûts DECIMAL(20,6), FK restrictives, rollback interdit dès présence de preuves. Migration appliquée sur copie puis source ; résultats et incident de connexion dans `phase3-3e-report.md`.
+
+## 10. Schéma réellement ajouté — Phase 4, 08/10/2026
+
+Trois migrations `2026_10_08_120000`, `130000`, `140000` appliquées après répétition sur copie :
+
+- `cash_sessions` : caissier/boutique, ouverture, comptage attendu/réel/écart, passation, clé et empreinte ; `active_user_id` unique et nullable garantit une session ouverte par caissier. `cash_movements` : direction, nature, montant, paiement éventuel, auteur, motif et horodatage.
+- Journal existant `payments`/`payment_allocations` réutilisé : session et instantané de reçu ajoutés ; affectation explicite à la vente. Les flux achats ne sont pas remplacés.
+- `customers` : état actif et identité interne Walking. `customer_debt_events` : échéances et relances manuelles, payload, auteur/boutique/date, clé/empreinte. La dette vient de la vente et de ses affectations, sans journal parallèle de paiement.
+- `orders` : session, cart_id, clé/empreinte, état natif/historique, XAF natif et devise historique nullable, échéance, total non arrondi/ajustement/correctifs/crédit/échange, snapshot. `order_products` : champs Phase 2 de conditionnement/facteur réutilisés, snapshots nom/prix/conditionnement et quantités/valeurs retournées.
+- `pos_carts` : utilisateur/boutique/cart_id/product_unit_id, quantité DECIMAL(20,6). Identité isolée par onglet ; les paniers historiques sans cart_id ne sont pas repris automatiquement.
+- `sale_corrections`, `return_items`, `return_stock_allocations` : correctif, lignes retournées, lots d'origine ; `exchange_settlements` : compensation correction/vente de remplacement.
+- `credit_notes`, `credit_note_uses` : solde client/boutique/XAF et journal des utilisations ; expiration nullable, consommation partielle sous verrou.
+- `expenses`, `expense_categories` : dépense/session/moyen/paiement et catégorie ; sortie physique espèces via cash_movements.
+
+Montants/quantités DECIMAL(20,6), totaux et paiements XAF entiers. FK restrictives, contrôles positifs/plafonds, clés idempotentes et refus de rollback destructif. Les anciennes colonnes des 54 tables de données ont été contrôlées avant/après migration. Dates natives vente/caisse UTC, affichage Africa/Douala ; cast conditionnel conservant les dates historiques et fournisseur. Étiquettes PDF calculées depuis le catalogue existant, sans table supplémentaire. Voir [rapport Phase 4](phase4-report.md).

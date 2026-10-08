@@ -52,6 +52,8 @@
                     'edit' => route('backend.admin.customers.edit', ':id'),
                     'destroy' => route('backend.admin.customers.destroy', ':id'),
                     'sales' => route('backend.admin.customers.orders', ':id'),
+                    'finance' => route('backend.admin.customers.finance', ':id'),
+                    'profile' => route('backend.admin.customers.show', ':id'),
                 ],
                 'labels' => [
                     'edit' => __('Edit'),
@@ -114,6 +116,7 @@
                         className: 'text-right',
                         render: (value, type, row) => {
                             const items = [];
+                            items.push({type:'link',url:withId(config.routes.profile,row.id),label:@json(__('View')),icon:'fas fa-user'});
 
                             if (config.can.edit) {
                                 items.push({
@@ -138,6 +141,7 @@
                             }
 
                             if (config.can.sales) {
+                                items.push({type:'link',url:withId(config.routes.finance,row.id),label:@json(__('Customer balances')),icon:'fas fa-wallet'});
                                 items.push({
                                     type: 'link',
                                     url: withId(config.routes.sales, row.id),

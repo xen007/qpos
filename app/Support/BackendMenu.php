@@ -46,6 +46,15 @@ class BackendMenu
         if ($user->can('sale_create')) {
             $items[] = self::item('POS', 'fas fa-cart-plus', 'backend.admin.cart.index');
         }
+        if ($user->can('cash_session_manage')) {
+            $items[] = self::item('Cash sessions', 'fas fa-cash-register', 'backend.admin.cash.index', ['backend.admin.cash.*']);
+        }
+        if ($user->can('expense_view')) {
+            $items[] = self::item('Expenses', 'fas fa-wallet', 'backend.admin.expenses.index', ['backend.admin.expenses.*']);
+        }
+        if ($user->can('price_labels')) {
+            $items[] = self::item('Price labels', 'fas fa-barcode', 'backend.admin.labels.index', ['backend.admin.labels.*']);
+        }
 
         // --- Personnes ------------------------------------------------------
         $items[] = self::group('People', 'fas fa-user-circle', [
@@ -133,12 +142,12 @@ class BackendMenu
                 : null,
         ]);
 
-        $items[] = self::group('Stock operations','fas fa-box',[
-            (bool)config('system.multi_shop_enabled', true) && $user->can('stock_view') ? self::item('Stock transfers','fas fa-circle','backend.admin.stock.transfers',['backend.admin.stock.transfers.*']) : null,
-            $user->can('stock_inventory') ? self::item('Physical inventories','fas fa-circle','backend.admin.stock.inventories',['backend.admin.stock.inventories.*']) : null,
-            $user->can('stock_opening_approve') ? self::item('Openings awaiting approval','fas fa-circle','backend.admin.stock.openings',['backend.admin.stock.openings.*']) : null,
-            $user->can('stock_auto_lots_manage') ? self::item('Lots automatiques','fas fa-circle','backend.admin.stock.automatic-lots',['backend.admin.stock.automatic-lots*']) : null,
-            $user->can('stock_view') ? self::item('Expiry alerts','fas fa-circle','backend.admin.stock.expiry-alerts') : null,
+        $items[] = self::group('Stock operations', 'fas fa-box', [
+            (bool) config('system.multi_shop_enabled', true) && $user->can('stock_view') ? self::item('Stock transfers', 'fas fa-circle', 'backend.admin.stock.transfers', ['backend.admin.stock.transfers.*']) : null,
+            $user->can('stock_inventory') ? self::item('Physical inventories', 'fas fa-circle', 'backend.admin.stock.inventories', ['backend.admin.stock.inventories.*']) : null,
+            $user->can('stock_opening_approve') ? self::item('Openings awaiting approval', 'fas fa-circle', 'backend.admin.stock.openings', ['backend.admin.stock.openings.*']) : null,
+            $user->can('stock_auto_lots_manage') ? self::item('Lots automatiques', 'fas fa-circle', 'backend.admin.stock.automatic-lots', ['backend.admin.stock.automatic-lots*']) : null,
+            $user->can('stock_view') ? self::item('Expiry alerts', 'fas fa-circle', 'backend.admin.stock.expiry-alerts') : null,
         ]);
 
         // --- Rapports -------------------------------------------------------

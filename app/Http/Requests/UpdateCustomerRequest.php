@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Customer;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -28,7 +29,7 @@ class UpdateCustomerRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -37,12 +38,13 @@ class UpdateCustomerRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'phone' => [
-                'required',
+                'nullable',
                 'string',
                 'max:20',
                 Rule::unique('customers', 'phone')->ignore($customerId),
             ],
             'address' => 'nullable|string|max:255',
+            'is_active' => 'sometimes|boolean',
         ];
     }
 }

@@ -6,7 +6,7 @@
     @php
         // L'action d'encaissement reste soumise a la permission, comme dans le
         // controleur d'origine.
-        $canCollect = auth()->user()->can('sale_update');
+        $canCollect = auth()->user()->can('sale_collect');
     @endphp
 
     <x-backend.card :padded="false">
@@ -18,11 +18,11 @@
                         <th class="px-3 py-3">{{ __('Sale ID') }}</th>
                         <th class="px-3 py-3">{{ __('Customer') }}</th>
                         <th class="px-3 py-3">{{ __('Items') }}</th>
-                        <th class="px-3 py-3">{{ __('Sub Total') }} {{ currency()->symbol ?? '' }}</th>
-                        <th class="px-3 py-3">{{ __('Discount') }} {{ currency()->symbol ?? '' }}</th>
-                        <th class="px-3 py-3">{{ __('Total') }} {{ currency()->symbol ?? '' }}</th>
-                        <th class="px-3 py-3">{{ __('Paid') }} {{ currency()->symbol ?? '' }}</th>
-                        <th class="px-3 py-3">{{ __('Due') }} {{ currency()->symbol ?? '' }}</th>
+                        <th class="px-3 py-3">{{ __('Sub Total') }}</th>
+                        <th class="px-3 py-3">{{ __('Discount') }}</th>
+                        <th class="px-3 py-3">{{ __('Total') }}</th>
+                        <th class="px-3 py-3">{{ __('Paid') }}</th>
+                        <th class="px-3 py-3">{{ __('Due') }}</th>
                         <th class="px-3 py-3">{{ __('Status') }}</th>
                         <th data-orderable="false" class="px-3 py-3 text-right">{{ __('Action') }}</th>
                     </tr>
@@ -34,16 +34,18 @@
     <script type="application/json" id="qpos-orders-table">
         {!! json_encode(
             [
-                'ajax' => route('backend.admin.orders.index'),
+                'ajax' => isset($customer) ? route('backend.admin.customers.orders', $customer->id) : route('backend.admin.orders.index'),
                 'csrf' => csrf_token(),
                 'can' => [
                     'collect' => $canCollect,
+                    'returns' => auth()->user()->can('sale_return'),
                 ],
                 'routes' => [
                     'invoice' => route('backend.admin.orders.invoice', ':id'),
                     'posInvoice' => route('backend.admin.orders.pos-invoice', ':id'),
                     'transactions' => route('backend.admin.orders.transactions', ':id'),
                     'collect' => route('backend.admin.due.collection', ':id'),
+                    'returns' => route('backend.admin.sales.returns', ':id'),
                 ],
                 'labels' => [
                     'invoice' => __('Invoice'),
@@ -52,6 +54,7 @@
                     'transactions' => __('Transactions'),
                     'paid' => __('Paid'),
                     'due' => __('Due'),
+                    'returns' => __('Sale returns'),
                 ],
             ],
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
@@ -68,6 +71,7 @@
         $(function() {
             const config = JSON.parse(document.getElementById('qpos-orders-table').textContent);
             const withId = (template, id) => template.replace(':id', id);
+            const documentUrl = (template,row) => { const url=new URL(withId(template,row.id)); if(row.point_of_sale_id) url.searchParams.set('operation_point_of_sale_id',row.point_of_sale_id); return url.toString(); };
 
             $('#datatables').DataTable({
                 processing: true,
@@ -106,14 +110,17 @@
                     },
                     {
                         data: 'total',
+                        render: (value,type,row) => type === 'display' ? (row.currency_code === 'XAF' ? String(value).split('.')[0] : value) + ' ' + row.currency_code : value,
                         name: 'total'
                     },
                     {
                         data: 'paid',
+                        render: (value,type,row) => type === 'display' ? (row.currency_code === 'XAF' ? String(value).split('.')[0] : value) + ' ' + row.currency_code : value,
                         name: 'paid'
                     },
                     {
                         data: 'due',
+                        render: (value,type,row) => type === 'display' ? (row.currency_code === 'XAF' ? String(value).split('.')[0] : value) + ' ' + row.currency_code : value,
                         name: 'due'
                     },
                     {
@@ -135,22 +142,23 @@
                         render: (value, type, row) => {
                             const items = [{
                                     type: 'link',
-                                    url: withId(config.routes.invoice, row.id),
+                                    url: documentUrl(config.routes.invoice, row),
                                     label: config.labels.invoice,
                                     icon: 'fas fa-file-invoice',
                                 },
                                 {
                                     type: 'link',
-                                    url: withId(config.routes.posInvoice, row.id),
+                                    url: documentUrl(config.routes.posInvoice, row),
                                     label: config.labels.posReceipt,
                                     icon: 'fas fa-file-invoice',
                                 },
                             ];
+                            if (config.can.returns && row.currency_code === 'XAF') items.push({type:'link',url:documentUrl(config.routes.returns,row),label:config.labels.returns,icon:'fas fa-undo'});
 
                             if (!row.is_paid && config.can.collect) {
                                 items.push({
                                     type: 'link',
-                                    url: withId(config.routes.collect, row.id),
+                                    url: documentUrl(config.routes.collect, row),
                                     label: config.labels.collectDue,
                                     icon: 'fas fa-receipt',
                                 });
@@ -158,7 +166,7 @@
 
                             items.push({
                                 type: 'link',
-                                url: withId(config.routes.transactions, row.id),
+                                url: documentUrl(config.routes.transactions, row),
                                 label: config.labels.transactions,
                                 icon: 'fas fa-exchange-alt',
                             });

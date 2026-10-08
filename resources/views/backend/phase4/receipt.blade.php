@@ -1,0 +1,7 @@
+<!doctype html><html lang="{{ app()->getLocale() }}"><head><meta charset="utf-8"><title>{{ __('Payment receipt') }} #{{ $payment->id }}</title><style>@page{size:A4;margin:15mm}body{font:14px Arial;max-width:650px;margin:30px auto}p{line-height:1.6}@media print{button{display:none}}</style></head><body>
+<h1>{{ __('Payment receipt') }} #{{ $payment->id }}</h1><p>{{ __('Sale') }} #{{ $snapshot['order_id'] }} · {{ $snapshot['customer_label'] }}</p>
+<p>{{ $payment->occurred_at->timezone('Africa/Douala')->format('d/m/Y H:i') }} · {{ __('Cash session') }} #{{ $payment->cash_session_id }}</p>
+<p>{{ __($payment->direction) }} · {{ __($payment->method) }} · {{ __('Received') }}: {{ App\Support\SaleFormat::xaf($payment->received_amount) }} XAF · {{ __('Change') }}: {{ App\Support\SaleFormat::xaf($payment->change_amount) }} XAF · {{ __('Allocated') }}: {{ App\Support\SaleFormat::xaf($payment->net_amount) }} XAF</p>
+@if(isset($snapshot['balance_before']))<p>{{ __('Balance before payment') }}: {{ App\Support\SaleFormat::xaf($snapshot['balance_before']) }} XAF<br>{{ __('Balance after payment') }}: {{ App\Support\SaleFormat::xaf($snapshot['balance_after']) }} XAF</p>@endif
+@if($payment->external_reference)<p>{{ __('External reference') }}: {{ $payment->external_reference }}</p>@endif
+<p>{{ __('This receipt preserves the balance at payment time.') }}</p><button onclick="window.print()">{{ __('Print') }}</button></body></html>

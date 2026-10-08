@@ -121,16 +121,21 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | D50 | Validée — 07/10/2026 | Traçabilité des lots automatiques | `auto_generated`, `cost_unknown` et `estimated_expiry` sont conservés sur le lot ; amendement motivé immuable avec utilisateur, clé et instant. Les rapports/UI ne masquent pas cette provenance. |
 | D51 | Validée — 07/10/2026 | Souplesse des imports SKU avec décision explicite | La contrainte SQL unique reste la dernière défense. Suffixe ou mise à jour n'est appliqué qu'après choix visible de l'utilisateur ; l'option mise à jour ne touche pas au stock ni à l'historique financier. |
 | D52 | Validée — 07/10/2026 | Valeurs par défaut administrables | Délai d'expiration estimé, génération de lots, préfixe, vente sans lot et mode multi-boutique sont configurés dans les réglages système avec validation serveur. |
+| D53 | Validée — 08/10/2026 | Arrondi XAF au total final | Les prix et calculs intermédiaires gardent leur précision ; l'arrondi monétaire XAF à zéro décimale s'applique au total final, pas à chaque ligne. Phase 4 |
+| D54 | Validée — 08/10/2026 | Client de passage comptant uniquement | Le client Walking ne peut porter ni dette ni avoir ; sa vente doit être réglée au checkout. Phase 4 |
+| D55 | Validée — 08/10/2026 | Monnaie rendue imputée aux espèces seulement | Les moyens mixtes restent distincts ; la monnaie rendue ne peut dépasser la part espèces et aucune monnaie n'est rendue sur carte. Phase 4 |
+| D56 | Validée — 08/10/2026 | Avoirs limités à une boutique | Un avoir appartient à la boutique de son émission, peut être consommé partiellement et n'expire pas par défaut. Phase 4 |
+| D57 | Validée — 08/10/2026 | Concurrence au checkout | Verrouiller `FOR UPDATE` le produit et l'utilisateur dans la transaction ; vérifier explicitement deux checkouts concurrents sur une copie en Phase 4.B. |
 | D26 | À clarifier | Libellé et sens du prix d'achat dans les parcours produit/achat | Phase 3 ; distinguer coût de réception et référence produit |
 | D27 | Clarifié | Menu et bouton de liste mènent au même formulaire ; ce n'est pas un doublon métier | Phase 3 ; deux raccourcis conservés au besoin UX |
-| D28 | À corriger | Lecture du scanner USB/code-barres au POS | Phase 4, saisie et correspondance produit/conditionnement |
-| D29 | À corriger | Recherche de produits au POS | Phase 4, résultats réactifs et utiles |
+| D28 | Réalisé — contrôle navigateur | Saisie scanner et correspondance produit/conditionnement/code-barres | Code exact et conditionnement contrôlés sur copie ; lecteur USB physique à valider sur site |
+| D29 | Réalisé — contrôle navigateur | Recherche de produits réactive au POS | Catalogue chargé et recherche vérifiée sur copie |
 | D30 | À corriger | Recherche multicritère | Phase 4, champs et priorité à décider |
-| D31 | À corriger / à confirmer | Facture de vente répartie sur deux pages à l'impression ; le parcours actuel rend une page HTML imprimable, sans génération PDF vérifiée | Phase 4, gabarit, impression et décision sur le besoin PDF |
-| D32 | À corriger — priorité haute | Transactions depuis un client affichent la liste générique des ventes ; filtre client perdu | Phase 4 ; corriger la route/requête AJAX et vérifier l'isolation par client |
-| D33 | À investiguer | Certaines ventes affichent 0 article | Phase 4 ; comparer la vente à ses lignes `order_products` |
-| D34 | Limite documentée | Reçu de règlement distinct de la facture de vente ; une réimpression utilise le solde actuel | Phase 4 ; décider s'il faut figer le solde à la date du paiement |
-| D35 | À investiguer | Facture de règlement semblant afficher deux ventes | Phase 4 ; obtenir les IDs des ventes et l'URL du document |
+| D31 | Corrigé et rendu vérifié | Gabarits d'impression natifs A4/80 mm ; facture courte PDF contrôlée sur une page | Facture longue peut occuper plusieurs pages ; test matériel à taille réelle |
+| D32 | Corrigé et vérifié sur copie | Filtre client conservé dans la requête AJAX et sa portée | Aucun autre client n'apparaît au contrôle finance |
+| D33 | Cause corrigée ; anciennes données examinées | `select()` supprimait l'agrégat `withSum()` ; ordre de requête corrigé. Les deux ventes historiques examinées possèdent des lignes | Aucun enregistrement historique vide identifié |
+| D34 | Corrigé pour les paiements natifs ; héritage documenté | Reçu daté avec instantané du solde après paiement et affectation explicite à une vente | Reçus historiques sans instantané identifiés explicitement comme non historiques |
+| D35 | Non reproduit — IDs historiques requis | Reçus natifs ciblent une vente via son affectation | Obtenir IDs des ventes et URL du reçu d'origine pour conclure sur l'incident ancien |
 | D36 | Compris | `products.purchase_price` est un coût de référence ; un coût réel différent reste sur chaque achat | Phases 2–3 ; achat actuel ne met pas automatiquement à jour la référence produit |
 | D37 | À vérifier | Effet d'un changement du prix courant sur statistiques et marges historiques | Phase 5 ; contrôler chaque rapport et ses sources |
 | D38 | Validée — 01/10/2026 | Sauvegarde quotidienne en fin de journée ; RPO de 24 heures | Le serveur étant éteint la nuit, cette fréquence borne la perte visée à une journée ; surveiller la réussite et vérifier la restaurabilité. Phase 7 |
@@ -388,6 +393,8 @@ La fréquence quotidienne répond au RPO validé ; son exécution et son succès
 Enveloppe indicative de 12–16 semaines à réviser après phase 1 selon disponibilité, données, matériel et intégrations. Les échéances de support priment sur les finitions non bloquantes.
 
 ## 11. Journal de reprise
+
+**Reprise Phase 4 — 08/10/2026 :** les six sous-lots ont été exécutés dans l'ordre validé 4.A → 4.C → 4.B → 4.D → 4.E → 4.F. D53–D57 inscrites au registre ; arrondi final XAF HALF_UP. Les 60 contrôles sur copie, deux scénarios de concurrence réelle, construction et sept PDF sont réussis. Trois migrations et permissions appliquées après sauvegarde/restauration contrôlée ; historiques préservés et aucun essai métier sur la source. Application remise en service. [Bilan Phase 4](phase4-report.md) : détails, D35 historique non reproduit, limites BDT/fuseau/rapports, taxes non configurées et calibration matérielle. La dernière instruction du propriétaire remplace « un commit par sous-lot » par **un seul commit final Phase 4 par le propriétaire**. Aucun commit/staging/push effectué.
 
 **Point de reprise actuel — 02/10/2026 :** Phase 1, sous-lot 4, refonte UI transversale des ecrans existants implementée avec une revue finale unique autorisée par le propriétaire. Un seul shell Tailwind, y compris POS/achat React ; Inter, composants, espacements, contrôles mobiles, palettes et icones Lucide communs. Les sept étapes visuelles ne remplacent pas les phases métier 2–8. Bilan : [refonte-ui-complete.md](refonte-ui-complete.md), contrats : [ui-composants.md](ui-composants.md). Compilation de 89 vues et rendu des composants réussis ; builds Vite réussis ; HTTP CSS/cache, récupération et 404 contrôlés. La revue navigateur a été autorisée, mais inspection/capture expirent : rendu visuel authentifié non validé. Un GET login a dépassé 30 secondes ; diagnostic PHP/environnement encore à traiter. Aucune écriture métier ou migration, aucun commit de cette finition. Prochaine action : revue globale du propriétaire et commit du groupe, puis reprise des travaux métier et défauts restants selon la roadmap.
 

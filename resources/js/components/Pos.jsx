@@ -1,263 +1,144 @@
-import React, {useEffect, useState, useCallback, useRef } from "react";
+import React, {useEffect, useRef, useState, useCallback} from "react";
 import axios from "axios";
+import {toast} from "sonner";
 import Swal from "sweetalert2";
+import {Barcode, Search, Package, ShoppingCart, Check, Trash2} from "lucide-react";
+import {Field, EmptyState, WorkspaceToaster} from "./WorkspaceUI";
 import Cart from "./Cart";
-import { toast } from "sonner";
-import CustomerSelect from "./CutomerSelect";
-
-import SuccessSound from "../sounds/beep-07a.mp3";
-import WarningSound from "../sounds/beep-02.mp3";
-import getErrorMessage from "../utils/getErrorMessage";
-import playSound from "../utils/playSound";
 import translate from "../utils/translate";
+import getErrorMessage from "../utils/getErrorMessage";
 
-import { Barcode, Search, Package, ShoppingCart, Trash2, Check } from "lucide-react";
-import { Field, EmptyState, WorkspaceToaster } from "./WorkspaceUI";
+const uuid = () => crypto.randomUUID();
+const whole = value => /^\d{1,14}$/.test(String(value || "0")) ? BigInt(value || "0") : 0n;
+const base = path => String(window.qposBaseUrl || "").replace(/\/$/, "") + path;
 
 export default function Pos() {
-
-    const [products, setProducts] = useState([]);
-    const [activePanel, setActivePanel] = useState('catalogue');
-    const [carts, setCarts] = useState([]);
-    const [orderDiscount, setOrderDiscount] = useState(0);
-    const [paid, setPaid] = useState(0);
-    const [due, setDue] = useState(0);
-    const [change, setChange] = useState(0);
-    const [total, setTotal] = useState(0);
-    const [updateTotal, setUpdateTotal] = useState(0);
-    const [customerId, setCustomerId] = useState();
-    const [cartUpdated, setCartUpdated] = useState(false);
-    const [productUpdated, setProductUpdated] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchBarcode, setSearchBarcode] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const productRequest = useRef(0);
-    const barcodeInput = useRef(null);
-
-    useEffect(() => {
-        if (activePanel !== 'catalogue') return;
-        const frame = window.requestAnimationFrame(() => barcodeInput.current?.focus());
-        return () => window.cancelAnimationFrame(frame);
-    }, [activePanel]);
-
-    const getProducts = useCallback(
-        async (search = "", page = 1, barcode = "") => {
-            const requestId = ++productRequest.current;
-            setLoading(true);
-            try {
-                const res = await axios.get('/admin/get/products', {
-                    params: { search, page, barcode },
-                });
-                const productsData = res.data;
-                if (requestId !== productRequest.current) return;
-                setProducts(prev => page === 1 ? productsData.data : [...prev, ...productsData.data]);
-                setCurrentPage(page);
-                if (productsData.scan_message) {
-                    toast.error(productsData.scan_message);
-                    setTotalPages(1);
-                    return;
+    const [products,setProducts]=useState([]),[customers,setCustomers]=useState([]),[customerId,setCustomerId]=useState("");
+    const [cartId,setCartId]=useState(""),[quote,setQuote]=useState(null),[session,setSession]=useState(null);
+    const [search,setSearch]=useState(""),[barcode,setBarcode]=useState(""),[discount,setDiscount]=useState("0");
+    const [cash,setCash]=useState("0"),[card,setCard]=useState("0"),[reference,setReference]=useState(""),[credit,setCredit]=useState("0"),[dueDate,setDueDate]=useState("");
+    const [page,setPage]=useState(1),[lastPage,setLastPage]=useState(1),[busy,setBusy]=useState(false),[pending,setPending]=useState(null);
+    const [exchangePreview,setExchangePreview]=useState(null),[cartBusy,setCartBusy]=useState(false);
+    const [panel,setPanel]=useState("catalogue"),[version,setVersion]=useState(0),[exchange,setExchange]=useState(null);
+    const mutations=useRef(0);const markMutation=useCallback(value=>{mutations.current=Math.max(0,mutations.current+(value?1:-1));setCartBusy(mutations.current>0);},[]);
+    const scan=useRef(null),keyPrefix=useRef(""),requestSeq=useRef(0),quoteSeq=useRef(0);
+    const refresh=useCallback(()=>{setQuote(null);setVersion(v=>v+1);},[]);
+    useEffect(()=> {
+        let live=true;const pinned=new URL(window.location.href);if(window.qposOperationShopId){pinned.searchParams.set("operation_point_of_sale_id",window.qposOperationShopId);window.history.replaceState(null,"",pinned.toString());}
+        Promise.all([axios.get("/admin/cash/state"),axios.get("/admin/get/customers")]).then(([state,list])=>{
+            if(!live)return;
+            setSession(state.data.session);
+            keyPrefix.current="qpos-pos:"+state.data.user_id+":"+window.qposOperationShopId+":";
+            let id=sessionStorage.getItem(keyPrefix.current+"cart")||uuid();sessionStorage.setItem(keyPrefix.current+"cart",id);setCartId(id);
+            const saved=sessionStorage.getItem(keyPrefix.current+"pending");const savedValue=saved?JSON.parse(saved):null;if(savedValue){setPending(savedValue);setQuote(savedValue.quote_snapshot||null);setDiscount(savedValue.sale.order_discount||"0");setCredit(savedValue.sale.credit_amount||"0");setDueDate(savedValue.sale.due_date||"");setCash(savedValue.sale.payments.filter(p=>p.method==="cash").reduce((sum,p)=>sum+whole(p.amount),0n).toString());setCard(savedValue.sale.payments.filter(p=>p.method==="card").reduce((sum,p)=>sum+whole(p.amount),0n).toString());setReference(savedValue.sale.payments.find(p=>p.method==="card")?.external_reference||"");}
+            const x=sessionStorage.getItem("qpos-exchange");let ex=x?JSON.parse(x):null;
+            if(ex && ex.shop_id===Number(window.qposOperationShopId))setExchange(ex);else ex=null;
+            setCustomers(list.data);const walking=list.data.find(c=>c.internal_code==="walking");
+            setCustomerId(String(savedValue?.sale.customer_id||ex?.customer_id||walking?.id||""));
+        }).catch(e=>toast.error(getErrorMessage(e)));
+        return()=>{live=false;};
+    },[]);
+    useEffect(()=>{
+        if(!cartId || !window.BroadcastChannel)return;
+        const instance=uuid(),channel=new BroadcastChannel(keyPrefix.current+"tabs");
+        channel.onmessage=event=>{
+            if(event.data.cart!==cartId || event.data.instance===instance)return;
+            if(event.data.type==="claim")channel.postMessage({type:"occupied",cart:cartId,instance});
+            if(event.data.type==="occupied"){
+                const id=uuid();sessionStorage.setItem(keyPrefix.current+"cart",id);sessionStorage.removeItem(keyPrefix.current+"pending");setPending(null);setCartId(id);
+            }
+        };
+        channel.postMessage({type:"claim",cart:cartId,instance});
+        return()=>channel.close();
+    },[cartId]);
+    const getProducts=useCallback(async(term="",next=1,code="")=>{
+        const seq=++requestSeq.current;if(code)markMutation(true);
+        try{const r=await axios.get("/admin/get/products",{params:{search:term,page:next,barcode:code}});
+            if(seq!==requestSeq.current)return;
+            setProducts(old=>next===1?r.data.data:[...old,...r.data.data]);setPage(next);setLastPage(r.data.meta.last_page);
+            if(code && r.data.data.length===1 && !pending){await axios.post("/admin/cart",{cart_id:cartId,product_unit_id:r.data.data[0].id});refresh();toast.success(translate("Cart updated"));}
+            else if(code && !r.data.data.length)toast.error(translate("No products found"));
+        }catch(e){toast.error(getErrorMessage(e));}
+    },[cartId,pending,refresh]);
+    useEffect(()=>{if(!cartId)return;const timer=setTimeout(()=>getProducts(search),250);return()=>clearTimeout(timer);},[search,cartId,getProducts]);
+    useEffect(()=>{
+        if(!cartId || !customerId || pending)return;const seq=++quoteSeq.current;
+        const timer=setTimeout(()=>axios.get("/admin/cart",{params:{cart_id:cartId,customer_id:customerId,order_discount:discount||"0"}}).then(r=>{if(seq===quoteSeq.current)setQuote(r.data);}).catch(e=>toast.error(getErrorMessage(e))),200);
+        return()=>clearTimeout(timer);
+    },[cartId,customerId,discount,version,pending]);
+    useEffect(()=>{const handler=e=>{if(e.key==="F2"){e.preventDefault();setPanel("catalogue");window.requestAnimationFrame(()=>scan.current?.focus());}if(e.key==="F4"){e.preventDefault();setPanel("checkout");}};window.addEventListener("keydown",handler);return()=>window.removeEventListener("keydown",handler);},[]);
+        useEffect(()=>{if(!exchange)return;axios.post('/admin/sales/'+exchange.order_id+'/exchange-preview',{items:exchange.items}).then(r=>setExchangePreview(r.data)).catch(e=>toast.error(getErrorMessage(e)));},[exchange]);
+    const add=async id=>{if(busy||pending)return;markMutation(true);try{await axios.post("/admin/cart",{cart_id:cartId,product_unit_id:id});refresh();scan.current?.focus();}catch(e){toast.error(getErrorMessage(e));}finally{markMutation(false);}};
+    const total=whole(quote?.total),exchangeAvailable=whole(exchangePreview?.settled_amount),remainingAfterCredit=total>whole(credit)?total-whole(credit):0n,exchangeOffset=exchangeAvailable<remainingAfterCredit?exchangeAvailable:remainingAfterCredit,tender=whole(cash)+whole(card)+whole(credit)+exchangeOffset,due=total>tender?total-tender:0n,change=tender>total?tender-total:0n;
+    const savePending=value=>{setPending(value);if(value)sessionStorage.setItem(keyPrefix.current+"pending",JSON.stringify(value));else sessionStorage.removeItem(keyPrefix.current+"pending");};
+    async function submit(value){
+        setBusy(true);let succeeded=false;
+        try{
+            let response;
+            for(let attempt=0;attempt<2;attempt++){
+                try{response=value.exchange?await axios.post("/admin/sales/"+value.exchange.order_id+"/corrections",{...value.exchange,exchange_sale:value.sale},{timeout:20000}):await axios.put("/admin/order/create",value.sale,{timeout:20000});break;}
+                catch(e){if(e.response || attempt===1)throw e;}
+            }
+            succeeded=true;savePending(null);sessionStorage.removeItem("qpos-exchange");
+            const id=response.data.order?.id;
+            window.location.href=base(id?"/admin/orders/pos-invoice/"+id:"/admin/sale-corrections/"+response.data.correction.id);
+        }catch(e){
+            if(e.response){
+                if(e.response.status===419 || e.response.status>=500){toast.error(translate("Checkout outcome uncertain. Retry the same operation."));return;}
+                if(e.response.data?.errors?.expired_confirmation_required){
+                    const confirm=await Swal.fire({title:translate("Expired product"),input:"text",inputLabel:translate("Reason"),showCancelButton:true,inputValidator:v=>!v?.trim()?translate("A reason is required"):undefined});
+                    if(confirm.isConfirmed){const next={...value,sale:{...value.sale,confirm_expired_sale:true,expired_sale_reason:confirm.value.trim()}};savePending(next);setBusy(false);return submit(next);}
                 }
-                if (productsData.data.length === 1 && barcode != "") {
-                    addProductToCart(productsData.data[0].id);
-                }
-                setTotalPages(productsData.meta.last_page); // Get total pages
-            } catch (error) {
-                if (requestId === productRequest.current) toast.error(getErrorMessage(error));
-            } finally {
-                if (requestId === productRequest.current) setLoading(false);
+                savePending(null);refresh();
             }
-        },
-        []
-    );
-    useEffect(() => {
-        ++productRequest.current;
-        const timer = setTimeout(() => getProducts(searchQuery, 1), 250);
-        return () => clearTimeout(timer);
-    }, [searchQuery, productUpdated, getProducts]);
-
-    const getCarts = async () => {
-        try {
-            const res = await axios.get('/admin/cart');
-            const data = res.data;
-            setTotal(data?.total);
-            setUpdateTotal(data?.total - orderDiscount);
-            setCarts(data?.carts);
-        } catch (error) {
-            console.error("Error fetching carts:", error);
-        }
-    };
-
-    useEffect(() => {
-        getCarts();
-    }, [cartUpdated]);
-
-    useEffect(() => {
-        let paid1 = paid;
-        let disc = orderDiscount;
-        if (paid == "") {
-            paid1 = 0;
-        }
-        if (orderDiscount == "") {
-            disc = 0;
-        }
-        const updatedTotalAmount = parseFloat(total) - parseFloat(disc);
-        // Positive balance => still owed (due); negative => overpaid (change to return).
-        const balance = updatedTotalAmount - parseFloat(paid1);
-        setUpdateTotal(updatedTotalAmount?.toFixed(2));
-        setDue((balance > 0 ? balance : 0).toFixed(2));
-        setChange((balance < 0 ? -balance : 0).toFixed(2));
-    }, [orderDiscount, paid, total]);
-    async function addProductToCart(id) {
-        try {
-            const res = await axios.post("/admin/cart", { id });
-            setCartUpdated(previous => !previous);
-            playSound(SuccessSound);
-            toast.success(res?.data?.message);
-        } catch (err) {
-            playSound(WarningSound);
-            toast.error(getErrorMessage(err));
-        } finally {
-            barcodeInput.current?.focus();
-        }
+            toast.error(e.response?getErrorMessage(e):translate("Checkout outcome uncertain. Retry the same operation."));
+        }finally{if(!succeeded)setBusy(false);}
     }
-    function cartEmpty() {
-        if (total <= 0) {
-            return;
-        }
-        Swal.fire({
-            title: translate("Are you sure you want to delete Cart?"),
-            showDenyButton: true,
-            confirmButtonText: translate("Yes"),
-            denyButtonText: translate("No"),
-            customClass: {
-                actions: "my-actions",
-                cancelButton: "order-1 right-gap",
-                confirmButton: "order-2",
-                denyButton: "order-3",
-            },
-        }).then((result) => {
-            if (result.isConfirmed) {
-                axios
-                    .put("/admin/cart/empty")
-                    .then((res) => {
-                        setCartUpdated(previous => !previous);
-                        playSound(SuccessSound);
-                        toast.success(res?.data?.message);
-                    })
-                    .catch((err) => {
-                        playSound(WarningSound);
-                        toast.error(getErrorMessage(err));
-                    });
-            } else if (result.isDenied) {
-                return;
-            }
-        });
+    async function checkout(){
+        if(pending)return submit(pending);
+        if(!quote?.carts.length || !session || cartBusy || (exchange && !exchangePreview))return;
+        const answer=await Swal.fire({title:translate("Confirm checkout"),text:quote.total+" XAF · "+translate("Due")+": "+due.toString()+" · "+translate("Change")+": "+change.toString(),showCancelButton:true,confirmButtonText:translate("Confirm sale"),cancelButtonText:translate("Cancel")});
+        if(!answer.isConfirmed)return;
+        const payments=[];if(whole(cash)>0n)payments.push({method:"cash",amount:cash});if(whole(card)>0n)payments.push({method:"card",amount:card,external_reference:reference});
+        const sale={operation_key:uuid(),cart_id:cartId,quote_hash:quote.quote_hash,customer_id:Number(customerId),order_discount:discount||"0",credit_amount:credit||"0",payments,due_date:dueDate||null};
+        const value={sale,quote_snapshot:quote,exchange:exchange?{...exchange,return_quote_hash:exchangePreview.return_quote_hash}:null};savePending(value);return submit(value);
     }
-    function orderCreate() {
-        if (total <= 0) {
-            return;
-        }
-        if (!customerId) {
-            toast.error(translate("Please select customer"));
-            return;
-        }
-        const balanceLine =
-            parseFloat(change) > 0
-                ? `${translate("Change to return")}: ${change}`
-                : `${translate("Due")}: ${due}`;
-        Swal.fire({
-            title: `${translate("Are you sure you want to complete this order?")} <br>${balanceLine}`,
-            showDenyButton: true,
-            confirmButtonText: translate("Yes"),
-            denyButtonText: translate("No"),
-            customClass: {
-                actions: "my-actions",
-                cancelButton: "order-1 right-gap",
-                confirmButton: "order-2",
-                denyButton: "order-3",
-            },
-        }).then((result) => {
-            if (result.isConfirmed) {
-                const payload = {
-                        customer_id: customerId,
-                        order_discount: parseFloat(orderDiscount) || 0,
-                        paid: parseFloat(paid) || 0,
-                    };
-                const complete = (values) => axios.put("/admin/order/create", values).then((res) => {
-                        setCartUpdated(previous => !previous);
-                        setProductUpdated(previous => !previous);
-                        toast.success(res?.data?.message);
-                        // window.location.href = `orders/invoice/${res?.data?.order?.id}`;
-                        window.location.href = `orders/pos-invoice/${res?.data?.order?.id}`;
-                    }).catch(async (err) => {
-                        if (err?.response?.data?.errors?.expired_confirmation_required) {
-                            const confirmation = await Swal.fire({
-                                title: translate('Expired product'),
-                                text: translate('This sale includes stock past its expiry date. Confirm only if authorized.'),
-                                input: 'text', inputLabel: translate('Reason'), inputPlaceholder: translate('Enter a reason'),
-                                inputValidator: value => !value?.trim() ? translate('A reason is required') : undefined,
-                                showCancelButton: true, confirmButtonText: translate('Confirm sale'), cancelButtonText: translate('Cancel'),
-                            });
-                            if (confirmation.isConfirmed) return complete({...payload,confirm_expired_sale:true,expired_sale_reason:confirmation.value.trim()});
-                            return;
-                        }
-                        playSound(WarningSound);
-                        toast.error(getErrorMessage(err), { duration: 6000 });
-                    });
-                complete(payload);
-            } else if (result.isDenied) {
-                return;
-            }
-        });
-    }
-    return (
-        <div className="qpos-pos-grid">
-            <nav className="qpos-workspace-tabs" role="tablist" aria-label={translate('POS')} onKeyDown={event => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-                event.preventDefault();
-                const next = event.key === 'Home' ? 'catalogue' : event.key === 'End' ? 'checkout' : activePanel === 'catalogue' ? 'checkout' : 'catalogue';
-                setActivePanel(next);
-                document.getElementById('pos-tab-' + next)?.focus();
-            }}>
-                <button id="pos-tab-catalogue" type="button" role="tab" aria-selected={activePanel === 'catalogue'} aria-controls="pos-panel-catalogue" tabIndex={activePanel === 'catalogue' ? 0 : -1} onClick={() => setActivePanel('catalogue')}><Package size={18} aria-hidden="true" />{translate('Products')}</button>
-                <button id="pos-tab-checkout" type="button" role="tab" aria-selected={activePanel === 'checkout'} aria-controls="pos-panel-checkout" tabIndex={activePanel === 'checkout' ? 0 : -1} onClick={() => setActivePanel('checkout')}><ShoppingCart size={18} aria-hidden="true" />{translate('Cart')} <span className="qpos-badge qpos-badge-info">{carts.length}</span></button>
-            </nav>
-            <section id="pos-panel-catalogue" role="tabpanel" className={'qpos-card qpos-catalogue-panel ' + (activePanel === 'catalogue' ? 'is-active' : '')} aria-labelledby="pos-tab-catalogue">
-                <header className="qpos-workspace-heading"><div><span className="qpos-eyebrow">{translate("POS")}</span><h2 id="qpos-catalogue-title">{translate("Product catalogue")}</h2></div><Package size={24} aria-hidden="true" /></header>
-                <div className="qpos-search-grid">
-                    <Field label={translate("Enter Product Barcode")}><span className="qpos-input-icon"><Barcode size={18} aria-hidden="true" /><input ref={barcodeInput} className="qpos-control" type="text" value={searchBarcode} onChange={e => setSearchBarcode(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && searchBarcode.trim()) { e.preventDefault(); const barcode = searchBarcode.trim(); setSearchBarcode(""); getProducts('',1,barcode); } }} /></span></Field>
-                    <Field label={translate("Search products")}><span className="qpos-input-icon"><Search size={18} aria-hidden="true" /><input className="qpos-control" type="search" placeholder={translate("Enter Product Name")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} /></span></Field>
-                </div>
-                <div className="qpos-products-grid" aria-busy={loading}>
-                    {products.map(product => <button type="button" className="qpos-product" key={product.id} onClick={() => addProductToCart(product.id)}>
-                        <img src={window.qposStorageUrl + '/' + product.image} alt="" loading="lazy" width="160" height="128" onError={e => { e.target.onerror=null; e.target.src=window.qposFallbackImage; }} />
-                        <span className="qpos-product-name">{product.name}</span>
-                        <span className="qpos-product-stock">{translate("Stock")}: {product.quantity}</span>
-                        {Number(product.expired_quantity || 0) > 0 && <span className="qpos-product-stock qpos-expiry-warning">{translate("Expired stock may require confirmation")}: {product.expired_quantity}</span>}
-                        <strong>{product.discounted_price}</strong>
-                    </button>)}
-                </div>
-                {loading ? <p className="qpos-workspace-status" role="status">{translate("Loading more...")}</p> : !products.length && <EmptyState title={translate("No products found")} description={translate("Search products")} />}
-                {currentPage < totalPages && <div className="qpos-workspace-footer"><button type="button" className="qpos-button qpos-button-md qpos-button-secondary" disabled={loading} onClick={() => getProducts(searchQuery, currentPage+1)}>{translate("Load more products")}</button></div>}
-            </section>
-            <section id="pos-panel-checkout" role="tabpanel" className={'qpos-card qpos-checkout-panel ' + (activePanel === 'checkout' ? 'is-active' : '')} aria-labelledby="pos-tab-checkout">
-                <header className="qpos-workspace-heading"><div><span className="qpos-eyebrow">{translate("Sale")}</span><h2 id="qpos-summary-title">{translate("Order summary")}</h2></div><ShoppingCart size={24} aria-hidden="true" /></header>
-                <div className="qpos-workspace-body"><label className="qpos-field-label" htmlFor="pos-customer">{translate("Customer")}</label><CustomerSelect setCustomerId={setCustomerId} /></div>
-                <Cart carts={carts} setCartUpdated={setCartUpdated} cartUpdated={cartUpdated} />
-                <div className="qpos-totals">
-                    <div><span>{translate("Sub Total:")}</span><strong>{total}</strong></div>
-                    <label><span>{translate("Discount:")}</span><input className="qpos-control" type="number" min="0" disabled={total<=0} value={orderDiscount} onChange={e => { const value=e.target.value; if(parseFloat(value)>total || parseFloat(value)<0) return; setOrderDiscount(value); }} /></label>
-                    <label className="qpos-check-row"><span>{translate("Apply Fractional Discount:")}</span><input type="checkbox" disabled={total<=0} onChange={e => setOrderDiscount(e.target.checked ? (total % 1).toFixed(2) : 0)} /></label>
-                    <div className="qpos-total-highlight"><span>{translate("Total:")}</span><strong>{updateTotal}</strong></div>
-                    <label><span>{translate("Paid:")}</span><input className="qpos-control" type="number" min="0" disabled={total<=0} value={paid} onChange={e => { if(parseFloat(e.target.value)<0) return; setPaid(e.target.value); }} /></label>
-                    <div><span>{translate("Due")}</span><strong>{due}</strong></div>
-                    {parseFloat(change)>0 && <div className="qpos-success"><span>{translate("Change:")}</span><strong>{change}</strong></div>}
-                </div>
-                <div className="qpos-checkout-actions"><button type="button" className="qpos-button qpos-button-md qpos-button-danger" disabled={total<=0} onClick={cartEmpty}><Trash2 size={18} aria-hidden="true" />{translate("Clear Cart")}</button><button type="button" className="qpos-button qpos-button-lg qpos-button-primary" disabled={total<=0} onClick={orderCreate}><Check size={20} aria-hidden="true" />{translate("Checkout")}</button></div>
-            </section>
-            <WorkspaceToaster />
-        </div>
-    );
+    return <div className="qpos-pos-grid">
+        <nav className="qpos-workspace-tabs" role="tablist" aria-label={translate("POS")}><button id="pos-tab-catalogue" type="button" role="tab" aria-selected={panel==="catalogue"} aria-controls="pos-panel-catalogue" onClick={()=>setPanel("catalogue")}><Package size={18}/>{translate("Products")} F2</button><button id="pos-tab-checkout" type="button" role="tab" aria-selected={panel==="checkout"} aria-controls="pos-panel-checkout" onClick={()=>setPanel("checkout")}><ShoppingCart size={18}/>{translate("Cart")} F4</button></nav>
+        <section id="pos-panel-catalogue" role="tabpanel" aria-labelledby="pos-tab-catalogue" className={"qpos-card qpos-catalogue-panel "+(panel==="catalogue"?"is-active":"")}>
+            <header className="qpos-workspace-heading"><h2>{translate("Product catalogue")}</h2></header>
+            <div className="qpos-search-grid">
+                <Field label={translate("Enter Product Barcode")}><input ref={scan} className="qpos-control" value={barcode} disabled={busy||!!pending} onChange={e=>setBarcode(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&barcode.trim()){e.preventDefault();getProducts("",1,barcode.trim());setBarcode("");}}}/></Field>
+                <Field label={translate("Search products")}><input className="qpos-control" type="search" value={search} onChange={e=>setSearch(e.target.value)}/></Field>
+            </div>
+            <div className="qpos-products-grid">{products.map(p=><button type="button" className="qpos-product" key={p.id} disabled={busy||!!pending} onClick={()=>add(p.id)}><img src={window.qposStorageUrl+"/"+p.image} alt="" loading="lazy" onError={e=>{e.target.onerror=null;e.target.src=window.qposFallbackImage;}}/><span className="qpos-product-name">{p.name}</span><span>{translate("Stock in base units")}: {p.quantity} · ×{p.factor}</span><strong>{p.price} XAF</strong>{Number(p.expired_quantity)>0&&<small>{translate("Expired stock may require confirmation")}: {p.expired_quantity}</small>}</button>)}</div>
+            {!products.length&&<EmptyState title={translate("No products found")}/>}
+            {page<lastPage&&<button type="button" className="qpos-button qpos-button-md qpos-button-secondary" onClick={()=>getProducts(search,page+1)}>{translate("Load more products")}</button>}
+        </section>
+        <section id="pos-panel-checkout" role="tabpanel" aria-labelledby="pos-tab-checkout" className={"qpos-card qpos-checkout-panel "+(panel==="checkout"?"is-active":"")}>
+            <header className="qpos-workspace-heading"><h2>{translate("Order summary")}</h2></header>
+            <div className="qpos-workspace-body">
+                {!session?<a href={base("/admin/cash")}>{translate("Open a cash session before checkout")}</a>:<p>{translate("Cash session")} #{session.id}</p>}
+                {exchange&&<p>{translate("Exchange sale")} #{exchange.order_id} · {translate("Return and new sale will be recorded together.")}</p>}
+                <Field label={translate("Customer")}><select className="qpos-control" disabled={busy||!!pending||!!exchange} value={customerId} onChange={e=>setCustomerId(e.target.value)}><option value="">{translate("Select customer")}</option>{customers.map(c=><option key={c.id} value={c.id}>{c.internal_code==="walking"?translate("Walking Customer"):c.name}</option>)}</select></Field>
+                <button type="button" className="qpos-button qpos-button-sm qpos-button-secondary" disabled={busy||!!pending} onClick={async()=>{const answer=await Swal.fire({title:translate("Create customer"),input:"text",showCancelButton:true});if(answer.isConfirmed&&answer.value?.trim()){try{const r=await axios.post("/admin/create/customers",{name:answer.value.trim()});setCustomers(old=>[...old,r.data]);setCustomerId(String(r.data.id));}catch(e){toast.error(getErrorMessage(e));}}}}>{translate("Create customer")}</button>
+            </div>
+            <Cart carts={quote?.carts||[]} cartId={cartId} disabled={busy||!!pending} refresh={refresh} onBusy={markMutation}/>
+            <div className="qpos-totals">
+                <Field label={translate("Manual discount")}><input className="qpos-control" type="number" min="0" step="0.000001" value={discount} disabled={busy||!!pending} onChange={e=>setDiscount(e.target.value)}/></Field>
+                <div className="qpos-total-highlight"><span>{translate("Total")}</span><strong>{quote?.total||"0"} XAF</strong></div>
+                {exchange&&<p>{translate("Exchange settlement")}: {exchangeOffset.toString()} XAF</p>}
+                {quote?.walking&&<p>{translate("Cash only: no debt or credit.")}</p>}
+                <Field label={translate("Cash tendered")}><input className="qpos-control" type="number" min="0" step="1" value={cash} disabled={busy||!!pending} onChange={e=>setCash(e.target.value)}/></Field>
+                <Field label={translate("External card")}><input className="qpos-control" type="number" min="0" step="1" value={card} disabled={busy||!!pending} onChange={e=>setCard(e.target.value)}/></Field>
+                {whole(card)>0n&&<Field label={translate("External reference")}><input className="qpos-control" maxLength={128} value={reference} disabled={busy||!!pending} onChange={e=>setReference(e.target.value)}/></Field>}
+                {!quote?.walking&&<Field label={translate("Use store credit")}><input className="qpos-control" type="number" min="0" step="1" value={credit} disabled={busy||!!pending} onChange={e=>setCredit(e.target.value)}/></Field>}
+                <div><span>{translate("Due")}</span><strong>{due.toString()} XAF</strong></div>
+                {due>0n&&!quote?.walking&&<Field label={translate("Due date")}><input className="qpos-control" type="date" value={dueDate} disabled={busy||!!pending} onChange={e=>setDueDate(e.target.value)}/></Field>}
+                <div><span>{translate("Change")}</span><strong>{change.toString()} XAF</strong></div>
+                {busy&&<p role="status">{translate("Recording sale...")}</p>}{pending&&!busy&&<p role="alert">{translate("Checkout outcome uncertain. Retry the same operation.")}</p>}
+            </div>
+            <div className="qpos-checkout-actions"><button type="button" className="qpos-button qpos-button-md qpos-button-danger" disabled={busy||!!pending} onClick={async()=>{try{await axios.put("/admin/cart/empty",{cart_id:cartId});refresh();}catch(e){toast.error(getErrorMessage(e));}}}><Trash2 size={18}/>{translate("Clear Cart")}</button><button type="button" className="qpos-button qpos-button-lg qpos-button-primary" disabled={busy||cartBusy||(!pending&&(!quote?.carts.length||!session||(exchange&&!exchangePreview)))} onClick={checkout}><Check size={20}/>{pending?translate("Retry checkout"):translate("Checkout")}</button></div>
+        </section><WorkspaceToaster/>
+    </div>;
 }

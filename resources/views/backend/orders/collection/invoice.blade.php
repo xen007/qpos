@@ -33,14 +33,14 @@
                 </tr>
                 <tr>
                     <th class="py-1 text-left font-normal text-qpos-muted">{{ __('Previously Paid') }}:</th>
-                    <td class="py-1 text-right tabular-nums">{{ $money($order->paid - $collection_amount) }}</td>
+                    <td class="py-1 text-right tabular-nums">{{ __('Payment-time balance was not retained for this historical receipt.') }}</td>
                 </tr>
                 <tr>
                     <th class="py-1 text-left font-normal text-qpos-muted">{{ __('Collection Amount') }}:</th>
                     <td class="py-1 text-right tabular-nums">{{ $money($collection_amount) }}</td>
                 </tr>
                 <tr>
-                    <th class="py-1 text-left font-normal text-qpos-muted">{{ __('Due') }}:</th>
+                    <th class="py-1 text-left font-normal text-qpos-muted">{{ __('Current balance') }}:</th>
                     <td class="py-1 text-right tabular-nums">{{ $money($order->due) }}</td>
                 </tr>
             </x-slot:totals>
@@ -58,6 +58,6 @@
 
 @push('script')
     <script>
-        window.addEventListener("load", window.print());
+        window.addEventListener("load", () => window.print());
     </script>
 @endpush

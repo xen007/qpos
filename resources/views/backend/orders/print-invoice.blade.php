@@ -58,6 +58,10 @@
 
 @push('script')
     <script>
-        window.addEventListener("load", window.print());
+        window.addEventListener("load", () => window.print());
     </script>
+@endpush
+
+@push('style')
+<style>@page{size:A4;margin:12mm}@media print{[data-qpos-invoice]{padding:0!important;margin:0!important;max-width:none!important;font-size:11px}[data-qpos-invoice] tr{break-inside:avoid}[data-qpos-invoice] thead{display:table-header-group}[data-qpos-invoice]>div:last-child{break-inside:avoid}.qpos-card{box-shadow:none!important;border:0!important}}</style>
 @endpush

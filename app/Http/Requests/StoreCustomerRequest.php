@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Customer;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCustomerRequest extends FormRequest
@@ -26,19 +27,19 @@ class StoreCustomerRequest extends FormRequest
      *     (POST /admin/create/customers) : le jeu de regles reduit d'origine
      *     est donc conserve pour les requetes JSON.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         if ($this->wantsJson()) {
             return [
-                'name' => 'required|string',
+                'name' => 'required|string|max:255',
             ];
         }
 
         return [
             'name' => 'required|string|max:255',
-            'phone' => 'required|string|max:20|unique:customers,phone',
+            'phone' => 'nullable|string|max:20|unique:customers,phone',
             'address' => 'nullable|string|max:255',
         ];
     }

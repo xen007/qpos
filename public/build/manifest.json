@@ -1,4 +1,12 @@
 {
+  "_WorkspaceUI-B9oWEvd7.js": {
+    "file": "assets/WorkspaceUI-B9oWEvd7.js",
+    "name": "WorkspaceUI",
+    "imports": [
+      "_jsx-runtime-CMlM1iwe.js",
+      "_useDocumentTheme-BKEELw4g.js"
+    ]
+  },
   "_jsx-runtime-CMlM1iwe.js": {
     "file": "assets/jsx-runtime-CMlM1iwe.js",
     "name": "jsx-runtime"
@@ -8,14 +16,6 @@
     "name": "useDocumentTheme",
     "imports": [
       "_jsx-runtime-CMlM1iwe.js"
-    ]
-  },
-  "_useStateManager-7e1e8489.esm-BYU6m3zv.js": {
-    "file": "assets/useStateManager-7e1e8489.esm-BYU6m3zv.js",
-    "name": "useStateManager-7e1e8489.esm",
-    "imports": [
-      "_jsx-runtime-CMlM1iwe.js",
-      "_useDocumentTheme-BKEELw4g.js"
     ]
   },
   "resources/css/app.css": {
@@ -37,7 +37,7 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-CK69Hncx.js",
+    "file": "assets/app-v9SW8rXS.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -60,7 +60,7 @@
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-Cd4WuNaa.js",
+    "file": "assets/Pos-B-wvRm4L.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
@@ -68,15 +68,11 @@
       "_jsx-runtime-CMlM1iwe.js",
       "resources/js/app.jsx",
       "_useDocumentTheme-BKEELw4g.js",
-      "_useStateManager-7e1e8489.esm-BYU6m3zv.js"
-    ],
-    "assets": [
-      "assets/beep-07a-BpTYY3WP.mp3",
-      "assets/beep-02-FDF-YbRr.mp3"
+      "_WorkspaceUI-B9oWEvd7.js"
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-Cz6gB-NQ.js",
+    "file": "assets/Purchase-C0otmoPy.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,
@@ -84,7 +80,7 @@
       "_jsx-runtime-CMlM1iwe.js",
       "resources/js/app.jsx",
       "_useDocumentTheme-BKEELw4g.js",
-      "_useStateManager-7e1e8489.esm-BYU6m3zv.js"
+      "_WorkspaceUI-B9oWEvd7.js"
     ]
   },
   "resources/js/dashboard.js": {
@@ -104,14 +100,6 @@
     "name": "shell",
     "src": "resources/js/shell.js",
     "isEntry": true
-  },
-  "resources/js/sounds/beep-02.mp3": {
-    "file": "assets/beep-02-FDF-YbRr.mp3",
-    "src": "resources/js/sounds/beep-02.mp3"
-  },
-  "resources/js/sounds/beep-07a.mp3": {
-    "file": "assets/beep-07a-BpTYY3WP.mp3",
-    "src": "resources/js/sounds/beep-07a.mp3"
   },
   "resources/js/table-actions.js": {
     "file": "assets/table-actions-CW_z3FQr.js",
