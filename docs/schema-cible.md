@@ -207,3 +207,18 @@ Trois migrations `2026_10_08_120000`, `130000`, `140000` appliquées après rép
 - `expenses`, `expense_categories` : dépense/session/moyen/paiement et catégorie ; sortie physique espèces via cash_movements.
 
 Montants/quantités DECIMAL(20,6), totaux et paiements XAF entiers. FK restrictives, contrôles positifs/plafonds, clés idempotentes et refus de rollback destructif. Les anciennes colonnes des 54 tables de données ont été contrôlées avant/après migration. Dates natives vente/caisse UTC, affichage Africa/Douala ; cast conditionnel conservant les dates historiques et fournisseur. Étiquettes PDF calculées depuis le catalogue existant, sans table supplémentaire. Voir [rapport Phase 4](phase4-report.md).
+
+## Schéma Phase 5 — 08/10/2026
+
+Migration `2026_10_08_160000_create_reporting_workflows` additive :
+
+- `report_line_snapshots` : catégorie/libellé de la ligne au checkout, clé ligne ; aucune modification de `order_products`.
+- `report_allocation_snapshots` : connaissance du coût et devise au moment de l'allocation, clé allocation ; coûts numériques d'origine réutilisés.
+- `reporting_activity` : source, boutique, date métier, instant ; raccordement par événements Eloquent.
+- `daily_summaries` : boutique/date/type uniques, version unique, borne UTC, payload/source IDs, empreinte du payload, chemin privé et SHA256 du PDF, auteur. Version figée dès création.
+- `summary_deliveries` : destinataire, type, état, tentatives, dates et erreur filtrée ; unique synthèse/destinataire/type. File spécialisée Phase 5, sans remplacer le futur outbox général des notifications.
+- `summary_delivery_attempts` : historique des tentatives sans secrets.
+- `reporting_pauses` : pause personnelle, utilisateur actif unique, début/reprise UTC ; aucune fermeture de session.
+- `reporting_runtime` : activation, curseur de rattrapage et dernier passage du scheduler.
+
+Index liés aux requêtes de rapports : ventes boutique/création/ID si équivalent absent, correctifs création/vente, dépenses boutique/date et sessions boutique/clôture. Les fenêtres SQL des retours calculent la reprise cumulative des coûts à partir des allocations originales ; aucun changement des lots, mouvements ou devises historiques. Rollback destructif refusé.

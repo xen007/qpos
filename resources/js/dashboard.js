@@ -5,6 +5,38 @@ Chart.defaults.font.size = 12;
 
 const payload = document.getElementById("qpos-dashboard-chart-data");
 
+const reportPayload = document.getElementById("qpos-report-chart-data");
+if (reportPayload) {
+    const data = JSON.parse(reportPayload.textContent);
+    const charts = [];
+    const palette = () => {
+        const style = getComputedStyle(document.documentElement);
+        return { ink: style.getPropertyValue("--qpos-text").trim(), brand: style.getPropertyValue("--qpos-brand").trim(), line: style.getPropertyValue("--qpos-border").trim() };
+    };
+    document.querySelectorAll("[data-report-chart]").forEach(canvas => {
+        const hourly = canvas.dataset.reportChart === "hours";
+        const rows = hourly ? data.hours : data.daily;
+        const c = palette();
+        charts.push(new Chart(canvas, {
+            type: hourly ? "bar" : "line",
+            data: { labels: rows.map(r => hourly ? r.hour : r.label), datasets: [{ label: data.label + " (XAF)", data: rows.map(r => Number(hourly ? r.average : r.value)), backgroundColor: c.brand, borderColor: c.brand, borderWidth: 2 }] },
+            options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { labels: { color: c.ink } } }, scales: { x: { ticks: { color: c.ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: c.ink }, grid: { color: c.line } } } },
+        }));
+    });
+    new MutationObserver(() => {
+        const c = palette();
+        charts.forEach(chart => {
+            chart.options.plugins.legend.labels.color = c.ink;
+            chart.options.scales.x.ticks.color = c.ink;
+            chart.options.scales.y.ticks.color = c.ink;
+            chart.options.scales.y.grid.color = c.line;
+            chart.data.datasets[0].backgroundColor = c.brand;
+            chart.data.datasets[0].borderColor = c.brand;
+            chart.update("none");
+        });
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-palette"] });
+}
+
 if (payload) {
     const { dates, dailySales, months, monthlySales, salesLabel } = JSON.parse(
         payload.textContent

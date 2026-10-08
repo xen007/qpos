@@ -46,4 +46,7 @@
   'auto_generate_lots' => true,
   'default_lot_prefix' => 'LOT-AUTO',
   'allow_sale_without_lot' => true,
+  // Daily summary defaults; admin overrides are stored in reporting_runtime.
+  'daily_summary_email_enabled' => false,
+  'daily_summary_email_recipients' => array (),
 );

@@ -303,3 +303,7 @@ correctifs, 0 échec**).
    colonne image quand elle existe, au lieu du nom (index 2) ; dans la liste
    utilisateurs, l'en-tête « # » affiche en réalité l'avatar, et la colonne « Role » ne
    renvoie que le premier rôle — et rien du tout si l'utilisateur n'a aucun rôle.
+
+## Phase 5 — dashboard et rapports, 08/10/2026
+
+Nouvelles vues `backend/reporting/*` : shell Tailwind existant, composants communs, tokens inchangés. Pagination serveur sans DataTables ; Chart.js local via `resources/js/dashboard.js` pour le dashboard et les heures de pointe. Préférence clair/sombre et locale du shell conservées. PDF Dompdf et Excel PhpSpreadsheet existants ; histogramme natif Excel. Aucune nouvelle dépendance. Recompiler Vite avec les droits de lecture des sources : le scanner Tailwind sous bac à sable Windows peut omettre les utilitaires ; contrôler le rendu avant livraison.

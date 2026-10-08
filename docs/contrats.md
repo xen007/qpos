@@ -190,3 +190,11 @@ Les règles D53–D57 sont réalisées dans les services de vente/caisse/correct
 Échéances et relances manuelles sont journalisées par clé idempotente, sans envoyer de message externe. Échange : correctif et remplacement atomiques, compensation dédiée, règlement de la différence ; Walking intégralement réglé et sans avoir. Retour partiel limité aux quantités restantes, lots d'origine tracés et inspection avant remise en vendable. Annulation produit un correctif, sans effacer la vente originale.
 
 Les taxes détaillées ne sont pas configurées tant que taux/exemptions ne sont pas décidés. Les historiques BDT et leur fuseau ne sont pas convertis. Les encaissements natifs d'une dette historique exigent une réconciliation préalable explicite. Les anciens reçus sans instantané annoncent leur limite. Voir [bilan et vérifications](phase4-report.md).
+
+## Phase 5 — contrats de rapports et clôtures, 08/10/2026
+
+Le [dictionnaire Phase 5](phase5-contracts.md) fixe les sources, les périodes, les devises, les filtres et la matrice d'accès. D37 contrôlée : aucun prix courant ne recalculera les ventes natives ni leur CMV. Le CMV d'un retour vendable reprend proportionnellement le total de l'allocation originale, avec cumul et arrondi à six places pour reprendre exactement le coût après plusieurs retours fractionnaires. L'activité à coût inconnu reste signalée même si quantités vendues et retournées se compensent.
+
+Pause personnelle indicative, session physique avec comptage Phase 4, puis journée récapitulative : actions distinctes. La clôture journalière ne ferme jamais une caisse. Clé unique boutique/date/type ; initial conservé, correction à 23h55 et notification explicite ; reprise après interruption. Payload, PDF et empreintes conservés, fichiers privés et droits revérifiés avant consultation/envoi. Les opérations apparues après la photographie sont retrouvées par identifiants même si leur transaction avait commencé avant la borne.
+
+Heures de pointe : moyenne sur jours calendaires sélectionnés, zéros inclus, trois pics/creux, égalités par heure. Excel et PDF appliquent les mêmes accès que les pages. Email externe reste conditionné à un transport réel configuré ; log/array ne sont pas une livraison. Sauvegarde quotidienne et restauration RPO24h/RTO8h demeurent le lot exploitation Phase 7.

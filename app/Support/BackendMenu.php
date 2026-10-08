@@ -48,6 +48,7 @@ class BackendMenu
         }
         if ($user->can('cash_session_manage')) {
             $items[] = self::item('Cash sessions', 'fas fa-cash-register', 'backend.admin.cash.index', ['backend.admin.cash.*']);
+            $items[] = self::item('reporting.workday', 'fas fa-cash-register', 'backend.admin.reporting.workday');
         }
         if ($user->can('expense_view')) {
             $items[] = self::item('Expenses', 'fas fa-wallet', 'backend.admin.expenses.index', ['backend.admin.expenses.*']);
@@ -150,21 +151,21 @@ class BackendMenu
             $user->can('stock_view') ? self::item('Expiry alerts', 'fas fa-circle', 'backend.admin.stock.expiry-alerts') : null,
         ]);
 
-        // --- Rapports -------------------------------------------------------
-        $items[] = self::group('Reports', 'fas fa-chart-bar', [
-            $user->can('reports_summary')
-                ? self::item('Sales Summary', 'fas fa-circle', 'backend.admin.sale.summery')
-                : null,
-            $user->can('reports_sales')
-                ? self::item('Sales', 'fas fa-circle', 'backend.admin.sale.report')
-                : null,
-            $user->can('reports_inventory')
-                ? self::item('Inventory', 'fas fa-circle', 'backend.admin.inventory.report')
-                : null,
-        ]);
-
+        // --- Rapports Phase 5 -----------------------------------------------
+        $reports = [];
+        foreach (\App\Services\ReportingService::TYPES as $type => $permission) {
+            if ($user->can($permission) && ($type !== 'history' || $user->hasRole('Admin'))) {
+                $reports[] = self::item('reporting.'.$type, 'fas fa-circle', 'backend.admin.reporting.index', [], '', ['type' => $type]);
+            }
+        }
+        if ($user->hasAllPermissions(['daily_summary_view', 'reports_summary', 'reports_sales', 'reports_inventory'])) {
+            $reports[] = self::item('reporting.daily_summary', 'fas fa-circle', 'backend.admin.reporting.summaries');
+        }
+        $items[] = self::group('Reports', 'fas fa-chart-bar', $reports);
         // --- Reglages -------------------------------------------------------
         $settings = self::group('Website Settings', 'fas fa-cog', [
+            $user->hasRole('Admin') && $user->hasAllPermissions(['daily_summary_close', 'daily_summary_view', 'reports_summary', 'reports_sales', 'reports_inventory', 'user_view', 'point_of_sale_manage_all'])
+                ? self::item('reporting.summary_settings', 'fas fa-envelope', 'backend.admin.reporting.summary-settings') : null,
             $user->hasAnyPermission([
                 'website_settings', 'contact_settings', 'socials_settings', 'style_settings',
                 'custom_settings', 'notification_settings', 'website_status_settings',
@@ -227,13 +228,14 @@ class BackendMenu
         string $icon,
         string $route,
         array $extraPatterns = [],
-        string $urlSuffix = ''
+        string $urlSuffix = '',
+        array $parameters = []
     ): array {
         return [
             'type' => self::TYPE_ITEM,
             'label' => __($label),
             'icon' => $icon,
-            'url' => route($route).$urlSuffix,
+            'url' => route($route, $parameters).$urlSuffix,
             'active' => request()->routeIs(array_merge([$route], $extraPatterns)),
             'children' => [],
         ];

@@ -198,3 +198,23 @@ Les chiffres en tête décrivent l'inventaire historique de 2026 ; ce complémen
 | Liste étiquettes et PDF | price_labels |
 
 `SaleWorkflowPermissionSeeder` ajoute neuf permissions à Admin ; les rôles existants `sale_create` obtiennent leur caisse, ceux `sale_update` l'encaissement. Il ne crée pas d'affectation boutique. Les routes destructives historiques de vente sont supprimées ; correction explicite à la place. `route:cache` réussi à la clôture.
+
+## Phase 5 — routes de rapports, 08/10/2026
+
+Le dashboard existant garde `dashboard_view` ; les trois anciennes routes de rapport délèguent au service Phase 5 et gardent leurs permissions. `point_of_sale_access` et `PointOfSale::accessibleBy` s'appliquent aux filtres et documents natifs.
+
+| Route | Autorisation serveur |
+|---|---|
+| GET `admin/reporting/{type}` | `reports_summary` (summary/cash/expenses), `reports_sales` (sales/seller/shop/category/product/peaks), `reports_inventory` (stock/expiry) ; contrôleur dynamique |
+| GET `admin/reporting/{type}/export/{xlsx,pdf}` | Exactement la même résolution type/permission/portée |
+| GET `admin/reporting/history` et ses exports | Admin ET `reports_history` ; dates héritées brutes, null-shop explicitement historique |
+| GET `admin/reporting/workday`, POST `pause` | `cash_session_manage`, portée boutique ; pause propre utilisateur |
+| GET `admin/reporting/summaries`, `{id}`, `{id}/pdf` | `daily_summary_view`, `reports_summary`, `reports_sales`, `reports_inventory`, accès à la boutique |
+| POST `admin/reporting/close-day` | Admin, `daily_summary_close` et droits de lecture de synthèse ; CSRF |
+
+`daily_summary_receive` s'ajoute aux droits de lecture pour recevoir un email ; suspension/affectation/capacités vérifiées de nouveau avant envoi. Seeder additif : quatre capacités nouvelles accordées uniquement au rôle Admin par défaut, aucune affectation inventée. Les anciens comptages de ce document restent datés ; cette section décrit uniquement le périmètre modifié.
+
+POST `admin/reporting/mail-activation` : Admin entreprise, `daily_summary_close`, `user_view`, `point_of_sale_manage_all` et droits complets de lecture des synthèses ; CSRF, consentement et empreinte du manifeste. L'envoi ne démarre qu'après confirmation explicite des adresses/boutiques et du contenu. Un changement d'adresse/boutique reste en attente de nouvelle approbation.
+# Paramètres de synthèse quotidienne (Phase 5)
+
+GET/POST `admin/settings/daily-summary` : Admin, `daily_summary_close`, `user_view`, `point_of_sale_manage_all`, puis mêmes exigences de consultation que la synthèse (`daily_summary_view`, `reports_summary`, `reports_sales`, `reports_inventory`, accès boutique). Liste des adresses et activation séparées du login. Consentement et SMTP requis pour activer ; désactivation possible sans consentement.

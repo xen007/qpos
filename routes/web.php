@@ -74,6 +74,19 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+    Route::get('settings/daily-summary', [\App\Http\Controllers\Backend\ReportingController::class, 'summarySettings'])->name('reporting.summary-settings')->middleware(['permission:daily_summary_close', 'permission:user_view', 'permission:point_of_sale_manage_all', 'role:Admin']);
+    Route::post('settings/daily-summary', [\App\Http\Controllers\Backend\ReportingController::class, 'summarySettingsUpdate'])->name('reporting.summary-settings.update')->middleware(['permission:daily_summary_close', 'permission:user_view', 'permission:point_of_sale_manage_all', 'role:Admin']);
+    Route::controller(\App\Http\Controllers\Backend\ReportingController::class)->prefix('reporting')->name('reporting.')->group(function () {
+        Route::get('workday', 'workday')->name('workday')->middleware('permission:cash_session_manage');
+        Route::get('summaries', 'summaries')->name('summaries')->middleware('permission:daily_summary_view');
+        Route::get('summaries/{id}', 'summary')->whereNumber('id')->name('summary')->middleware('permission:daily_summary_view');
+        Route::get('summaries/{id}/{format}', 'summary')->whereNumber('id')->whereIn('format', ['pdf'])->name('summary-export')->middleware('permission:daily_summary_view');
+        Route::post('close-day', 'closeDay')->name('close-day')->middleware(['permission:daily_summary_close', 'role:Admin']);
+        Route::post('pause', 'pause')->name('pause')->middleware('permission:cash_session_manage');
+        Route::post('mail-activation', 'mailActivation')->name('mail-activation')->middleware(['permission:daily_summary_close', 'permission:user_view', 'permission:point_of_sale_manage_all', 'role:Admin']);
+        Route::get('{type}/export/{format}', 'export')->whereIn('type', array_keys(\App\Services\ReportingService::TYPES))->whereIn('format', ['xlsx', 'pdf'])->name('export');
+        Route::get('{type}', 'index')->whereIn('type', array_keys(\App\Services\ReportingService::TYPES))->name('index');
+    });
     Route::get('cash', [SaleWorkflowController::class, 'cash'])->name('cash.index')->middleware('permission:cash_session_manage');
     Route::get('cash/state', [SaleWorkflowController::class, 'cashState'])->name('cash.state')->middleware('permission:sale_create');
     Route::post('cash/open', [SaleWorkflowController::class, 'open'])->name('cash.open')->middleware('permission:cash_session_manage');

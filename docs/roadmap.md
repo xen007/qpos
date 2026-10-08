@@ -137,7 +137,7 @@ Cette roadmap est la référence de pilotage. Chaque lot consigne résultat, fic
 | D34 | Corrigé pour les paiements natifs ; héritage documenté | Reçu daté avec instantané du solde après paiement et affectation explicite à une vente | Reçus historiques sans instantané identifiés explicitement comme non historiques |
 | D35 | Non reproduit — IDs historiques requis | Reçus natifs ciblent une vente via son affectation | Obtenir IDs des ventes et URL du reçu d'origine pour conclure sur l'incident ancien |
 | D36 | Compris | `products.purchase_price` est un coût de référence ; un coût réel différent reste sur chaque achat | Phases 2–3 ; achat actuel ne met pas automatiquement à jour la référence produit |
-| D37 | À vérifier | Effet d'un changement du prix courant sur statistiques et marges historiques | Phase 5 ; contrôler chaque rapport et ses sources |
+| D37 | Vérifiée — Phase 5 | Rapports natifs fondés sur les instantanés de ligne et les allocations de coût | Changement de prix/coût catalogue ou de coût de lot sans effet sur les valeurs historisées ; contrôlé sur copie. |
 | D38 | Validée — 01/10/2026 | Sauvegarde quotidienne en fin de journée ; RPO de 24 heures | Le serveur étant éteint la nuit, cette fréquence borne la perte visée à une journée ; surveiller la réussite et vérifier la restaurabilité. Phase 7 |
 | D39 | Validée — 01/10/2026 | Aucune réservation panier ; contrôle et verrouillage du stock au checkout | Le panier ne bloque pas le stock ; revérifier la disponibilité et verrouiller les lignes concernées dans la transaction de vente pour prévenir la survente concurrente. Phase 4 |
 
@@ -295,6 +295,7 @@ Synthèse quotidienne PDF/email : installer transport, planification et traiteme
 
 Critère : chiffres rapprochés des opérations, exports cohérents, performances mesurées et synthèse vérifiée.
 
+**Extension validée le 08/10/2026 — Phase 5 :** huit sous-lots 5.A → 5.H ; rapports natifs XAF séparés des historiques, coûts inconnus exclus du stock valorisé, résultat = ventes nettes − CMV − dépenses. Rapport des heures de pointe : profil moyen sur 24 heures, top 3 pics/creux, filtres jour/semaine/mois/boutique et histogrammes Excel/PDF. Pause personnelle, session et journée distinctes ; clôture manuelle Admin, fallback 23h55 Africa/Douala sans clôture de caisse, correction automatique explicite et versions/PDF immuables, livraisons tracées et reprises contrôlées. Voir [contrats Phase 5](phase5-contracts.md), [exploitation](phase5-operations.md) et [bilan](phase5-report.md).
 ### Phase 6 — Administration complète
 
 Utilisateurs/rôles/permissions, dernier administrateur protégé, correction noms/identifiants des permissions ; paramètres, devises, URL, écritures de configuration et caches ; connexion/déconnexion/récupération/profil/Google si retenu ; limites de tentatives/sessions/FR-EN ; consultation audit ; méthodes mortes recensées.
@@ -302,6 +303,8 @@ Utilisateurs/rôles/permissions, dernier administrateur protégé, correction no
 Les protections indispensables sont livrées dans les lots qui en dépendent. Un défaut bloquant d'autorisation n'attend pas cette phase. Critère : comptes fiables, autorisations cohérentes, paramètres exploitables.
 
 ### Phase 7 — Exploitation et intégrations
+
+Bons de commande intelligents (prévision stock, suggestion automatique selon consommation + délais fournisseurs). Fonction reportée en Phase 7 : consommation, saisonnalité, délais fournisseurs et seuils produit à définir ; hors Phase 5.
 
 Centre de notifications/badges/temps réel ; email puis SMS/WhatsApp selon comptes, budget et prestataires ; canaux autorisés par utilisateur/boutique ; scheduler/workers/reprises/surveillance. Externaliser les sauvegardes vers la destination choisie ; documenter protection et restauration.
 
