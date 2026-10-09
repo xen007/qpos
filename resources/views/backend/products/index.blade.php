@@ -13,6 +13,7 @@
 @endsection
 
 @section('content')
+    <div class="qpos-product-catalogue qpos-touch-workspace">
     <x-backend.card :padded="false">
         <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table id="datatables" class="w-full border-collapse text-sm">
@@ -31,6 +32,7 @@
             </table>
         </div>
     </x-backend.card>
+    </div>
 
     <script type="application/json" id="qpos-products-table">
         {!! json_encode(
@@ -76,6 +78,10 @@
             const escapeHtml = window.qposTableActions.escapeHtml;
 
             $('#datatables').DataTable({
+                createdRow: (row) => {
+                    const headings = Array.from(document.querySelectorAll('#datatables thead th')).map(th => th.textContent.trim());
+                    Array.from(row.cells).forEach((cell, index) => cell.dataset.label = headings[index]);
+                },
                 processing: true,
                 serverSide: true,
                 ordering: true,
@@ -104,14 +110,14 @@
                     {
                         data: 'price_value',
                         name: 'price_value',
-                        render: (value, type, row) => Number(row.price_original) > Number(row.price_value) ?
-                            `${row.price_value}<br><del class="text-qpos-muted">${row.price_original}</del>` :
-                            row.price_value,
+                        render: (value, type, row) => type !== 'display' ? value : Number(row.price_original) > Number(row.price_value) ?
+                            `${window.qposTableActions.money(row.price_value)}<br><del class="text-qpos-muted">${window.qposTableActions.money(row.price_original)}</del>` :
+                            window.qposTableActions.money(row.price_value),
                     },
                     {
                         data: 'quantity_value',
                         name: 'quantity_value',
-                        render: (value, type, row) => `${row.quantity_value ?? ''} ${escapeHtml(row.unit_short ?? '')}`,
+                        render: (value, type, row) => type !== 'display' ? value : `${window.qposTableActions.quantity(row.quantity_value)} ${escapeHtml(row.unit_short ?? '')}`,
                     },
                     {
                         data: 'created_at',

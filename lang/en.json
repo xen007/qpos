@@ -1091,5 +1091,19 @@
     "Debt follow-up history": "Debt follow-up history",
     "Reminder recorded": "Reminder recorded",
     "reminder": "Manual reminder",
-    "due_date_change": "Due date change"
+    "due_date_change": "Due date change",
+    "Open your cash session": "Open your cash session",
+    "Open my session": "Open my session",
+    "Advanced options": "Advanced options",
+    "Ask an authorized cashier to open their session.": "Ask an authorized cashier to open their session.",
+    "Updating cart...": "Updating cart...",
+    "Loading cart...": "Loading cart...",
+    "Loading exchange...": "Loading exchange...",
+    "Unable to load the POS. Reload or check your access.": "Unable to load the POS. Reload or check your access.",
+    "Statistics": "Statistics",
+    "Customers served": "Customers served",
+    "Registered customers in selected period": "Registered customers in selected period",
+    "Low stock": "Low stock",
+    "Current available stock below 10 base units, excluding shortages": "Current available stock below 10 base units, excluding shortages",
+    "base units": "base units"
 }

@@ -1091,5 +1091,19 @@
     "Debt follow-up history": "Historique du suivi des dettes",
     "Reminder recorded": "Relance enregistrée",
     "reminder": "Relance manuelle",
-    "due_date_change": "Changement d'échéance"
+    "due_date_change": "Changement d'échéance",
+    "Open your cash session": "Ouvrez votre session caisse",
+    "Open my session": "Ouvrir ma session",
+    "Advanced options": "Options avancées",
+    "Ask an authorized cashier to open their session.": "Confiez l’encaissement à un caissier autorisé.",
+    "Updating cart...": "Mise à jour du panier…",
+    "Loading cart...": "Chargement du panier…",
+    "Loading exchange...": "Chargement de l’échange…",
+    "Unable to load the POS. Reload or check your access.": "Impossible de charger le POS. Rechargez la page ou vérifiez vos accès.",
+    "Statistics": "Statistiques",
+    "Customers served": "Clients servis",
+    "Registered customers in selected period": "Clients enregistrés servis sur la période",
+    "Low stock": "Stock bas",
+    "Current available stock below 10 base units, excluding shortages": "Stock disponible actuel inférieur à 10 unités de base, hors ruptures",
+    "base units": "unités de base"
 }

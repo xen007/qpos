@@ -1,3 +1,5 @@
+import {money, quantity} from "./utils/pos-format";
+
 /**
  * Actions de ligne des tables DataTables (pages migrees vers Tailwind).
  *
@@ -118,5 +120,5 @@
         }</span>`;
     };
 
-    window.qposTableActions = { buttons, inline, statusBadge, escapeHtml, icon };
+    window.qposTableActions = { buttons, inline, statusBadge, escapeHtml, icon, money, quantity };
 })();

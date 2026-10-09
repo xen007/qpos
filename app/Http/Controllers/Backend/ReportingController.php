@@ -32,10 +32,26 @@ class ReportingController extends Controller
         abort_unless($r->user()?->can('dashboard_view'), 403);
         $filter = ReportFilter::fromRequest($r);
         $s = app(ReportingService::class);
+        $clients = $s->events($filter)->where('event_kind', 'sale')->join('orders as customer_orders', 'customer_orders.id', '=', 'events.source_id')->join('customers as served', 'served.id', '=', 'customer_orders.customer_id')->where(fn ($q) => $q->whereNull('served.internal_code')->orWhere('served.internal_code', '<>', 'walking'))->distinct()->count('served.id');
+        // Multi-shop stock is evaluated per shop; never infer an inaccessible shop.
+        $lowStock = collect($filter->shops)->sum(function ($shop) use ($filter) {
+            $products = \App\Models\Product::query()->where('status', true)
+                ->when($filter->product !== null, fn ($q) => $q->where('products.id', $filter->product))
+                ->when($filter->category !== null, fn ($q) => $q->where('products.category_id', $filter->category));
+            return DB::query()->fromSub(app(\App\Services\StockAvailability::class)->attach($products, $shop), 'available')
+                ->where('stock_available', '>', 0)->where('stock_available', '<', 10)->count();
+        });
         return view('backend.reporting.dashboard', $this->choices($r, $filter) + [
             'filter' => $filter, 'summary' => $s->summary($filter), 'daily' => $s->daily($filter),
             'peaks' => $s->peaks($filter), 'stock' => $s->stockTotals($filter), 'types' => ReportingService::TYPES,
+            'clients' => $clients, 'lowStock' => $lowStock,
         ]);
+    }
+
+    public function statistics(Request $r)
+    {
+        $dashboard = $this->dashboard($r);
+        return view('backend.reporting.statistics', $dashboard->getData());
     }
 
     public function index(Request $r, string $type)

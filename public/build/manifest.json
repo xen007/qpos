@@ -1,25 +1,29 @@
 {
-  "_WorkspaceUI-B9oWEvd7.js": {
-    "file": "assets/WorkspaceUI-B9oWEvd7.js",
+  "_WorkspaceUI-CAiSyKaR.js": {
+    "file": "assets/WorkspaceUI-CAiSyKaR.js",
     "name": "WorkspaceUI",
     "imports": [
-      "_jsx-runtime-CMlM1iwe.js",
-      "_useDocumentTheme-BKEELw4g.js"
+      "_jsx-runtime-bDsl9zqz.js",
+      "_useDocumentTheme-BG44nHvh.js"
     ]
   },
-  "_jsx-runtime-CMlM1iwe.js": {
-    "file": "assets/jsx-runtime-CMlM1iwe.js",
+  "_jsx-runtime-bDsl9zqz.js": {
+    "file": "assets/jsx-runtime-bDsl9zqz.js",
     "name": "jsx-runtime"
   },
-  "_useDocumentTheme-BKEELw4g.js": {
-    "file": "assets/useDocumentTheme-BKEELw4g.js",
+  "_pos-format-kDzrg1b7.js": {
+    "file": "assets/pos-format-kDzrg1b7.js",
+    "name": "pos-format"
+  },
+  "_useDocumentTheme-BG44nHvh.js": {
+    "file": "assets/useDocumentTheme-BG44nHvh.js",
     "name": "useDocumentTheme",
     "imports": [
-      "_jsx-runtime-CMlM1iwe.js"
+      "_jsx-runtime-bDsl9zqz.js"
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-Bbmmz66Y.css",
+    "file": "assets/app-D0oAXB21.css",
     "name": "app",
     "names": [
       "app.css"
@@ -37,12 +41,12 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-v9SW8rXS.js",
+    "file": "assets/app-BwFd7jaY.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
     "imports": [
-      "_jsx-runtime-CMlM1iwe.js"
+      "_jsx-runtime-bDsl9zqz.js"
     ],
     "dynamicImports": [
       "resources/js/components/Pos.jsx",
@@ -50,37 +54,38 @@
     ]
   },
   "resources/js/backend-toast.jsx": {
-    "file": "assets/backend-toast-CHdx4Fkd.js",
+    "file": "assets/backend-toast--pr-9VGa.js",
     "name": "backend-toast",
     "src": "resources/js/backend-toast.jsx",
     "isEntry": true,
     "imports": [
-      "_jsx-runtime-CMlM1iwe.js",
-      "_useDocumentTheme-BKEELw4g.js"
+      "_jsx-runtime-bDsl9zqz.js",
+      "_useDocumentTheme-BG44nHvh.js"
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-B-wvRm4L.js",
+    "file": "assets/Pos-CyU7YmAp.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_jsx-runtime-CMlM1iwe.js",
+      "_jsx-runtime-bDsl9zqz.js",
       "resources/js/app.jsx",
-      "_useDocumentTheme-BKEELw4g.js",
-      "_WorkspaceUI-B9oWEvd7.js"
+      "_pos-format-kDzrg1b7.js",
+      "_useDocumentTheme-BG44nHvh.js",
+      "_WorkspaceUI-CAiSyKaR.js"
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-C0otmoPy.js",
+    "file": "assets/Purchase-C-wcLOy6.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,
     "imports": [
-      "_jsx-runtime-CMlM1iwe.js",
+      "_jsx-runtime-bDsl9zqz.js",
       "resources/js/app.jsx",
-      "_useDocumentTheme-BKEELw4g.js",
-      "_WorkspaceUI-B9oWEvd7.js"
+      "_useDocumentTheme-BG44nHvh.js",
+      "_WorkspaceUI-CAiSyKaR.js"
     ]
   },
   "resources/js/dashboard.js": {
@@ -102,10 +107,13 @@
     "isEntry": true
   },
   "resources/js/table-actions.js": {
-    "file": "assets/table-actions-CW_z3FQr.js",
+    "file": "assets/table-actions-N9PGSSJi.js",
     "name": "table-actions",
     "src": "resources/js/table-actions.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_pos-format-kDzrg1b7.js"
+    ]
   },
   "resources/js/theme.js": {
     "file": "assets/theme-CjBbhCrZ.js",

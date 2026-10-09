@@ -41,6 +41,7 @@ class BackendMenu
 
         if ($user->can('dashboard_view')) {
             $items[] = self::item('Dashboard', 'fas fa-tachometer-alt', 'backend.admin.dashboard');
+            $items[] = self::item('Statistics', 'fas fa-chart-bar', 'backend.admin.reporting.statistics');
         }
 
         if ($user->can('sale_create')) {
