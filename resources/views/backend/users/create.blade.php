@@ -14,8 +14,7 @@
                 <x-backend.input name="email" type="email" :label="__('Login Email')" :placeholder="__('Email')"
                     required />
 
-                <x-backend.select name="role" :label="__('Role & Permissions')" :options="$roles->pluck('name', 'id')->all()"
-                    :placeholder="'-- ' . __('Select a role') . ' --'" required />
+                @include('backend.users.roles', ['selectedRoles'=>old('roles',[])])
 
                 <x-backend.input name="password" type="password" :label="__('Login password')"
                     :placeholder="__('Enter your password')" autocomplete="new-password" required />

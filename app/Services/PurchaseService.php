@@ -216,15 +216,20 @@ final class PurchaseService
                 return $existing->load('allocations');
             }
             $allocated = $this->netPaid($purchase);
+            app(PaymentMethodService::class)->validate($shop->id,$data['method'],$data['external_reference']??null);
             if ($allocated->plus($amount)->isGreaterThan((string)$purchase->grand_total))
                 throw ValidationException::withMessages(['amount' => __('The payment exceeds the outstanding purchase balance.')]);
+            if($data['method']==='cash') abort_unless(\App\Models\User::findOrFail($userId)->can('cash_session_manage'),403);
+            $cashSession=$data['method']==='cash' ? app(CashService::class)->active($userId,$shop->id) : null;
             $payment = Payment::create(['point_of_sale_id' => $shop->id, 'user_id' => $userId, 'supplier_id' => $purchase->supplier_id,
+                'cash_session_id'=>$cashSession?->id,
                 'direction' => 'outgoing', 'method' => $data['method'], 'source_amount' => (string)$amount,
                 'received_amount' => (string)$amount, 'change_amount' => '0.000000', 'net_amount' => (string)$amount,
                 'currency_code' => $purchase->currency_code, 'external_reference' => $data['external_reference'] ?? null,
                 'idempotency_key' => $data['idempotency_key'], 'request_hash' => $hash, 'status' => 'posted',
                 'provenance' => 'live', 'occurred_at' => now('Africa/Douala')]);
             PaymentAllocation::create(['payment_id' => $payment->id, 'purchase_id' => $purchase->id, 'amount' => (string)$amount, 'provenance' => 'live']);
+            if($cashSession) app(CashService::class)->movement($cashSession,$userId,'out',(string)$amount,'payment','supplier-cash-'.$payment->id,'Supplier payment #'.$purchase->id,$payment->id);
             $total = $allocated->plus($amount);
             $purchase->forceFill(['payment_status' => $total->isEqualTo((string)$purchase->grand_total) ? 'paid' : 'partial'])->save();
             return $payment->load('allocations');
@@ -273,7 +278,12 @@ final class PurchaseService
                 return $existing;
             }
             $amount = MoneyDecimal::parse((string)$source->net_amount);
+            if($data['method']!==$source->method) throw ValidationException::withMessages(['method'=>__('Refund through the original payment channel.')]);
+            if(isset(PaymentMethodService::LABELS[$data['method']])) app(PaymentMethodService::class)->validate($shop->id,$data['method'],$data['external_reference']??null,true);
+            if($data['method']==='cash') abort_unless(\App\Models\User::findOrFail($userId)->can('cash_session_manage'),403);
+            $cashSession=$data['method']==='cash' ? app(CashService::class)->active($userId,$shop->id) : null;
             $payment = Payment::create([
+                'cash_session_id'=>$cashSession?->id,
                 'point_of_sale_id'=>$shop->id, 'user_id'=>$userId, 'supplier_id'=>$purchase->supplier_id,
                 'direction'=>'incoming', 'method'=>$data['method'], 'source_amount'=>(string)$amount,
                 'received_amount'=>(string)$amount, 'change_amount'=>'0.000000', 'net_amount'=>(string)$amount,
@@ -284,6 +294,7 @@ final class PurchaseService
                 'reason'=>$data['reason'], 'occurred_at'=>now('Africa/Douala'),
             ]);
             PaymentAllocation::create(['payment_id'=>$payment->id,'purchase_id'=>$purchase->id,'amount'=>(string)$amount,'provenance'=>'payment_reversal']);
+            if($cashSession) app(CashService::class)->movement($cashSession,$userId,'in',(string)$amount,'payment','supplier-reversal-cash-'.$payment->id,'Supplier reversal #'.$purchase->id,$payment->id);
             $net = $this->netPaid($purchase);
             $purchase->forceFill(['payment_status'=>$net->isZero() ? 'unpaid' : ($net->isEqualTo((string)$purchase->grand_total) ? 'paid' : 'partial')])->save();
             return $payment->load('allocations');

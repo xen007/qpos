@@ -12,7 +12,7 @@ class StoreUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return (bool)$this->user()?->can('user_create');
     }
 
     /**
@@ -33,9 +33,14 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
-            'role' => 'required|exists:roles,id',
+            'roles'=>'required|array|min:1|max:10',
+            'roles.*'=>'required|integer|distinct|exists:roles,id',
             'password' => 'required|string|min:8|max:255',
             'profile_image' => ['file', new ValidImageType, 'max:2048'],
         ];
+    }
+    protected function prepareForValidation(): void
+    {
+        if(!$this->has('roles') && $this->filled('role')) $this->merge(['roles'=>[$this->input('role')]]);
     }
 }

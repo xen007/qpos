@@ -17,10 +17,15 @@ return new class extends Migration
             $t->string('internal_code', 24)->nullable()->unique();
         });
         $walking = DB::table('customers')->where('name', 'Walking Customer')->get();
-        if ($walking->count() !== 1) {
+        if ($walking->count() === 0
+            && DB::table('customers')->count() === 0
+            && DB::table('orders')->count() === 0) {
+            // Fresh installations receive the walking customer from the seeder.
+        } elseif ($walking->count() === 1) {
+            DB::table('customers')->where('id', $walking->first()->id)->update(['internal_code' => 'walking']);
+        } else {
             throw new RuntimeException('Exactly one Walking Customer must be identified before migration.');
         }
-        DB::table('customers')->where('id', $walking->first()->id)->update(['internal_code' => 'walking']);
         Schema::table('orders', function (Blueprint $t) {
             $t->dropForeign(['customer_id']);
             $t->foreign('customer_id')->references('id')->on('customers')->restrictOnDelete();

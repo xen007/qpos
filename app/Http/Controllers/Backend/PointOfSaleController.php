@@ -47,6 +47,7 @@ class PointOfSaleController extends Controller
             if ($request->boolean('assignment_payload')) {
                 $this->assignUsers($shop, $data['user_ids'] ?? []);
             }
+            $this->settings($request,$shop);
         });
         return to_route('backend.admin.shops.index')->with('success', __('Store saved successfully.'));
     }
@@ -76,6 +77,7 @@ class PointOfSaleController extends Controller
         DB::transaction(function () use ($request, $shop, $data) {
             $shop = PointOfSale::whereKey($shop->id)->lockForUpdate()->firstOrFail();
             $this->authorize('update', $shop);
+            if(!$data['is_active']) $this->assertDeactivation($shop);
             if ($request->boolean('assignment_payload')) {
                 $this->authorize('assign', $shop);
             }
@@ -83,6 +85,7 @@ class PointOfSaleController extends Controller
             if ($request->boolean('assignment_payload')) {
                 $this->assignUsers($shop, $data['user_ids'] ?? []);
             }
+            $this->settings($request,$shop);
         });
         return to_route('backend.admin.shops.index')->with('success', __('Store saved successfully.'));
     }
@@ -93,6 +96,7 @@ class PointOfSaleController extends Controller
         DB::transaction(function () use ($shop) {
             $shop = PointOfSale::whereKey($shop->id)->lockForUpdate()->firstOrFail();
             $this->authorize('delete', $shop);
+            $this->assertDeactivation($shop);
             $shop->update(['is_active' => false]);
         });
         return to_route('backend.admin.shops.index')->with('success', __('Store deactivated; its history is preserved.'));
@@ -154,6 +158,25 @@ class PointOfSaleController extends Controller
         $canAssign = $shop->exists ? Gate::allows('assign', $shop) : Gate::allows('assignNew', PointOfSale::class);
         $users = $canAssign ? User::where('is_suspended', false)->select(['id', 'name'])->orderBy('name')->get() : collect();
         $assignedIds = $shop->exists ? $shop->users()->where('point_of_sale_user.is_active', true)->pluck('users.id')->all() : [];
-        return view('backend.shops.form', compact('shop', 'users', 'assignedIds', 'canAssign'));
+        $workflow=app(\App\Services\ShopWorkflowSettings::class)->get((int)$shop->id);
+        $methods=\Illuminate\Support\Facades\Schema::hasTable('payment_methods') ? DB::table('payment_methods')->where('sale_enabled',true)->get() : collect();
+        $activeMethods=$shop->exists ? array_keys(app(\App\Services\PaymentMethodService::class)->choices($shop->id)) : $methods->where('default_active',true)->pluck('code')->all();
+        return view('backend.shops.form', compact('shop', 'users', 'assignedIds', 'canAssign','workflow','methods','activeMethods'));
+    }
+    private function settings(Request $request, PointOfSale $shop): void
+    {
+        if (!$request->boolean('workflow_payload')) return;
+        abort_unless($request->user()->can('payment_methods_manage') && \Illuminate\Support\Facades\Schema::hasTable('point_of_sale_settings'),403);
+        $v=$request->validate(['pending_sale_enabled'=>'required|boolean','pending_expiry_minutes'=>'required|integer|min:15|max:1440','taken_lease_minutes'=>'required|integer|min:1|max:60','orphan_idle_minutes'=>'required|integer|min:60|max:10080','payment_codes'=>'required|array|min:1|max:7','payment_codes.*'=>'required|string|distinct|in:cash,card,bank_transfer,orange_money,mtn_momo,wave,cheque']);
+        if(!$v['pending_sale_enabled'] && DB::table('pending_sales')->where('point_of_sale_id',$shop->id)->whereIn('state',['pending','taken'])->exists()) throw \Illuminate\Validation\ValidationException::withMessages(['pending_sale_enabled'=>__('Resolve pending sales before disabling handoff.')]);
+        DB::table('point_of_sale_settings')->updateOrInsert(['point_of_sale_id'=>$shop->id],collect($v)->except('payment_codes')->all()+['updated_at'=>now('UTC')]);
+        foreach (DB::table('payment_methods')->where('sale_enabled',true)->get() as $method) DB::table('point_of_sale_payment_method')->updateOrInsert(['point_of_sale_id'=>$shop->id,'payment_method_id'=>$method->id],['is_active'=>in_array($method->code,$v['payment_codes'],true)]);
+    }
+    private function assertDeactivation(PointOfSale $shop): void
+    {
+        $open=DB::table('cash_sessions')->where('point_of_sale_id',$shop->id)->where('state','open')->exists();
+        $stock=DB::table('product_stock')->where('point_of_sale_id',$shop->id)->where(fn($q)=>$q->where('saleable_quantity','>',0)->orWhere('unsaleable_quantity','>',0))->exists();
+        $pending=\Illuminate\Support\Facades\Schema::hasTable('pending_sales')&&DB::table('pending_sales')->where('point_of_sale_id',$shop->id)->whereIn('state',['pending','taken'])->exists();
+        if($open||$stock||$pending) throw \Illuminate\Validation\ValidationException::withMessages(['is_active'=>__('Resolve open cash sessions, pending sales and remaining stock before deactivating this store.')]);
     }
 }

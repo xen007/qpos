@@ -16,6 +16,12 @@ return new class extends Migration
             throw new RuntimeException('Phase 2 catalogue migrations must be applied first.');
         }
 
+        // Fresh installations have no seeded units or legacy products yet.
+        // This conversion only applies when the legacy dozen catalogue exists.
+        if (!DB::table('products')->exists()) {
+            return;
+        }
+
         $piece = DB::table('units')->where('short_name', 'pcs')->where('title', 'Piece')->first();
         $dozen = DB::table('units')->where('short_name', 'dz')->where('title', 'Dozen')->first();
         if (!$piece || !$dozen || !$piece->is_active || !$dozen->is_active) {
@@ -23,6 +29,9 @@ return new class extends Migration
         }
 
         $products = DB::table('products')->where('unit_id', $dozen->id)->orderBy('id')->get();
+        if ($products->isEmpty()) {
+            return;
+        }
         if ($products->count() !== 11) {
             throw new RuntimeException('Expected exactly 11 products with Dozen as base unit; no data was changed.');
         }

@@ -4,7 +4,7 @@
     "scripts": {
         "dev": "vite --config vite.config.js",
         "dev:docker": "vite --config vite.docker.js",
-        "build": "node scripts/build-icons.mjs && vite build --config vite.config.js",
+        "build": "node scripts/build-icons.mjs && vite build --config vite.config.js && node scripts/check-build-css.mjs",
         "build:docker": "vite build --config vite.docker.js"
     },
     "devDependencies": {

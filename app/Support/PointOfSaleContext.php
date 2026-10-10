@@ -15,8 +15,7 @@ final class PointOfSaleContext
     }
     public static function manageableBy(User $user)
     {
-        if (!config('system.multi_shop_enabled', true)) return PointOfSale::query()->whereKey(1);
-        if (PointOfSale::active()->count() === 1) return PointOfSale::active();
+        if ($user->is_suspended || $user->getRoleNames()->isEmpty()) return PointOfSale::query()->whereRaw('1 = 0');
         return PointOfSale::query()->when(!$user->can('point_of_sale_manage_all'), function ($query) use ($user) {
             $query->whereHas('users', fn ($q) => $q->whereKey($user->id)->where('point_of_sale_user.is_active', true));
         });

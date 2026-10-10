@@ -21,6 +21,11 @@
         @if(($report['type'] ?? '') === 'expiry')
             <label class="text-sm">{{ __('reporting.expiry') }}<select name="expiry" class="qpos-control block">@foreach(['expired','7','30','90','unknown'] as $expiry)<option value="{{ $expiry }}" @selected(request('expiry','90') === $expiry)>{{ __('reporting.expiry_'.$expiry) }}</option>@endforeach</select></label>
         @endif
+        @if(($report['type']??'')==='payments')
+            <label>{{ __('reporting.seller') }}<select name="seller_id" class="qpos-control"><option value="">{{ __('All') }}</option>@foreach($sellers as $seller)<option value="{{ $seller->id }}" @selected($filter->seller===$seller->id)>{{ $seller->name }}</option>@endforeach</select></label>
+            <label>{{ __('reporting.cashier') }}<select name="cashier_id" class="qpos-control"><option value="">{{ __('All') }}</option>@foreach($cashiers as $cashier)<option value="{{ $cashier->id }}" @selected($filter->cashier===$cashier->id)>{{ $cashier->name }}</option>@endforeach</select></label>
+            <label>{{ __('reporting.cash_session') }}<input type="number" min="1" name="session_id" list="report-sessions" value="{{ $filter->session }}" class="qpos-control"><datalist id="report-sessions">@foreach($sessions as $session)<option value="{{ $session->id }}">#{{ $session->id }}</option>@endforeach</datalist></label>
+        @endif
         <button class="qpos-button qpos-button-primary qpos-button-md">{{ __('Apply') }}</button>
     </form>
     <p class="mt-3 text-sm text-qpos-muted">{{ $filter->label() }} · {{ __('reporting.custom_hint') }}</p>

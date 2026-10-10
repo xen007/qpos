@@ -298,6 +298,8 @@ Critère : chiffres rapprochés des opérations, exports cohérents, performance
 **Extension validée le 08/10/2026 — Phase 5 :** huit sous-lots 5.A → 5.H ; rapports natifs XAF séparés des historiques, coûts inconnus exclus du stock valorisé, résultat = ventes nettes − CMV − dépenses. Rapport des heures de pointe : profil moyen sur 24 heures, top 3 pics/creux, filtres jour/semaine/mois/boutique et histogrammes Excel/PDF. Pause personnelle, session et journée distinctes ; clôture manuelle Admin, fallback 23h55 Africa/Douala sans clôture de caisse, correction automatique explicite et versions/PDF immuables, livraisons tracées et reprises contrôlées. Voir [contrats Phase 5](phase5-contracts.md), [exploitation](phase5-operations.md) et [bilan](phase5-report.md).
 ### Phase 6 — Administration complète
 
+Suivi post-audit : compléter les filtres métier du catalogue ; les corrections de recherche, tri numérique et lecture mobile du présent lot ne constituent pas ces filtres avancés.
+
 Utilisateurs/rôles/permissions, dernier administrateur protégé, correction noms/identifiants des permissions ; paramètres, devises, URL, écritures de configuration et caches ; connexion/déconnexion/récupération/profil/Google si retenu ; limites de tentatives/sessions/FR-EN ; consultation audit ; méthodes mortes recensées.
 
 Les protections indispensables sont livrées dans les lots qui en dépendent. Un défaut bloquant d'autorisation n'attend pas cette phase. Critère : comptes fiables, autorisations cohérentes, paramètres exploitables.
@@ -305,6 +307,8 @@ Les protections indispensables sont livrées dans les lots qui en dépendent. Un
 ### Phase 7 — Exploitation et intégrations
 
 Bons de commande intelligents (prévision stock, suggestion automatique selon consommation + délais fournisseurs). Fonction reportée en Phase 7 : consommation, saisonnalité, délais fournisseurs et seuils produit à définir ; hors Phase 5.
+
+Suivi post-audit : « assurances » reportées en Phase 7, périmètre fonctionnel à préciser avant conception. Les integrations de paiement réelles, SMTP et validations de matériel restent distinctes du traçage manuel testé en copie.
 
 Centre de notifications/badges/temps réel ; email puis SMS/WhatsApp selon comptes, budget et prestataires ; canaux autorisés par utilisateur/boutique ; scheduler/workers/reprises/surveillance. Externaliser les sauvegardes vers la destination choisie ; documenter protection et restauration.
 

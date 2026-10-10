@@ -7,7 +7,7 @@
     <p class="text-sm text-qpos-muted">{{ __('reporting.native_notice') }}</p>
     @include('backend.reporting.metrics')
     <div class="my-4 grid gap-4 sm:grid-cols-2">
-        <x-backend.stat-card :label="__('reporting.saleable_value')" :value="\App\Support\SaleFormat::decimal($stock['saleable_value']).' XAF'" icon="fas fa-box" />
+        <x-backend.stat-card :label="__('reporting.saleable_value')" :value="\App\Support\SaleFormat::moneyDisplay($stock['saleable_value']).' XAF'" icon="fas fa-box" />
         <x-backend.stat-card :label="__('reporting.unknown_quantity')" :value="\App\Support\SaleFormat::decimal($stock['unknown_quantity'])" icon="fas fa-box" />
     </div>
     <p class="text-sm text-qpos-muted">{{ __('reporting.stock_current') }} {{ __('reporting.cost_notice') }}</p>

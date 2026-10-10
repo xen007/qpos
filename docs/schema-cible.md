@@ -222,3 +222,15 @@ Migration `2026_10_08_160000_create_reporting_workflows` additive :
 - `reporting_runtime` : activation, curseur de rattrapage et dernier passage du scheduler.
 
 Index liés aux requêtes de rapports : ventes boutique/création/ID si équivalent absent, correctifs création/vente, dépenses boutique/date et sessions boutique/clôture. Les fenêtres SQL des retours calculent la reprise cumulative des coûts à partir des allocations originales ; aucun changement des lots, mouvements ou devises historiques. Rollback destructif refusé.
+
+## Complément post-audit Phase 5 — 10/10/2026
+
+Migration additive `2026_10_09_230000_add_post_audit_workflows.php`, appliquée aux copies de validation uniquement avant déploiement accepté :
+
+- `payment_methods` : code canonique, libellé, espèces physiques, référence requise, usage vente et activation par défaut ; `point_of_sale_payment_methods` : activation par boutique, paire unique boutique/moyen.
+- `point_of_sale_settings` : passation vendeur/caissier, expiration de préparation, durée du bail de prise et délai d'inactivité des caisses.
+- `pending_sales` : boutique, vendeur, caissier éventuel, client, devise, clé/hash de soumission, prix proposé, état, échéance/bail, clé finale et ordre terminé. `pending_sale_items` : produit/conditionnement/quantité et instantané de prix par ligne ; aucune liste de lignes métier stockée en JSON. `pending_sale_events` : auteur, action, motif, données de preuve et instant UTC.
+- `cash_session_supervisions` : caisse, auteur de supervision, comptage, motif et preuve ; supervision unique par session.
+- `orders.prepared_by_user_id` : auteur de préparation distinct de `user_id` encaissant. `payments.original_payment_id` : lien de remboursement au paiement client original ; `method` accepte les codes canoniques étendus.
+
+Les tables de stock, allocations de coût et historiques ne sont pas réécrites. Le retour arrière destructif de ce complément est refusé ; une restauration vérifiée constitue la procédure de retour avant déploiement.

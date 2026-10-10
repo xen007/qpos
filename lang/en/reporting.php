@@ -1,6 +1,10 @@
 <?php
 
 return array (
+  'payments'=>'Payment method breakdown', 'bank_transfer'=>'Bank transfer', 'orange_money'=>'Orange Money', 'mtn_momo'=>'MTN Mobile Money', 'wave'=>'Wave', 'cheque'=>'Cheque',
+  'cashier'=>'Cashier', 'unique_sales'=>'Unique sales in period', 'allocations_count'=>'Allocation count',
+  'sales_received'=>'Sale receipts', 'debt_received'=>'Debt collections', 'refunds'=>'Customer refunds', 'supplier_out'=>'Supplier payments', 'supplier_in'=>'Supplier refunds', 'internal_in'=>'Internal transfers in', 'internal_out'=>'Internal transfers out', 'net_flows'=>'Recorded net flows',
+  'flow_notice'=>'A mixed sale counts once in unique sales. Per-method sale counts are not additive. Recorded flows are not a certified bank balance.',
   'cash_method' => 'Cash',
   'delivery_address' => 'Delivery address',
   'delivery_address_notice' => 'This notification address does not change the login account. Select recipients and review addresses before confirming.',

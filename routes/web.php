@@ -74,6 +74,12 @@ Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallba
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+    Route::get('pending-sales',[\App\Http\Controllers\Backend\PendingSaleController::class,'index'])->name('pending.index');
+    Route::post('pending-sales',[\App\Http\Controllers\Backend\PendingSaleController::class,'submit'])->name('pending.submit')->middleware('permission:pending_sale_prepare');
+    Route::post('pending-sales/{id}/take',[\App\Http\Controllers\Backend\PendingSaleController::class,'take'])->whereNumber('id')->name('pending.take')->middleware('permission:pending_sale_collect');
+    Route::get('pending-sales/{id}/quote',[\App\Http\Controllers\Backend\PendingSaleController::class,'quote'])->whereNumber('id')->name('pending.quote')->middleware('permission:pending_sale_collect');
+    Route::post('pending-sales/{id}/complete',[\App\Http\Controllers\Backend\PendingSaleController::class,'complete'])->whereNumber('id')->name('pending.complete')->middleware('permission:pending_sale_collect');
+    Route::post('pending-sales/{id}/resolve',[\App\Http\Controllers\Backend\PendingSaleController::class,'resolve'])->whereNumber('id')->name('pending.resolve');
     Route::get('settings/daily-summary', [\App\Http\Controllers\Backend\ReportingController::class, 'summarySettings'])->name('reporting.summary-settings')->middleware(['permission:daily_summary_close', 'permission:user_view', 'permission:point_of_sale_manage_all', 'role:Admin']);
     Route::post('settings/daily-summary', [\App\Http\Controllers\Backend\ReportingController::class, 'summarySettingsUpdate'])->name('reporting.summary-settings.update')->middleware(['permission:daily_summary_close', 'permission:user_view', 'permission:point_of_sale_manage_all', 'role:Admin']);
     Route::controller(\App\Http\Controllers\Backend\ReportingController::class)->prefix('reporting')->name('reporting.')->group(function () {
@@ -89,6 +95,8 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::get('{type}', 'index')->whereIn('type', array_keys(\App\Services\ReportingService::TYPES))->name('index');
     });
     Route::get('cash', [SaleWorkflowController::class, 'cash'])->name('cash.index')->middleware('permission:cash_session_manage');
+    Route::get('cash-supervision',[\App\Http\Controllers\Backend\CashSupervisionController::class,'index'])->name('cash.supervision')->middleware('permission:cash_session_supervise');
+    Route::post('cash-supervision/{id}/close',[\App\Http\Controllers\Backend\CashSupervisionController::class,'close'])->whereNumber('id')->name('cash.supervised-close')->middleware('permission:cash_session_supervise');
     Route::get('cash/state', [SaleWorkflowController::class, 'cashState'])->name('cash.state')->middleware('permission:sale_create');
     Route::post('cash/open', [SaleWorkflowController::class, 'open'])->name('cash.open')->middleware('permission:cash_session_manage');
     Route::post('cash/{session}/close', [SaleWorkflowController::class, 'close'])->whereNumber('session')->name('cash.close')->middleware('permission:cash_session_manage');

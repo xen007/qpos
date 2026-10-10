@@ -316,7 +316,21 @@ class AuthController extends Controller
     public function redirectUser()
     {
         if (Auth::check()) {
-            return redirect()->route('backend.admin.dashboard');
+            $user = Auth::user();
+
+            if ($user->can('dashboard_view')) {
+                return redirect()->route('backend.admin.dashboard');
+            }
+
+            if ($user->can('sale_create')) {
+                return redirect()->route('backend.admin.cart.index');
+            }
+
+            if ($user->can('cash_session_manage')) {
+                return redirect()->route('backend.admin.cash.index');
+            }
+
+            return redirect()->route('backend.admin.profile');
         } else {
             return redirect()->route('login')->with('error', __('You are not logged in'));
         }

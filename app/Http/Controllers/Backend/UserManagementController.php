@@ -127,6 +127,7 @@ class UserManagementController extends Controller
     public function create(StoreUserRequest $request)
     {
         if ($request->isMethod('post')) {
+            $selectedRoles=\App\Support\RoleAssignment::resolve($request->user(),$request->input('roles'));
             $newUser = new User();
             $newUser->name = $request->name;
             $newUser->email = $request->email;
@@ -138,12 +139,11 @@ class UserManagementController extends Controller
             }
             $newUser->save();
 
-            $role = Role::find($request->role);
-            $newUser->syncRoles($role);
+            $newUser->syncRoles($selectedRoles->all());
 
             return to_route('backend.admin.users')->with('success', __('User added successfully'));
         } else {
-            $roles = Role::all();
+            $roles = \App\Support\RoleAssignment::choices($request->user());
             return view('backend.users.create', compact('roles'));
         }
     }
@@ -152,6 +152,7 @@ class UserManagementController extends Controller
     {
 
         $user = User::with('roles')->findOrFail($id);
+        \App\Support\RoleAssignment::protectTarget($request->user(),$user);
 
         if ($request->isMethod('post')) {
             if (demoUserCheck($user->email)) {
@@ -160,9 +161,9 @@ class UserManagementController extends Controller
 
             $change = DB::transaction(function () use ($request, $user) {
                 $adminRole = Role::where('name', 'Admin')->lockForUpdate()->first();
-                $role = Role::whereKey($request->role)->lockForUpdate()->firstOrFail();
+                $roles = \App\Support\RoleAssignment::resolve($request->user(),$request->input('roles'));
 
-                if ($user->hasRole('Admin') && $role->name !== 'Admin' && $adminRole && User::role('Admin')->count() <= 1) {
+                if ($user->hasRole('Admin') && !$roles->contains('name','Admin') && $adminRole && User::role('Admin')->count() <= 1) {
                     return ['allowed' => false];
                 }
 
@@ -182,7 +183,7 @@ class UserManagementController extends Controller
                     $user->profile_image = $this->fileHandler->fileUploadAndGetPath($request->file('profile_image'), '/public/media/users');
                 }
                 $user->save();
-                $user->syncRoles($role);
+                $user->syncRoles($roles->all());
 
                 return ['allowed' => true, 'old_image' => $request->hasFile('profile_image') ? $oldImage : null];
             });
@@ -200,7 +201,7 @@ class UserManagementController extends Controller
                 return to_route('backend.admin.profile');
             }
 
-            $roles = Role::all();
+            $roles = \App\Support\RoleAssignment::choices($request->user());
             return view('backend.users.edit', compact('user', 'roles'));
         }
     }

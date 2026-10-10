@@ -14,12 +14,14 @@ final class ReportingService
         'category' => 'reports_sales', 'product' => 'reports_sales', 'sales' => 'reports_sales',
         'peaks' => 'reports_sales', 'stock' => 'reports_inventory', 'expiry' => 'reports_inventory',
         'cash' => 'reports_summary', 'expenses' => 'reports_summary', 'history' => 'reports_history',
+        'payments'=>'reports_sales',
     ];
 
     private const KNOWN = '(cs.cost_known = 1 AND cs.currency_code = \'XAF\' AND a.total_cost IS NOT NULL)';
 
     public function events(ReportFilter $f)
     {
+        $seller = \Illuminate\Support\Facades\Schema::hasColumn('orders','prepared_by_user_id') ? 'COALESCE(o.prepared_by_user_id,o.user_id)' : 'o.user_id';
         $costs = DB::table('order_stock_allocations as a')
             ->leftJoin('report_allocation_snapshots as cs', 'cs.order_stock_allocation_id', '=', 'a.id')
             ->join('order_products as cl', 'cl.id', '=', 'a.order_product_id')->join('orders as co', 'co.id', '=', 'cl.order_id')
@@ -35,7 +37,7 @@ final class ReportingService
             ->where('o.currency_code', 'XAF')->where('o.sale_state', '<>', 'legacy')->whereIn('o.point_of_sale_id', $f->shops);
         $f->limit($sales, 'o.created_at');
         $this->lineFilters($sales, $f);
-        $sales->selectRaw("o.created_at as occurred_at, o.point_of_sale_id as shop_id, o.user_id as seller_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'sale' as event_kind, o.id as source_id")
+        $sales->selectRaw("o.created_at as occurred_at, o.point_of_sale_id as shop_id, {$seller} as seller_id, o.user_id as cashier_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'sale' as event_kind, o.id as source_id")
             ->selectRaw('l.effective_total as net_sales')
             ->selectRaw('COALESCE(costs.cogs, 0) as cogs, COALESCE(costs.unknown_quantity, 0) + GREATEST(COALESCE(l.base_quantity, 0) - COALESCE(costs.allocated_quantity, 0), 0) as unknown_quantity, l.base_quantity as quantity');
 
@@ -63,7 +65,7 @@ final class ReportingService
             ->where('o.currency_code', 'XAF')->where('o.sale_state', '<>', 'legacy')->whereIn('o.point_of_sale_id', $f->shops);
         $f->limit($returns, 'sc.created_at');
         $this->lineFilters($returns, $f);
-        $returns->selectRaw("sc.created_at as occurred_at, o.point_of_sale_id as shop_id, o.user_id as seller_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'return' as event_kind, sc.id as source_id")
+        $returns->selectRaw("sc.created_at as occurred_at, o.point_of_sale_id as shop_id, {$seller} as seller_id, o.user_id as cashier_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'return' as event_kind, sc.id as source_id")
             ->selectRaw('-(ri.amount + CASE WHEN ri.id = rt.last_id THEN sc.amount - rt.amount ELSE 0 END) as net_sales')
             ->selectRaw('-CASE WHEN ri.saleable = 1 THEN COALESCE(rc.cogs, 0) ELSE 0 END as cogs, -CASE WHEN ri.saleable = 1 THEN COALESCE(rc.unknown_quantity, 0) + GREATEST(ri.base_quantity - COALESCE(rc.allocated_quantity, 0), 0) ELSE 0 END as unknown_quantity, -ri.base_quantity as quantity');
         return DB::query()->fromSub($sales->unionAll($returns), 'events');
@@ -71,7 +73,7 @@ final class ReportingService
 
     private function lineFilters($q, ReportFilter $f): void
     {
-        if ($f->seller) $q->where('o.user_id', $f->seller);
+        if ($f->seller) $q->whereRaw((\Illuminate\Support\Facades\Schema::hasColumn('orders','prepared_by_user_id') ? 'COALESCE(o.prepared_by_user_id,o.user_id)' : 'o.user_id').' = ?', [$f->seller]);
         if ($f->category) $q->where('ls.category_id', $f->category);
         if ($f->product) $q->where('l.product_id', $f->product);
     }
@@ -103,7 +105,7 @@ final class ReportingService
     {
         // Supplier occurred_at is already Africa/Douala; native customer payment is UTC.
         // Apply range predicates to raw columns so the existing date indexes remain usable.
-        $base = fn () => DB::table('payments')->whereIn('point_of_sale_id', $f->shops)->where('currency_code', 'XAF')->where('provenance', 'live');
+        $base = fn () => DB::table('payments')->whereIn('point_of_sale_id', $f->shops)->where('currency_code', 'XAF')->whereIn('provenance', ['live','payment_reversal']);
         $native = $base()->whereNotNull('receipt_snapshot');
         $f->limit($native, 'occurred_at');
         $supplier = $base()->whereNull('receipt_snapshot')->whereNotNull('supplier_id')
@@ -114,7 +116,8 @@ final class ReportingService
         $supplier->selectRaw($select)->groupBy('method');
         $payments = DB::query()->fromSub($native->unionAll($supplier), 'flows')->selectRaw('method, SUM(incoming) as incoming, SUM(outgoing) as outgoing')->groupBy('method')->get()->keyBy('method');
         $expenses = $this->expenseQuery($f)->selectRaw('e.method, SUM(e.amount) as amount')->groupBy('e.method')->pluck('amount', 'method');
-        return collect(['cash', 'card', 'transfer'])->map(function ($m) use ($payments, $expenses) {
+        return collect(['cash', 'card', 'transfer', 'bank_transfer', 'orange_money', 'mtn_momo', 'wave', 'cheque'])
+            ->merge($payments->keys())->merge($expenses->keys())->unique()->values()->map(function ($m) use ($payments, $expenses) {
             $p = $payments->get($m);
             $in = $p?->incoming ?? '0'; $out = $p?->outgoing ?? '0'; $expense = $expenses->get($m, '0');
             return ['method' => $m, 'incoming' => (string) $in, 'outgoing' => (string) $out, 'expenses' => (string) $expense, 'net' => (string) BigDecimal::of($in)->minus($out)->minus($expense)];
@@ -198,6 +201,7 @@ final class ReportingService
     public function report(ReportFilter $f, string $type): array
     {
         $meta = ['type' => $type, 'filter' => $f, 'currency' => $type === 'history' ? '—' : 'XAF'];
+        if($type==='payments') return $meta + app(PaymentReportService::class)->report($f);
         if ($type === 'summary') {
             $s = $this->summary($f);
             $rows = collect(['net_sales', 'cogs', 'gross_margin', 'expenses', 'management_result', 'unknown_quantity', 'cash_difference', 'open_sessions', 'sales_count', 'returns_count'])->map(fn ($key) => ['indicator' => __('reporting.'.$key), 'value' => $s[$key] ?? '—'])->all();
@@ -211,7 +215,7 @@ final class ReportingService
         }
         if (in_array($type, ['seller', 'shop', 'category', 'product'], true)) return $meta + ['columns' => ['label', 'net_sales', 'cogs', 'gross_margin', 'unknown_quantity', 'quantity'], 'query' => $this->grouped($f, $type)];
         if ($type === 'sales') {
-            return $meta + ['columns' => ['occurred_at', 'event_kind', 'source_id', 'product_label', 'net_sales', 'cogs', 'unknown_quantity'], 'query' => $this->events($f)->orderByDesc('occurred_at')->orderByDesc('source_id')];
+            return $meta + ['columns' => ['occurred_at', 'event_kind', 'source_id', 'seller_id','cashier_id','product_label', 'net_sales', 'cogs', 'unknown_quantity'], 'query' => $this->events($f)->orderByDesc('occurred_at')->orderByDesc('source_id')];
         }
         if (in_array($type, ['stock', 'expiry'], true)) {
             $q = $this->stockQuery($f);

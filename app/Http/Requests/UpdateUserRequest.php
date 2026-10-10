@@ -13,7 +13,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return (bool)$this->user()?->can('user_update');
     }
 
     /**
@@ -40,9 +40,14 @@ class UpdateUserRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($userId),
             ],
-            'role' => 'required|exists:roles,id',
+            'roles'=>'required|array|min:1|max:10',
+            'roles.*'=>'required|integer|distinct|exists:roles,id',
             'password' => 'nullable|string|min:8|max:255',
             'profile_image' => ['file', new ValidImageType, 'max:2048'],
         ];
+    }
+    protected function prepareForValidation(): void
+    {
+        if(!$this->has('roles') && $this->filled('role')) $this->merge(['roles'=>[$this->input('role')]]);
     }
 }

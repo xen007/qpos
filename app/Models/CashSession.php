@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CashSession extends Model
 {
+    protected $attributes = ['state'=>'open'];
     public function freshTimestamp()
     {
         return now('UTC');

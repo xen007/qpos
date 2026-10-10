@@ -45,6 +45,29 @@ class ProductController extends Controller
             $products = Product::query()->with('unit')->latest();
             if ($shop) { app(\App\Services\StockAvailability::class)->attach($products, $shop->id); }
             return DataTables::of($products)
+                ->filter(function ($query) use ($request) {
+                    $search = $request->input('search.value');
+                    if (is_string($search) && trim($search) !== '') {
+                        $term = '%'.trim($search).'%';
+                        $query->where(fn ($q) => $q->where('products.name', 'like', $term)->orWhere('products.sku', 'like', $term));
+                    }
+                })
+                ->order(function ($query) use ($request, $shop) {
+                    $fields = [
+                        'name' => 'products.name', 'created_at' => 'products.created_at', 'is_active' => 'products.status',
+                        'price_value' => "COALESCE(products.catalogue_price_ttc, ROUND(products.price - CASE WHEN products.discount_type = 'fixed' THEN products.discount WHEN products.discount_type = 'percentage' THEN products.price * products.discount / 100 ELSE 0 END, 2))",
+                        'quantity_value' => $shop ? 'COALESCE(stock_available, 0)' : 'products.quantity',
+                    ];
+                    $query->reorder();
+                    foreach (array_slice((array) $request->input('order', []), 0, 8) as $order) {
+                        $index = filter_var($order['column'] ?? null, FILTER_VALIDATE_INT);
+                        $field = $index !== false ? $request->input('columns.'.$index.'.data') : null;
+                        if (is_string($field) && isset($fields[$field]) && in_array($order['dir'] ?? null, ['asc', 'desc'], true)) {
+                            $query->orderByRaw($fields[$field].' '.$order['dir']);
+                        }
+                    }
+                    $query->orderBy('products.id', 'desc');
+                })
                 ->addIndexColumn()
                 // Colonnes neutres : les pages migrees composent leurs cellules
                 // (image, prix, stock, etat, actions) cote page, sans Bootstrap.

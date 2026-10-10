@@ -16,21 +16,34 @@ final class CameroonDemoSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->runningInConsole() || DB::connection()->getDatabaseName() !== 'qpos_seed_2026_10_09') {
-            throw new \RuntimeException('CameroonDemoSeeder requires the isolated qpos_seed_2026_10_09 database.');
+        $database = DB::connection()->getDatabaseName();
+        $isolatedAuditCopy = $database === 'qpos_seed_2026_10_09';
+        $explicitLocalDatabase = ($database === 'qpos' || preg_match('/\Aqpos_test_[a-z0-9_]+\z/D', $database))
+            && app()->environment('local')
+            && getenv('QPOS_DEMO_SEED_TARGET') === $database;
+        if (! app()->runningInConsole() || (! $isolatedAuditCopy && ! $explicitLocalDatabase)) {
+            throw new \RuntimeException('CameroonDemoSeeder requires an isolated audit copy or an explicitly selected local demo/test database.');
         }
         $credentials = [];
         DB::transaction(function () use (&$credentials) {
             \App\Models\Currency::firstOrCreate(['code'=>'XAF'],['name'=>'Franc CFA BEAC','symbol'=>'FCFA']);
             DB::table('currencies')->update(['active'=>false]);
             DB::table('currencies')->where('code','XAF')->update(['active'=>true]);
-            $shop = PointOfSale::firstOrCreate(['code'=>'MAIN'], ['name'=>'Boutique démo Douala', 'is_active'=>true]);
+            $shops = [];
+            foreach ([
+                ['MAIN', 'Boutique principale'],
+                ['DOUALA-BONABERI', 'Boutique Bonabéri - Douala'],
+                ['YAOUNDE-MOKOLO', 'Boutique Mokolo - Yaoundé'],
+            ] as [$code, $name]) {
+                $shops[$code] = PointOfSale::firstOrCreate(['code' => $code], ['name' => $name, 'is_active' => true]);
+            }
+            $shop = $shops['MAIN'];
             $now = now('Africa/Douala');
             DB::table('reporting_runtime')->insertOrIgnore(['key'=>'demo_seed_date', 'value'=>$now->toDateString()]);
             $day = \Carbon\CarbonImmutable::parse(DB::table('reporting_runtime')->where('key','demo_seed_date')->value('value'), 'Africa/Douala');
             $roles = [
-                'Demo Cashier'=>['sale_create','cash_session_manage','sale_view','customer_view','point_of_sale_access'],
-                'Demo Seller'=>['sale_create','customer_view','point_of_sale_access'],
+                'Demo Cashier'=>['sale_create','cash_session_manage','sale_view','customer_view','point_of_sale_access','pending_sale_collect'],
+                'Demo Seller'=>['sale_create','customer_view','point_of_sale_access','pending_sale_prepare'],
                 'Demo Stock'=>['product_view','stock_view','stock_adjust','stock_inventory','point_of_sale_access'],
             ];
             foreach ($roles as $name=>$permissions) {
@@ -42,7 +55,9 @@ final class CameroonDemoSeeder extends Seeder
             foreach ([['Admin','admin','Admin'],['Marie','marie','Demo Cashier'],['Pauline','pauline','Demo Cashier'],['Jean','jean','Demo Seller'],['Pierre','pierre','Demo Stock']] as [$name,$login,$role]) {
                 $email=$login.'@qpos.test';$user=User::where('email',$email)->first();
                 if (!$user) { $password=Str::password(24);$user=User::create(['name'=>$name,'username'=>'demo-'.$login,'email'=>$email,'password'=>Hash::make($password),'is_suspended'=>false]);$credentials[$email]=$password; }
-                $user->assignRole($role);$user->pointOfSales()->syncWithoutDetaching([$shop->id=>['is_active'=>true]]);
+                $user->assignRole($role);
+                $assignedShops = $login === 'admin' ? $shops : ['MAIN' => $shop];
+                $user->pointOfSales()->sync(collect($assignedShops)->mapWithKeys(fn ($assignedShop) => [$assignedShop->id => ['is_active' => true]])->all());
                 DB::table('users')->where('id',$user->id)->update(['preferred_point_of_sale_id'=>$shop->id]);
             }
             $admin=User::where('email','admin@qpos.test')->firstOrFail();
@@ -78,13 +93,19 @@ final class CameroonDemoSeeder extends Seeder
                 }
                 // No purchase price was supplied; unknown costs stay unknown.
                 $stock=($i>=10&&$i<=14)?$i-5:(($i>=15&&$i<=17)?0:100+($i%9)*25);
-                if ($stock===0) { ProductStock::firstOrCreate(['point_of_sale_id'=>$shop->id,'product_id'=>$product->id]);continue; }
+                if ($stock===0) {
+                    foreach ($shops as $stockShop) ProductStock::firstOrCreate(['point_of_sale_id'=>$stockShop->id,'product_id'=>$product->id]);
+                    continue;
+                }
                 $dated=$category==='Alimentation'||$category==='Boissons';
                 $expires=$i===30?$day->addDays(10):($i===33?$day->addDays(20):($i===40?$day->subDay():$day->addMonths(12)));
-                app(StockService::class)->increase($shop->id,$product->id,(string)$stock,[
-                    'type'=>'receipt','correlation_key'=>'demo-cm-opening-'.$sku,'user_id'=>$admin->id,'reason'=>'Démonstration fictive Session A : stock initial',
-                    'batch'=>['batch_number'=>'DEMO-'.$sku,'expiry_status'=>$dated?'dated':'not_applicable','expires_on'=>$dated?$expires->toDateString():null,'received_at'=>$day->toDateTimeString(),'unit_cost'=>null,'currency_code'=>null,'cost_unknown'=>true,'provenance'=>'receipt'],
-                ]);
+                foreach ($shops as $shopCode => $stockShop) {
+                    $correlationKey = $shopCode === 'MAIN' ? 'demo-cm-opening-'.$sku : 'demo-cm-opening-'.$shopCode.'-'.$sku;
+                    app(StockService::class)->increase($stockShop->id,$product->id,(string)$stock,[
+                        'type'=>'receipt','correlation_key'=>$correlationKey,'user_id'=>$admin->id,'reason'=>'Démonstration fictive Session A : stock initial',
+                        'batch'=>['batch_number'=>($shopCode==='MAIN'?'DEMO-':'DEMO-'.$shopCode.'-').$sku,'expiry_status'=>$dated?'dated':'not_applicable','expires_on'=>$dated?$expires->toDateString():null,'received_at'=>$day->toDateTimeString(),'unit_cost'=>null,'currency_code'=>null,'cost_unknown'=>true,'provenance'=>'receipt'],
+                    ]);
+                }
             }
         });
         if($credentials)file_put_contents(sys_get_temp_dir().'/qpos-seed-credentials.txt',json_encode($credentials,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));

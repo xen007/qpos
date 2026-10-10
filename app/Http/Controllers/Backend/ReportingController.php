@@ -22,6 +22,8 @@ class ReportingController extends Controller
         abort_unless($r->user()?->can(ReportingService::TYPES[$type]), 403);
         if ($type === 'history') abort_unless($r->user()->hasRole('Admin'), 403);
         $f = ReportFilter::fromRequest($r);
+        if($type==='payments') abort_if($f->product!==null||$f->category!==null,422,__('reporting.sales_filters_only'));
+        if($type!=='payments') abort_if($f->session!==null||$f->cashier!==null,422,__('reporting.sales_filters_only'));
         if (in_array($type, ['summary', 'cash', 'expenses', 'history'], true)) abort_if($f->salesOnly(), 422, __('reporting.sales_filters_only'));
         if (in_array($type, ['stock', 'expiry'], true)) abort_if($f->seller !== null, 422, __('reporting.sales_filters_only'));
         return $f;
@@ -32,6 +34,7 @@ class ReportingController extends Controller
         abort_unless($r->user()?->can('dashboard_view'), 403);
         $filter = ReportFilter::fromRequest($r);
         $s = app(ReportingService::class);
+        $orphanCount=$r->user()->hasRole('Admin')&&$r->user()->can('cash_session_supervise')&&\Illuminate\Support\Facades\Schema::hasTable('cash_session_supervisions') ? app(\App\Services\CashSupervisionService::class)->query($filter->shops)->whereRaw('paused=0')->where('suspected',1)->count() : 0;
         $clients = $s->events($filter)->where('event_kind', 'sale')->join('orders as customer_orders', 'customer_orders.id', '=', 'events.source_id')->join('customers as served', 'served.id', '=', 'customer_orders.customer_id')->where(fn ($q) => $q->whereNull('served.internal_code')->orWhere('served.internal_code', '<>', 'walking'))->distinct()->count('served.id');
         // Multi-shop stock is evaluated per shop; never infer an inaccessible shop.
         $lowStock = collect($filter->shops)->sum(function ($shop) use ($filter) {
@@ -45,6 +48,7 @@ class ReportingController extends Controller
             'filter' => $filter, 'summary' => $s->summary($filter), 'daily' => $s->daily($filter),
             'peaks' => $s->peaks($filter), 'stock' => $s->stockTotals($filter), 'types' => ReportingService::TYPES,
             'clients' => $clients, 'lowStock' => $lowStock,
+            'orphanCount'=>$orphanCount,
         ]);
     }
 
@@ -75,6 +79,7 @@ class ReportingController extends Controller
         $filename = 'qpos-'.$type.'-'.$filter->start->toDateString().'.'.$format;
         if ($format === 'xlsx') {
             array_unshift($data, [__('reporting.scope'), implode(', ', $filter->shops)], [__('reporting.period'), $filter->label()], [__('reporting.currency_code'), $report['currency']], [__('reporting.warning'), __('reporting.cost_notice')], $headings);
+            if(isset($report['unique_sales'])) array_splice($data,4,0,[[__('reporting.unique_sales'),$report['unique_sales']],[__('reporting.flow_notice')]]);
             if (isset($report['peaks'])) foreach (['peaks', 'troughs'] as $rank) $data[] = [__('reporting.top_'.$rank), implode('; ', array_map(fn ($v) => $v['hour'].' ('.$v['average'].' XAF)', $report['peaks'][$rank]))];
             return Excel::download(new ReportExport($data, [__('reporting.'.$type), 'QPOS'], $type), $filename);
         }
@@ -84,6 +89,8 @@ class ReportingController extends Controller
     public function displayValue(string $col, mixed $value, string $type): string
     {
         if ($value === null) return '—';
+        if ($type !== 'history' && in_array($col, ['net_sales','cogs','gross_margin','average','saleable_value','amount','difference','expected_amount','counted_amount','opening_amount','total','paid','due','value'], true) && is_numeric($value)) return \App\Support\SaleFormat::moneyDisplay($value);
+        if(in_array($col,['sales_received','debt_received','refunds','supplier_out','supplier_in','expenses','internal_in','internal_out','net_flows'],true)) return \App\Support\SaleFormat::moneyDisplay($value);
         if ($col === 'occurred_at') return CarbonImmutable::parse($value, 'UTC')->setTimezone('Africa/Douala')->format('Y-m-d H:i:s');
         if (in_array($col, ['cost_unknown', 'auto_generated', 'estimated_expiry'], true)) return $value ? __('Yes') : __('No');
         if (in_array($col, ['event_kind', 'method'], true)) return __('reporting.'.($col === 'method' && $value === 'cash' ? 'cash_method' : $value));
@@ -95,12 +102,14 @@ class ReportingController extends Controller
     {
         $shops = PointOfSale::accessibleBy($r->user())->orderBy('name')->get();
         $products = DB::table('products')->whereIn('id', DB::table('product_stock')->whereIn('point_of_sale_id', $filter->shops)->select('product_id'))->orderBy('name')->limit(500)->get(['id', 'name']);
-        $sellers = DB::table('users')->whereIn('id', DB::table('orders')->whereIn('point_of_sale_id', $filter->shops)->where('currency_code', 'XAF')->select('user_id'))->orderBy('name')->get(['id', 'name']);
+        $sellers = DB::table('users')->whereIn('id', DB::table('orders')->whereIn('point_of_sale_id', $filter->shops)->where('currency_code', 'XAF')->selectRaw(\Illuminate\Support\Facades\Schema::hasColumn('orders','prepared_by_user_id') ? 'COALESCE(prepared_by_user_id,user_id)' : 'user_id'))->orderBy('name')->get(['id', 'name']);
         $categories = DB::table('report_line_snapshots as ls')->join('order_products as l', 'l.id', '=', 'ls.order_product_id')->join('orders as o', 'o.id', '=', 'l.order_id')
             ->whereIn('o.point_of_sale_id', $filter->shops)->whereNotNull('ls.category_id')->select('ls.category_id as id', 'ls.category_label as name')->distinct()->orderBy('name')->get();
         $currentCategories = DB::table('categories')->whereIn('id', DB::table('products')->whereIn('id', DB::table('product_stock')->whereIn('point_of_sale_id', $filter->shops)->select('product_id'))->select('category_id'))->get(['id', 'name']);
         $categories = $categories->merge($currentCategories)->unique(fn ($c) => $c->id.':'.$c->name)->sortBy('name')->values();
-        return compact('shops', 'products', 'sellers', 'categories');
+        $sessions=DB::table('cash_sessions')->whereIn('point_of_sale_id',$filter->shops)->orderByDesc('id')->limit(200)->get(['id','user_id']);
+        $cashiers=DB::table('users')->whereIn('id',DB::table('payments')->whereIn('point_of_sale_id',$filter->shops)->select('user_id'))->orderBy('name')->get(['id','name']);
+        return compact('shops', 'products', 'sellers', 'categories','sessions','cashiers');
     }
 
     private function authorizeSummary(Request $r): void

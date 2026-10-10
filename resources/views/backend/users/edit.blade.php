@@ -21,8 +21,7 @@
                     :placeholder="__('Email')" required />
 
                 {{-- Le mot de passe laisse vide conserve l'actuel (StoreUserRequest/UpdateUserRequest). --}}
-                <x-backend.select name="role" :label="__('Role & Permissions')" :options="$roles->pluck('name', 'id')->all()"
-                    :selected="$currentRoleId" :placeholder="'-- ' . __('Select a role') . ' --'" required />
+                @include('backend.users.roles', ['selectedRoles'=>old('roles',$user->roles->pluck('id')->all())])
 
                 <x-backend.input name="password" type="password" :label="__('Login password')"
                     :placeholder="__('Leave blank to keep current password.')" autocomplete="new-password" />

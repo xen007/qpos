@@ -12,6 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('sales:expire-pending')->everyMinute()->withoutOverlapping(10);
         $schedule->command('reports:daily')->everyMinute()->timezone('Africa/Douala')->withoutOverlapping(10);
         $schedule->command('reports:deliver --limit=10')->everyMinute()->withoutOverlapping(10);
     }

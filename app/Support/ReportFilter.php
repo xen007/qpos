@@ -15,6 +15,8 @@ final class ReportFilter
     public ?int $seller = null;
     public ?int $category = null;
     public ?int $product = null;
+    public ?int $session = null;
+    public ?int $cashier = null;
     public string $period = 'month';
 
     public static function fromRequest(Request $r): self
@@ -24,6 +26,7 @@ final class ReportFilter
         $v = $r->validate([
             'shop_id' => 'nullable|integer|min:1', 'seller_id' => 'nullable|integer|min:1',
             'category_id' => 'nullable|integer|min:1', 'product_id' => 'nullable|integer|min:1',
+            'session_id'=>'nullable|integer|min:1', 'cashier_id'=>'nullable|integer|min:1',
             'period' => 'nullable|in:day,week,month,custom', 'date' => 'nullable|date_format:Y-m-d',
             'date_from' => 'nullable|date_format:Y-m-d', 'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from',
             'start_date' => 'nullable|date_format:Y-m-d', 'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
@@ -46,6 +49,9 @@ final class ReportFilter
         $f->seller = isset($v['seller_id']) ? (int) $v['seller_id'] : null;
         $f->category = isset($v['category_id']) ? (int) $v['category_id'] : null;
         $f->product = isset($v['product_id']) ? (int) $v['product_id'] : null;
+        $f->cashier=isset($v['cashier_id'])?(int)$v['cashier_id']:null;
+        $f->session=isset($v['session_id'])?(int)$v['session_id']:null;
+        if($f->session) abort_unless(\Illuminate\Support\Facades\DB::table('cash_sessions')->whereIn('point_of_sale_id',$f->shops)->where('id',$f->session)->exists(),403);
         return $f;
     }
 

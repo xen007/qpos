@@ -3,6 +3,7 @@
 @section('title', __('Sales'))
 
 @section('content')
+    <label class="block mb-4">{{ __('Debt status') }}<select id="debt-state-filter" class="qpos-control"><option value="all">{{ __('All') }}</option><option value="overdue">{{ __('Overdue debt') }}</option></select></label>
     @php
         // L'action d'encaissement reste soumise a la permission, comme dans le
         // controleur d'origine.
@@ -81,7 +82,8 @@
                     [1, 'desc']
                 ],
                 ajax: {
-                    url: config.ajax
+                    url: config.ajax,
+                    data: data => { data.debt_state=document.getElementById('debt-state-filter').value; }
                 },
 
                 columns: [{
@@ -90,7 +92,8 @@
                     },
                     {
                         data: 'saleId',
-                        name: 'id'
+                        name: 'id',
+                        render: (value,type,row) => type!=='display'?value:window.qposTableActions.escapeHtml(value)+(row.is_overdue?' <span class="font-semibold text-qpos-danger">'+@json(__('Overdue debt'))+'</span>':'')
                     },
                     {
                         data: 'customer',
@@ -179,6 +182,7 @@
                     },
                 ]
             });
+            document.getElementById('debt-state-filter').addEventListener('change',()=>$('#datatables').DataTable().ajax.reload());
         });
     </script>
 @endpush

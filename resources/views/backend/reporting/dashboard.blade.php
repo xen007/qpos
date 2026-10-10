@@ -1,6 +1,7 @@
 @extends('backend.master-tailwind')
 @section('title', __('Dashboard'))
 @section('content')
+    @if(($orphanCount??0)>0)<p role="alert" class="my-4 rounded-lg border p-4"><a href="{{ route('backend.admin.cash.supervision') }}">{{ __('Inactive cash sessions require review') }}: {{ $orphanCount }}</a></p>@endif
 <div class="qpos-touch-workspace">
     @include('backend.reporting.filters')
     @include('backend.reporting.navigation')

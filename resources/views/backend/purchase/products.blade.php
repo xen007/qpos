@@ -108,7 +108,7 @@
                 <input type="hidden" name="operation_point_of_sale_id" value="{{ $purchase->point_of_sale_id }}">
                 <input type="hidden" name="idempotency_key" value="{{ (string)\Illuminate\Support\Str::uuid() }}">
                 <label>{{ __('Amount') }}<input required name="amount" type="number" min="0.000001" max="{{ $purchase->due_amount }}" step="any" class="qpos-control"></label>
-                <label>{{ __('Method') }}<select name="method" class="qpos-control">@foreach(['cash'=>'Cash','mobile_money'=>'Mobile money','bank_transfer'=>'Bank transfer','card'=>'Card','other'=>'Other'] as $key=>$label)<option value="{{ $key }}">{{ __($label) }}</option>@endforeach</select></label>
+                <label>{{ __('Method') }}<select name="method" class="qpos-control">@foreach(app(App\Services\PaymentMethodService::class)->choices($purchase->point_of_sale_id) as $key=>$label)<option value="{{ $key }}">{{ __($label) }}</option>@endforeach</select></label>
                 <label>{{ __('Reference') }}<input name="external_reference" maxlength="128" class="qpos-control"></label>
                 <button class="qpos-button qpos-button-md qpos-button-primary self-end" type="submit">{{ __('Record payment') }}</button>
             </form>
@@ -125,7 +125,7 @@
                         @csrf
                         <input type="hidden" name="operation_point_of_sale_id" value="{{ $purchase->point_of_sale_id }}">
                         <label>{{ __('Reversal reason') }}<input required name="reason" maxlength="255" class="qpos-control"></label>
-                        <label>{{ __('Method') }}<select name="method" class="qpos-control">@foreach(['cash'=>'Cash','mobile_money'=>'Mobile money','bank_transfer'=>'Bank transfer','card'=>'Card','other'=>'Other'] as $key=>$label)<option value="{{ $key }}">{{ __($label) }}</option>@endforeach</select></label>
+                        <label>{{ __('Method') }}<select name="method" class="qpos-control">@foreach(app(App\Services\PaymentMethodService::class)->choices($purchase->point_of_sale_id) as $key=>$label)<option value="{{ $key }}">{{ __($label) }}</option>@endforeach</select></label>
                         <label>{{ __('Reference') }}<input name="external_reference" maxlength="128" class="qpos-control"></label>
                         <button class="qpos-button qpos-button-md qpos-button-secondary self-end" type="submit">{{ __('Record refund / reversal') }}</button>
                     </form>

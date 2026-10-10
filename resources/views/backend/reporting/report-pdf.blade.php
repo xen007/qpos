@@ -2,6 +2,7 @@
 <h1>QPOS — {{ __('reporting.'.$report['type']) }}</h1>
 <p>{{ $filter->label() }} · {{ __('reporting.scope') }}: {{ implode(', ',$filter->shops) }} · {{ $report['currency'] }}</p>
 <p class="muted">{{ $report['type'] === 'history' ? __('reporting.history_notice') : __('reporting.native_notice') }} {{ __('reporting.cost_notice') }}</p>
+@if(isset($report['unique_sales']))<p>{{ __('reporting.unique_sales') }}: {{ $report['unique_sales'] }} · {{ __('reporting.flow_notice') }}</p>@endif
 @if(isset($report['peaks']))
 <p>{{ __('reporting.average_notice',['days'=>$report['peaks']['days']]) }}</p>
 @foreach(['peaks','troughs'] as $k)<p>{{ __('reporting.top_'.$k) }}: @foreach($report['peaks'][$k] as $p){{ $p['hour'] }} ({{ \App\Support\SaleFormat::decimal($p['average']) }} XAF) @endforeach</p>@endforeach

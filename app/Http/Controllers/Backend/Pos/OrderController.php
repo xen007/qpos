@@ -26,6 +26,7 @@ class OrderController extends Controller
 
     private function listing(Request $r, ?Customer $customer)
     {
+        $r->validate(['debt_state'=>'nullable|in:all,overdue']);
         if (! $r->ajax()) {
             return view('backend.orders.index', ['customer' => $customer]);
         }
@@ -33,8 +34,10 @@ class OrderController extends Controller
         if ($customer) {
             $orders->where('customer_id', $customer->id);
         }
+        if($r->input('debt_state')==='overdue') $orders->where('orders.currency_code','XAF')->where('orders.sale_state','<>','legacy')->where('orders.due','>',0)->whereNotNull('orders.due_date')->where('orders.due_date','<',now('Africa/Douala')->toDateString());
 
         return DataTables::of($orders)->addIndexColumn()->addColumn('saleId', fn ($o) => '#'.$o->id)
+            ->addColumn('is_overdue',fn($o)=>$o->currency_code==='XAF'&&$o->sale_state!=='legacy'&&\Brick\Math\BigDecimal::of($o->due)->isPositive()&&$o->due_date!==null&&(string)$o->due_date<now('Africa/Douala')->toDateString())
             ->addColumn('is_paid', fn ($o) => (bool) $o->status)
             ->addColumn('customer', fn ($o) => $o->customer?->name ?? '-')
             ->addColumn('item', fn ($o) => $o->item_quantity_sum ?? '0')
@@ -44,7 +47,9 @@ class OrderController extends Controller
 
     public function store(Request $r)
     {
-        $data = $r->validate(['operation_key' => 'required|string|max:64', 'cart_id' => 'required|string|max:64', 'quote_hash' => 'required|string|size:64', 'customer_id' => 'required|integer|exists:customers,id', 'order_discount' => 'nullable|string', 'credit_amount' => 'nullable|string', 'due_date' => 'nullable|date_format:Y-m-d', 'payments' => 'present|array|max:10', 'payments.*.method' => 'required|in:cash,card', 'payments.*.amount' => 'required|string', 'payments.*.external_reference' => 'nullable|string|max:128', 'confirm_expired_sale' => 'nullable|boolean', 'expired_sale_reason' => 'nullable|string|max:255']);
+        $r->validate(['cash_received'=>'sometimes|required|string']);
+        $data = $r->validate(['operation_key' => 'required|string|max:64', 'cart_id' => 'required|string|max:64', 'quote_hash' => 'required|string|size:64', 'customer_id' => 'required|integer|exists:customers,id', 'order_discount' => 'nullable|string', 'credit_amount' => 'nullable|string', 'due_date' => 'nullable|date_format:Y-m-d', 'payments' => 'present|array|max:10', 'payments.*.method' => 'required|string|max:24', 'payments.*.amount' => 'required|string', 'payments.*.external_reference' => 'nullable|string|max:128', 'confirm_expired_sale' => 'nullable|boolean', 'expired_sale_reason' => 'nullable|string|max:255']);
+        if ($r->has('cash_received')) $data['cash_received']=$r->input('cash_received');
         $order = app(SaleService::class)->checkout($r->user()->id, StockContext::shop($r)->id, $data);
 
         return response()->json(['message' => __('Order completed successfully'), 'order' => $order]);
@@ -75,7 +80,7 @@ class OrderController extends Controller
         if (! $r->isMethod('post')) {
             return view('backend.phase4.collection', compact('order'));
         }
-        $data = $r->validate(['operation_key' => 'required|string|max:64', 'amount' => 'required|string', 'method' => 'required|in:cash,card', 'external_reference' => 'nullable|string|max:128']);
+        $data = $r->validate(['operation_key' => 'required|string|max:64', 'amount' => 'required|string', 'method' => 'required|string|max:24', 'external_reference' => 'nullable|string|max:128']);
         $p = app(SaleService::class)->collect($r->user()->id, StockContext::shop($r)->id, (int) $id, $data);
 
         return to_route('backend.admin.payments.receipt', $p->id);

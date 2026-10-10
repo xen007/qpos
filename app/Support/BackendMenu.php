@@ -47,10 +47,12 @@ class BackendMenu
         if ($user->can('sale_create')) {
             $items[] = self::item('POS', 'fas fa-cart-plus', 'backend.admin.cart.index');
         }
+        if ($user->hasAnyPermission(['pending_sale_prepare','pending_sale_collect'])) $items[] = self::item('Pending sales','fas fa-cart-plus','backend.admin.pending.index');
         if ($user->can('cash_session_manage')) {
             $items[] = self::item('Cash sessions', 'fas fa-cash-register', 'backend.admin.cash.index', ['backend.admin.cash.*']);
             $items[] = self::item('reporting.workday', 'fas fa-cash-register', 'backend.admin.reporting.workday');
         }
+        if($user->can('cash_session_supervise')&&$user->hasRole('Admin')) $items[]=self::item('Cash supervision','fas fa-cash-register','backend.admin.cash.supervision');
         if ($user->can('expense_view')) {
             $items[] = self::item('Expenses', 'fas fa-wallet', 'backend.admin.expenses.index', ['backend.admin.expenses.*']);
         }

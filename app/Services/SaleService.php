@@ -64,7 +64,7 @@ class SaleService
     public function checkout(int $user, int $shop, array $data, ?array $exchangeSettlement = null): Order
     {
         return SaleTransaction::run(function () use ($user, $shop, $data, $exchangeSettlement) {
-            User::whereKey($user)->lockForUpdate()->firstOrFail();
+            $cashierUser=User::whereKey($user)->lockForUpdate()->firstOrFail();
             $key = Op::key($data);
             $hash = Op::hash($user, $shop, [$data, $exchangeSettlement]);
             if ($old = Order::where('operation_key', $key)->first()) {
@@ -103,11 +103,11 @@ class SaleService
                 }
                 if ($p['method'] === 'cash') {
                     $cash = $cash->plus($v);
-                } elseif ($p['method'] === 'card' && ! empty(trim($p['external_reference'] ?? ''))) {
-                    $card = $card->plus($v);
                 } else {
-                    Op::fail('payments', 'Confirm the external card payment reference.');
+                    app(PaymentMethodService::class)->validate($shop,$p['method'],$p['external_reference']??null);
+                    $card = $card->plus($v);
                 }
+                if ($p['method']==='cash') app(PaymentMethodService::class)->validate($shop,'cash',null);
             }
             $exchangeValue = Op::money($exchangeSettlement['amount'] ?? '0');
             if ($exchangeValue->isGreaterThan($total->minus($credit))) {
@@ -117,11 +117,20 @@ class SaleService
             if ($card->isGreaterThan($remaining)) {
                 Op::fail('payments', 'Card payments cannot exceed the amount due.');
             }
-            $change = BigDecimal::max(BigDecimal::zero(), $cash->plus($card)->minus($remaining));
-            if ($change->isGreaterThan($cash)) {
+            $explicitTender = array_key_exists('cash_received', $data);
+            if ($explicitTender) {
+                $cashReceived = Op::money($data['cash_received'], 'cash_received');
+                if ($cashReceived->isLessThan($cash) || ($cash->isZero() && $cashReceived->isPositive()) || $cash->plus($card)->isGreaterThan($remaining)) {
+                    Op::fail('payments','Payment allocations must match the amount due; cash received must cover only the cash allocation.');
+                }
+                $change = $cashReceived->minus($cash);
+            } else {
+                $change = BigDecimal::max(BigDecimal::zero(), $cash->plus($card)->minus($remaining));
+            }
+            if (!$explicitTender && $change->isGreaterThan($cash)) {
                 Op::fail('payments', 'Change can only be returned from cash.');
             }
-            $paid = $cash->plus($card)->minus($change);
+            $paid = $explicitTender ? $cash->plus($card) : $cash->plus($card)->minus($change);
             $due = $remaining->minus($paid);
             if ($due->isPositive() && ($customer->isWalking() || ! User::findOrFail($user)->can('customer_credit_manage'))) {
                 Op::fail('customer_id', 'This sale must be paid in full.');
@@ -133,7 +142,7 @@ class SaleService
                 Op::fail('due_date', 'The due date cannot be in the past.');
             }
             $order = Order::create(['point_of_sale_id' => $shop, 'cash_session_id' => $session->id, 'customer_id' => $customer->id, 'user_id' => $user, 'operation_key' => $key, 'request_hash' => $hash, 'cart_id' => $data['cart_id'], 'sale_state' => 'completed', 'currency_code' => 'XAF', 'due_date' => $due->isPositive() ? $data['due_date'] : null, 'sub_total' => $quote['gross'], 'discount' => (string) BigDecimal::of($quote['gross'])->minus($quote['unrounded_total']), 'unrounded_total' => $quote['unrounded_total'], 'rounding_adjustment' => $quote['rounding_adjustment'], 'total' => (string) $total, 'paid' => (string) $paid, 'due' => (string) $due, 'credit_used' => (string) $credit, 'change_amount' => (string) $change, 'status' => $due->isZero()]);
-            $order->update(['exchange_value' => (string) $exchangeValue, 'created_at' => now('UTC'), 'updated_at' => now('UTC'), 'checkout_snapshot' => ['due_date' => $order->due_date, 'customer_label' => $customer->name, 'sub_total' => $quote['gross'], 'discount' => $order->discount, 'paid' => (string) $paid, 'due' => (string) $due, 'change_amount' => (string) $change, 'credit_used' => (string) $credit, 'exchange_value' => (string) $exchangeValue, 'payments' => $payments]]);
+            $order->update(['exchange_value' => (string) $exchangeValue, 'created_at' => now('UTC'), 'updated_at' => now('UTC'), 'checkout_snapshot' => ['cash_received'=>(string)($explicitTender?$cashReceived:$cash),'cashier_label'=>$cashierUser->name,'seller_label'=>$cashierUser->name,'due_date' => $order->due_date, 'customer_label' => $customer->name, 'sub_total' => $quote['gross'], 'discount' => $order->discount, 'paid' => (string) $paid, 'due' => (string) $due, 'change_amount' => (string) $change, 'credit_used' => (string) $credit, 'exchange_value' => (string) $exchangeValue, 'payments' => $payments]]);
             $allocated = BigDecimal::zero();
             $last = count($quote['carts']) - 1;
             foreach ($quote['carts'] as $index => $row) {
@@ -155,12 +164,13 @@ class SaleService
             $paymentBalance = $remaining;
             foreach ($payments as $i => $p) {
                 $amount = Op::money($p['amount']);
-                $back = $p['method'] === 'cash' ? BigDecimal::min($amount, $changeLeft) : BigDecimal::zero();
+                $back = $p['method'] === 'cash' ? ($explicitTender ? $changeLeft : BigDecimal::min($amount, $changeLeft)) : BigDecimal::zero();
+                if ($explicitTender && $p['method']==='cash') $amount=$amount->plus($back);
                 $changeLeft = $changeLeft->minus($back);
                 $net = $amount->minus($back);
                 if ($net->isPositive()) {
                     $afterPayment = $paymentBalance->minus($net);
-                    $this->payment($order, $session, $p['method'], $amount, $back, 'incoming', 'sale-'.$order->id.'-'.$i, $p['external_reference'] ?? null, ['order_id' => $order->id, 'customer_label' => $customer->name, 'balance_before' => (string) $paymentBalance, 'balance_after' => (string) $afterPayment, 'total' => (string) $total, 'currency_code' => 'XAF']);
+                    $this->payment($order, $session, $p['method'], $amount, $back, 'incoming', 'sale-'.$order->id.'-'.$i, $p['external_reference'] ?? null, ['flow_kind'=>'sale', 'order_id' => $order->id, 'customer_label' => $customer->name, 'balance_before' => (string) $paymentBalance, 'balance_after' => (string) $afterPayment, 'total' => (string) $total, 'currency_code' => 'XAF']);
                     $paymentBalance = $afterPayment;
                 }
             }
@@ -203,16 +213,36 @@ class SaleService
         }
     }
 
-    public function payment(Order $order, CashSession $s, string $method, BigDecimal $amount, BigDecimal $change, string $direction, string $key, ?string $ref, array $snapshot, ?string $reason = null, ?string $commandHash = null): Payment
+    public function payment(Order $order, CashSession $s, string $method, BigDecimal $amount, BigDecimal $change, string $direction, string $key, ?string $ref, array $snapshot, ?string $reason = null, ?string $commandHash = null, ?int $originalPayment = null): Payment
     {
         $net = $amount->minus($change);
-        $p = Payment::create(['point_of_sale_id' => $order->point_of_sale_id, 'cash_session_id' => $s->id, 'user_id' => $s->user_id, 'customer_id' => $order->customer_id, 'direction' => $direction, 'method' => $method, 'source_amount' => (string) $amount, 'received_amount' => (string) $amount, 'change_amount' => (string) $change, 'net_amount' => (string) $net, 'currency_code' => 'XAF', 'external_reference' => $ref, 'idempotency_key' => $key, 'request_hash' => $commandHash ?? Op::hash($s->user_id, $order->point_of_sale_id, $snapshot), 'receipt_snapshot' => $snapshot, 'reason' => $reason, 'occurred_at' => now('UTC')]);
+        $origin = $originalPayment && \Illuminate\Support\Facades\Schema::hasColumn('payments','original_payment_id') ? ['original_payment_id'=>$originalPayment] : [];
+        $p = Payment::create(['point_of_sale_id' => $order->point_of_sale_id, 'cash_session_id' => $s->id, 'user_id' => $s->user_id, 'customer_id' => $order->customer_id, 'direction' => $direction, 'method' => $method, 'source_amount' => (string) $amount, 'received_amount' => (string) $amount, 'change_amount' => (string) $change, 'net_amount' => (string) $net, 'currency_code' => 'XAF', 'external_reference' => $ref, 'idempotency_key' => $key, 'request_hash' => $commandHash ?? Op::hash($s->user_id, $order->point_of_sale_id, $snapshot), 'receipt_snapshot' => $snapshot, 'reason' => $reason, 'occurred_at' => now('UTC')]+$origin);
         PaymentAllocation::create(['payment_id' => $p->id, 'order_id' => $order->id, 'amount' => (string) $net]);
         if ($method === 'cash') {
             app(CashService::class)->movement($s, $s->user_id, $direction === 'incoming' ? 'in' : 'out', (string) $net, 'payment', 'cash-payment-'.$p->id, $reason ?? 'Sale payment #'.$order->id, $p->id);
         }
 
         return $p;
+    }
+
+    public function refund(Order $order, CashSession $session, string $method, BigDecimal $amount, string $key, ?string $reference, array $snapshot, string $reason): void
+    {
+        app(PaymentMethodService::class)->validate($order->point_of_sale_id,$method,$reference,true);
+        $allocations=$order->paymentAllocations()->with('payment')->orderBy('id')->get()->filter(fn($a)=>$a->payment->method===$method);
+        $refunded=BigDecimal::zero();$incoming=BigDecimal::zero();
+        foreach($allocations as $a) { if($a->payment->direction==='incoming') $incoming=$incoming->plus($a->amount); else $refunded=$refunded->plus($a->amount); }
+        if ($amount->isGreaterThan($incoming->minus($refunded))) Op::fail('method','Refund through the original payment channel with sufficient remaining funds.');
+        $left=$amount;
+        foreach($allocations->filter(fn($a)=>$a->payment->direction==='incoming') as $a) {
+            $used=BigDecimal::min($refunded,BigDecimal::of($a->amount));$refunded=$refunded->minus($used);
+            $take=BigDecimal::min($left,BigDecimal::of($a->amount)->minus($used));
+            if($take->isPositive()) {
+                $this->payment($order,$session,$method,$take,BigDecimal::zero(),'outgoing',$key.'-'.$a->payment_id,$reference,$snapshot+['flow_kind'=>'refund','original_payment_id'=>$a->payment_id,'original_reference'=>$a->payment->external_reference],$reason,null,$a->payment_id);
+                $left=$left->minus($take);
+            }
+            if($left->isZero()) break;
+        }
     }
 
     public function collect(int $user, int $shop, int $id, array $data): Payment
@@ -235,12 +265,10 @@ class SaleService
             if (! $v->isPositive() || $v->isGreaterThan($o->due)) {
                 Op::fail('amount', 'The amount cannot exceed the remaining balance.');
             }
-            if (! in_array($data['method'], ['cash', 'card'], true) || ($data['method'] === 'card' && empty(trim($data['external_reference'] ?? '')))) {
-                Op::fail('method', 'Confirm the external card payment reference.');
-            }
+            app(PaymentMethodService::class)->validate($shop,$data['method'],$data['external_reference']??null);
             $before = $o->due;
             $after = BigDecimal::of($before)->minus($v);
-            $p = $this->payment($o, $s, $data['method'], $v, BigDecimal::zero(), 'incoming', $key, $data['external_reference'] ?? null, ['order_id' => $o->id, 'customer_label' => $o->customer->name, 'total' => $o->total, 'balance_before' => $before, 'balance_after' => (string) $after, 'currency_code' => 'XAF', 'command_hash' => $hash], null, $hash);
+            $p = $this->payment($o, $s, $data['method'], $v, BigDecimal::zero(), 'incoming', $key, $data['external_reference'] ?? null, ['flow_kind'=>'debt_collection','order_id' => $o->id, 'customer_label' => $o->customer->name, 'total' => $o->total, 'balance_before' => $before, 'balance_after' => (string) $after, 'currency_code' => 'XAF', 'command_hash' => $hash], null, $hash);
             $o->update(['paid' => (string) BigDecimal::of($o->paid)->plus($v), 'due' => (string) $after, 'status' => $after->isZero()]);
             $this->assertBalance($o);
 

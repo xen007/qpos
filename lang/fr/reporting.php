@@ -1,6 +1,10 @@
 <?php
 
 return array (
+  'payments'=>'Répartition par moyen', 'bank_transfer'=>'Virement bancaire', 'orange_money'=>'Orange Money', 'mtn_momo'=>'MTN Mobile Money', 'wave'=>'Wave', 'cheque'=>'Chèque',
+  'cashier'=>'Caissière', 'unique_sales'=>'Ventes uniques dans la période', 'allocations_count'=>'Nombre d’allocations',
+  'sales_received'=>'Encaissements de ventes', 'debt_received'=>'Recouvrements de dettes', 'refunds'=>'Remboursements clients', 'supplier_out'=>'Paiements fournisseurs', 'supplier_in'=>'Remboursements fournisseurs', 'internal_in'=>'Transferts internes entrants', 'internal_out'=>'Transferts internes sortants', 'net_flows'=>'Flux nets enregistrés',
+  'flow_notice'=>'Une vente mixte compte une fois dans le total de ventes uniques. Les nombres par moyen ne se cumulent pas. Les flux enregistrés ne constituent pas un solde bancaire certifié.',
   'cash_method' => 'Espèces',
   'delivery_address' => 'Adresse de réception',
   'delivery_address_notice' => 'Cette adresse de notification ne modifie pas le compte de connexion. Sélectionner les destinataires et vérifier les adresses avant confirmation.',

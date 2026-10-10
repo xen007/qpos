@@ -33,7 +33,7 @@ class PurchaseController extends Controller
                 ->addColumn('can_amend',fn($data)=>$data->receipt_status==='pending' && $data->receipts_count===0 && $data->payment_allocations_count===0)
                 ->addColumn('supplier', fn ($data) => $data->supplier?->name)
                 ->editColumn('id', fn ($data) => '#' . $data->id)
-                ->editColumn('total', fn ($data) => $data->grand_total.' '.($data->currency_code ?? __('Historical currency unknown')))
+                ->editColumn('total', fn ($data) => (string) \Brick\Math\BigDecimal::of((string) $data->grand_total)->toScale(2, \Brick\Math\RoundingMode::HalfUp).' '.($data->currency_code ?? __('Historical currency unknown')))
                 ->editColumn('created_at', fn ($data) => Carbon::parse($data->date)->translatedFormat('d M, Y'))
                 ->addColumn('action', function ($data) {
                     $actions = '<div class="btn-group"><button type="button" class="btn bg-gradient-primary btn-flat">' . e(__('Actions')) . '</button>';
@@ -159,7 +159,7 @@ class PurchaseController extends Controller
         $data = $request->validate([
             'idempotency_key' => ['required', 'string', 'min:8', 'max:96'],
             'amount' => ['required', 'string', 'regex:/\A\d{1,14}(?:\.\d{1,6})?\z/D'],
-            'method' => ['required', 'in:cash,mobile_money,bank_transfer,card,other'],
+            'method' => ['required', 'string'],
             'currency_code' => ['nullable', 'regex:/\A[A-Z]{3}\z/D'],
             'external_reference' => ['nullable', 'string', 'max:128'],
         ]);
@@ -183,7 +183,7 @@ class PurchaseController extends Controller
     public function reversePayment(Request $request, Purchase $purchase, Payment $payment)
     {
         abort_unless($request->user()->can('purchase_pay'), 403);
-        $data = $request->validate(['reason'=>['required','string','max:255'],'method'=>['required','in:cash,mobile_money,bank_transfer,card,other'],'external_reference'=>['nullable','string','max:128']]);
+        $data = $request->validate(['reason'=>['required','string','max:255'],'method'=>['required','string'],'external_reference'=>['nullable','string','max:128']]);
         if ($data['method'] === 'card' && empty($data['external_reference'])) throw ValidationException::withMessages(['external_reference'=>__('Enter the external terminal reference for a card payment.')]);
         $reversal = app(PurchaseService::class)->reversePayment($purchase, $payment, $data, StockContext::shop($request), (int)$request->user()->id);
         if (!$request->expectsJson()) return to_route('backend.admin.purchase.products', $purchase->id)->with('success', __('Supplier payment reversal recorded.'));

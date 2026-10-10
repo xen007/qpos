@@ -38,7 +38,7 @@ class SaleWorkflowController extends Controller
         $shop = StockContext::shop($r)->id;
         $s = CashSession::where('active_user_id', $r->user()->id)->where('point_of_sale_id', $shop)->first();
 
-        return response()->json(['user_id' => $r->user()->id, 'session' => $s, 'expected' => $s ? (string) app(CashService::class)->expected($s) : null]);
+        return response()->json(['user_id' => $r->user()->id, 'session' => $s, 'expected' => $s ? (string) app(CashService::class)->expected($s) : null, 'payment_methods'=>app(\App\Services\PaymentMethodService::class)->choices($shop), 'workflow'=>app(\App\Services\ShopWorkflowSettings::class)->get($shop), 'can_prepare'=>$r->user()->can('pending_sale_prepare'), 'can_collect'=>$r->user()->can('pending_sale_collect')]);
     }
 
     public function open(Request $r)
@@ -119,13 +119,15 @@ class SaleWorkflowController extends Controller
 
     public function correct(Request $r, int $order)
     {
+        $r->validate(['exchange_sale.cash_received'=>'sometimes|required|string']);
         if ($r->input('kind') === 'exchange') {
             abort_unless($r->user()->can('sale_create'), 403);
         }
-        $data = $r->validate(['return_quote_hash' => 'nullable|string|size:64', 'operation_key' => 'required|string|max:64', 'kind' => 'required|in:refund,exchange,credit_note,cancel', 'reason' => 'required|string|max:255', 'method' => 'nullable|in:cash,card', 'external_reference' => 'nullable|string|max:128', 'saleable' => 'nullable|boolean', 'items' => 'nullable|array|max:200', 'items.*.order_product_id' => 'required|integer', 'items.*.quantity' => 'required|string', 'items.*.saleable' => 'nullable|boolean', 'exchange_sale' => 'nullable|array']);
+        $data = $r->validate(['return_quote_hash' => 'nullable|string|size:64', 'operation_key' => 'required|string|max:64', 'kind' => 'required|in:refund,exchange,credit_note,cancel', 'reason' => 'required|string|max:255', 'method' => 'nullable|string|max:24', 'external_reference' => 'nullable|string|max:128', 'saleable' => 'nullable|boolean', 'items' => 'nullable|array|max:200', 'items.*.order_product_id' => 'required|integer', 'items.*.quantity' => 'required|string', 'items.*.saleable' => 'nullable|boolean', 'exchange_sale' => 'nullable|array']);
         if (! empty($data['exchange_sale'])) {
-            $data['exchange_sale'] = $r->validate(['exchange_sale.operation_key' => 'required|string|max:64', 'exchange_sale.cart_id' => 'required|string|max:64', 'exchange_sale.customer_id' => 'required|integer', 'exchange_sale.quote_hash' => 'required|string|size:64', 'exchange_sale.order_discount' => 'nullable|string', 'exchange_sale.credit_amount' => 'nullable|string', 'exchange_sale.payments' => 'present|array|max:10', 'exchange_sale.payments.*.method' => 'required|in:cash,card', 'exchange_sale.payments.*.amount' => 'required|string', 'exchange_sale.payments.*.external_reference' => 'nullable|string|max:128', 'exchange_sale.due_date' => 'nullable|date_format:Y-m-d', 'exchange_sale.confirm_expired_sale' => 'nullable|boolean', 'exchange_sale.expired_sale_reason' => 'nullable|string|max:255'])['exchange_sale'];
+            $data['exchange_sale'] = $r->validate(['exchange_sale.operation_key' => 'required|string|max:64', 'exchange_sale.cart_id' => 'required|string|max:64', 'exchange_sale.customer_id' => 'required|integer', 'exchange_sale.quote_hash' => 'required|string|size:64', 'exchange_sale.order_discount' => 'nullable|string', 'exchange_sale.credit_amount' => 'nullable|string', 'exchange_sale.payments' => 'present|array|max:10', 'exchange_sale.payments.*.method' => 'required|string|max:24', 'exchange_sale.payments.*.amount' => 'required|string', 'exchange_sale.payments.*.external_reference' => 'nullable|string|max:128', 'exchange_sale.due_date' => 'nullable|date_format:Y-m-d', 'exchange_sale.confirm_expired_sale' => 'nullable|boolean', 'exchange_sale.expired_sale_reason' => 'nullable|string|max:255'])['exchange_sale'];
         }
+        if(isset($data['exchange_sale'])&&$r->has('exchange_sale.cash_received'))$data['exchange_sale']['cash_received']=$r->input('exchange_sale.cash_received');
         $doc = app(SaleCorrectionService::class)->correct($r->user()->id, StockContext::shop($r)->id, $order, $data);
 
         return $r->wantsJson() ? response()->json(['correction' => $doc, 'order' => $doc->exchange_order_id ? Order::find($doc->exchange_order_id) : null]) : to_route('backend.admin.corrections.document', $doc->id);
@@ -171,7 +173,7 @@ class SaleWorkflowController extends Controller
 
     public function expense(Request $r)
     {
-        $data = $r->validate(['operation_key' => 'required|string|max:64', 'expense_category_id' => 'required|integer', 'amount' => 'required|string', 'method' => 'required|in:cash,card,transfer', 'description' => 'required|string|max:500', 'external_reference' => 'nullable|string|max:128']);
+        $data = $r->validate(['operation_key' => 'required|string|max:64', 'expense_category_id' => 'required|integer', 'amount' => 'required|string', 'method' => 'required|string|max:24,transfer', 'description' => 'required|string|max:500', 'external_reference' => 'nullable|string|max:128']);
         $shop = StockContext::shop($r)->id;
         $user = $r->user()->id;
         DB::transaction(function () use ($data, $shop, $user) {

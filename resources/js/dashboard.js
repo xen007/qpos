@@ -11,7 +11,7 @@ if (reportPayload) {
     const charts = [];
     const palette = () => {
         const style = getComputedStyle(document.documentElement);
-        return { ink: style.getPropertyValue("--qpos-text").trim(), brand: style.getPropertyValue("--qpos-brand").trim(), line: style.getPropertyValue("--qpos-border").trim() };
+        return { ink: style.getPropertyValue("--qpos-text").trim(), brand: style.getPropertyValue("--qpos-brand-ink").trim(), line: style.getPropertyValue("--qpos-border").trim() };
     };
     document.querySelectorAll("[data-report-chart]").forEach(canvas => {
         const hourly = canvas.dataset.reportChart === "hours";
@@ -53,7 +53,7 @@ if (payload) {
     function palette() {
         const styles = getComputedStyle(document.documentElement);
         return {
-            brand: styles.getPropertyValue("--qpos-brand").trim() || "#1e5f74",
+            brand: styles.getPropertyValue("--qpos-brand-ink").trim() || "#1e5f74",
             text: styles.getPropertyValue("--qpos-text").trim() || "#182230",
             border:
                 styles.getPropertyValue("--qpos-border").trim() || "#e3e8ef",

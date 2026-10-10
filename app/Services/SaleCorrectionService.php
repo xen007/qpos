@@ -172,10 +172,7 @@ class SaleCorrectionService
                     DB::table('credit_notes')->insert(['customer_id' => $o->customer_id, 'point_of_sale_id' => $shop, 'sale_correction_id' => $correction, 'amount' => (string) $remainder, 'remaining_amount' => (string) $remainder, 'created_at' => $now, 'updated_at' => $now]);
                 } else {
                     $method = $data['method'] ?? 'cash';
-                    if (! in_array($method, ['cash', 'card'], true) || ($method === 'card' && empty(trim($data['external_reference'] ?? '')))) {
-                        Op::fail('method', 'Confirm the external card payment reference.');
-                    }
-                    app(SaleService::class)->payment($o, $s, $method, $remainder, BigDecimal::zero(), 'outgoing', 'refund-'.$correction, $data['external_reference'] ?? null, $snapshot, $reason);
+                    app(SaleService::class)->refund($o, $s, $method, $remainder, 'refund-'.$correction, $data['external_reference'] ?? null, $snapshot, $reason);
                 }
             }
             $due = BigDecimal::of($o->due)->minus($debt);

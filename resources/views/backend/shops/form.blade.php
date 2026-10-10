@@ -33,6 +33,17 @@
                 @endforeach
             </fieldset>
         @endif
+        @if(auth()->user()->can('payment_methods_manage') && $methods->isNotEmpty())
+        <fieldset class="mt-6 grid gap-4"><legend class="font-semibold">{{ __('Store workflow') }}</legend>
+            <input type="hidden" name="workflow_payload" value="1">
+            <x-backend.switch name="pending_sale_enabled" :label="__('Seller to cashier handoff')" :checked="$workflow['pending_sale_enabled']" />
+            <x-backend.input name="pending_expiry_minutes" :label="__('Pending sale expiry (minutes)')" type="number" min="15" max="1440" :value="$workflow['pending_expiry_minutes']" required />
+            <x-backend.input name="taken_lease_minutes" :label="__('Cashier claim duration (minutes)')" type="number" min="1" max="60" :value="$workflow['taken_lease_minutes']" required />
+            <x-backend.input name="orphan_idle_minutes" :label="__('Inactive cash session threshold (minutes)')" type="number" min="60" max="10080" :value="$workflow['orphan_idle_minutes']" required />
+            <p>{{ __('Active payment methods') }}</p>
+            @foreach($methods as $method)<label class="flex items-center gap-3 min-h-11"><input type="checkbox" name="payment_codes[]" value="{{ $method->code }}" @checked(in_array($method->code,old('payment_codes',$activeMethods)))>{{ __($method->label) }}</label>@endforeach
+        </fieldset>
+        @endif
         <button class="qpos-button qpos-button-md qpos-button-primary mt-6" type="submit">{{ __('Save') }}</button>
     </form>
     @if (!$shop->exists)

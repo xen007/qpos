@@ -107,6 +107,7 @@ class RolePermissionSeeder extends Seeder
             'point_of_sale_delete',
             'point_of_sale_assign',
             'point_of_sale_manage_all',
+            'payment_methods_manage', 'pending_sale_prepare', 'pending_sale_collect', 'cash_session_supervise',
 
         ];
         $admin = Role::where('name', 'Admin')->first();
@@ -122,6 +123,7 @@ class RolePermissionSeeder extends Seeder
         // Optionally, assign permissions to the cashier and sales_associate roles
         // You can customize these permissions as needed
         $cashierPermissions = [
+            'pending_sale_collect',
             'sale_create',
             'sale_view',
             'customer_view',
@@ -135,6 +137,7 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $salesPermissions = [
+            'pending_sale_prepare',
             //sale
             'sale_create',
             'sale_view',
