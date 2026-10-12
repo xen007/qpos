@@ -34,20 +34,21 @@
             <div class="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <div>
                     <label for="password" class="block text-sm font-medium text-qpos-ink">{{ __('Current password') }}</label>
-                    <input type="password" id="password" name="current_password" autocomplete="new-password"
+                    <input type="password" id="password" name="current_password" autocomplete="current-password"
                         placeholder="{{ __('Enter your password') }}"
                         class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
 
                 <div>
                     <label for="new_password" class="block text-sm font-medium text-qpos-ink">{{ __('New password') }}</label>
-                    <input type="password" id="new_password" name="new_password" placeholder="{{ __('New password') }}"
+                    <input type="password" id="new_password" name="new_password" autocomplete="new-password" minlength="8" placeholder="{{ __('New password') }}"
                         class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>
 
                 <div>
                     <label for="confirmPassword" class="block text-sm font-medium text-qpos-ink">{{ __('Confirm password') }}</label>
                     <input type="password" id="confirmPassword" name="new_password_confirmation"
+                        autocomplete="new-password" minlength="8"
                         placeholder="{{ __('Confirm password') }}"
                         class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
                 </div>

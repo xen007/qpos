@@ -22,6 +22,7 @@ class SystemSettingsController extends Controller
 
     public function update(Request $request)
     {
+        abort_unless(\App\Support\RoleAssignment::globalManager($request->user()),403);
         $data=$request->validate([
             'multi_shop_enabled'=>['required','boolean'], 'default_expiry_months'=>['required','integer','min:1','max:120'],
             'auto_generate_lots'=>['required','boolean'], 'default_lot_prefix'=>['required','string','max:32','regex:/\A[A-Za-z0-9_-]+\z/'],
@@ -31,7 +32,7 @@ class SystemSettingsController extends Controller
         if (!$newMulti && config('system.multi_shop_enabled',true) && $this->hasNonMainBusinessData()) {
             return back()->withErrors(['multi_shop_enabled'=>__('Mono-boutique is refused because another shop contains business data. No data was changed.')])->withInput();
         }
-        foreach ($data as $key=>$value) writeConfig($key,$value);
+        app(\App\Services\SystemSettings::class)->update($data);
         return back()->with('success',__('System settings saved.'));
     }
 

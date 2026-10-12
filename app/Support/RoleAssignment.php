@@ -19,5 +19,10 @@ final class RoleAssignment
     public static function protectTarget(User $actor, User $target): void
     {
         abort_unless(self::globalManager($actor) || (!$target->hasRole('Admin') && !$target->can('point_of_sale_manage_all') && $target->getAllPermissions()->every(fn($p)=>$actor->can($p->name))),403);
+        if (!self::globalManager($actor)) {
+            $shops=$actor->pointOfSales()->where('points_of_sale.is_active',true)->wherePivot('is_active',true)->pluck('points_of_sale.id');
+            abort_unless(UserAdministration::query($actor)->whereKey($target->id)->exists(),403);
+            abort_if($target->pointOfSales()->where('points_of_sale.is_active',true)->wherePivot('is_active',true)->whereNotIn('points_of_sale.id',$shops)->exists(),403);
+        }
     }
 }

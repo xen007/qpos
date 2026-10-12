@@ -14,7 +14,9 @@ class CurrencySeeder extends Seeder
      */
     public function run()
     {
+        $fresh = !Currency::query()->exists();
         $currencies = [
+            ['name' => 'Franc CFA BEAC', 'code' => 'XAF', 'symbol' => 'FCFA'],
             // Global currencies
             ['name' => 'US Dollar', 'code' => 'USD', 'symbol' => '$'],
             ['name' => 'Euro', 'code' => 'EUR', 'symbol' => '€'],
@@ -28,7 +30,7 @@ class CurrencySeeder extends Seeder
             ['name' => 'Indian Rupee', 'code' => 'INR', 'symbol' => '₹'],
             ['name' => 'Indonesian Rupiah', 'code' => 'IDR', 'symbol' => 'Rp'],
             ['name' => 'Pakistani Rupee', 'code' => 'PKR', 'symbol' => '₨'],
-            ['name' => 'Bangladeshi Taka', 'code' => 'BDT', 'symbol' => '৳','active'=>true],
+            ['name' => 'Bangladeshi Taka', 'code' => 'BDT', 'symbol' => '৳'],
             ['name' => 'Vietnamese Dong', 'code' => 'VND', 'symbol' => '₫'],
             ['name' => 'Philippine Peso', 'code' => 'PHP', 'symbol' => '₱'],
             ['name' => 'Thai Baht', 'code' => 'THB', 'symbol' => '฿'],
@@ -70,10 +72,10 @@ class CurrencySeeder extends Seeder
         ];
 
         foreach ($currencies as $currency) {
-            Currency::firstOrCreate(
-                ['code' => $currency['code']],
-                $currency,
-            );
+            $row = Currency::firstOrNew(['code' => $currency['code']]);
+            if (!$row->exists) {
+                $row->forceFill($currency + ['active' => $fresh && $currency['code']==='XAF'])->save();
+            }
         }
     }
 }

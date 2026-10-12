@@ -7,6 +7,10 @@ use App\Models\Currency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\{DB,Schema};
+use App\Services\AdministrationAudit;
+use App\Support\RoleAssignment;
+use Illuminate\Validation\ValidationException;
 
 class CurrencyController extends Controller
 {
@@ -71,13 +75,18 @@ class CurrencyController extends Controller
      */
     public function store(Request $request)
     {
-
+        abort_unless(RoleAssignment::globalManager($request->user()),403);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:currencies,code',
-            'symbol' => 'required|string'
+            'code' => 'required|string|regex:/\A[A-Z]{3}\z/|unique:currencies,code',
+            'symbol' => 'required|string|max:20',
         ]);
-        $currency = Currency::create($request->only(['name', 'code', 'symbol']));
+        DB::transaction(function () use ($validated) {
+            $this->lockCurrencies();
+            $currency=Currency::create($validated);
+            app(AdministrationAudit::class)->record('currency.created','currency',$currency->id,[], $validated);
+        });
+        Cache::forget('default_currency');
 
         return redirect()->route('backend.admin.currencies.index')->with('success', __('Currency created successfully!'));
     }
@@ -106,14 +115,24 @@ class CurrencyController extends Controller
      */
     public function update(Request $request, $id)
     {
-
+        abort_unless(RoleAssignment::globalManager($request->user()),403);
         $currency = Currency::findOrFail($id);
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:currencies,code,' . $currency->id,
-            'symbol' => 'required|string'
+            'code' => 'required|string|regex:/\A[A-Z]{3}\z/|unique:currencies,code,' . $currency->id,
+            'symbol' => 'required|string|max:20',
         ]);
-        $currency->update($request->only(['name', 'code', 'symbol']));
+        DB::transaction(function () use ($id,$validated) {
+            $this->lockCurrencies();
+            $currency=Currency::findOrFail($id);
+            if($currency->code!==$validated['code'] && ($currency->active || $this->used($currency->code))) {
+                throw ValidationException::withMessages(['code'=>__('administration.currency_used')]);
+            }
+            $before=$currency->only(['name','code','symbol']);
+            $currency->update($validated);
+            app(AdministrationAudit::class)->record('currency.updated','currency',$id,$before,$validated);
+        });
+        Cache::forget('default_currency');
         return redirect()->route('backend.admin.currencies.index')->with('success', __('Currency updated successfully!'));
     }
 
@@ -123,18 +142,46 @@ class CurrencyController extends Controller
      */
     public function destroy($id)
     {
-
-        $currency = Currency::findOrFail($id);
-        $currency->delete();
+        abort_unless(RoleAssignment::globalManager(auth()->user()),403);
+        DB::transaction(function () use ($id) {
+            $this->lockCurrencies();
+            $currency=Currency::findOrFail($id);
+            if($currency->active) throw ValidationException::withMessages(['currency'=>__('administration.currency_default')]);
+            if($this->used($currency->code)) throw ValidationException::withMessages(['currency'=>__('administration.currency_used')]);
+            $before=$currency->only(['name','code','symbol']);$currency->delete();
+            app(AdministrationAudit::class)->record('currency.deleted','currency',$id,$before);
+        });
+        Cache::forget('default_currency');
         return redirect()->back()->with('success', __('Currency Deleted Successfully'));
     }
     public function setDefault($id)
     {
-        Currency::where('active', true)->update(['active' => false]);
-        $currency = Currency::findOrFail($id);
-        $currency->active = true;
-        $currency->save();
-        Cache::put('default_currency', $currency, 60 * 24);
+        abort_unless(RoleAssignment::globalManager(auth()->user()),403);
+        DB::transaction(function () use ($id) {
+            $this->lockCurrencies();
+            $currency=Currency::findOrFail($id);
+            if($currency->code!=='XAF') throw ValidationException::withMessages(['currency'=>__('administration.xaf_default')]);
+            $before=['code'=>Currency::where('active',true)->value('code')];
+            Currency::where('active',true)->update(['active'=>false]);
+            $currency->active=true;$currency->save();
+            app(AdministrationAudit::class)->record('currency.default_changed','currency',$id,$before,['code'=>$currency->code,'active'=>true]);
+        });
+        Cache::forget('default_currency');
         return redirect()->back()->with('success', __('Currency Set Default Successfully'));
+    }
+
+    private function lockCurrencies(): void
+    {
+        Currency::orderBy('id')->lockForUpdate()->get();
+    }
+
+    private function used(string $code): bool
+    {
+        // BDT denotes preserved historical documents, including legacy unknown rows.
+        if(in_array($code,['XAF','BDT'],true))return true;
+        foreach(['orders','purchases','payments','product_batches','credit_notes'] as $table) {
+            if(Schema::hasColumn($table,'currency_code') && DB::table($table)->where('currency_code',$code)->exists())return true;
+        }
+        return false;
     }
 }

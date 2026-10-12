@@ -1,5 +1,21 @@
 # QPOS — cartographie des routes et des permissions
 
+## Complément Phase 6 — 12/10/2026
+
+Inventaire source actuel : **219 routes**, **100 codes de permission enregistrés**, aucun code statique de middleware manquant. Les tableaux historiques plus bas restent datés.
+
+| Route / opération | Autorisation |
+|---|---|
+| GET admin/audit, admin/audit/{id} | audit_view ; scope actif par boutique, événements globaux pour Admin global seulement |
+| GET admin/products | product_view et contexte boutique ; catégorie/statut/marque validés, DataTables côté serveur |
+| Gestion utilisateurs | user_view/create/update/delete/suspend selon action ; contrôle cible et portées locales ; dernier Admin protégé |
+| Mutations rôles/permissions | Permission de route existante ET Admin global ; identifiants Permission web ; codes utilisés protégés |
+| Lecture paramètres généraux | Au moins une permission d'onglet |
+| Mutations paramètres/devises | Permission de l'onglet/opération ET Admin global ; validation et audit atomique |
+| POST login/récupération/reset/renvoi | Limites nommées distinctes, CSRF ; GET non comptabilisés |
+
+Routes Google retirées après recherche des appels ; données google_id conservées. Ce complément remplace la règle ancienne du seeder Phase 4 qui donnait une caisse à tout rôle sale_create : seuls les rôles de caissier prévus reçoivent cette capacité automatiquement.
+
 Document genere depuis la table de routes (`php artisan route:list`) le 29/09/2026.
 
 - **134 routes** au total ;

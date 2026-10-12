@@ -1,5 +1,15 @@
 # QPOS — Schéma cible
 
+## Schéma livré Phase 6 — 12/10/2026
+
+Migrations additives `2026_10_12_140000_create_administration_audit_and_settings` et `2026_10_12_143000_register_native_administration_permissions`, vérifiées sur copie puis déployées sur qpos.
+
+- `audit_logs` : id, actor_id nullable, point_of_sale_id nullable, event, object_type/object_id, old_values/new_values JSON filtrés, result/reason, correlation_id, occurred_at/recorded_at UTC. Références scalaires conservant les preuves après suppression d'une cible. Index boutique/date/id, objet/ID/date, action/date et acteur. Aucune collecte IP/UA ; append-only par modèle et interface.
+- `system_settings` : clé primaire, valeur JSON, updated_by nullable et updated_at UTC. Whitelist de réglages chargée au démarrage, au-dessus de config/system.php.
+- Permissions natives inscrites de manière additive et chaîne des seeders complétée, sans nouvelle affectation boutique ni réécriture de stock/ventes/historiques. `audit_view` attribuée à Admin. Un vendeur ne reçoit pas automatiquement `cash_session_manage`.
+
+78 tables existantes inchangées après déploiement, contrôlées par empreinte ; seules permissions/role_has_permissions/migrations enrichies, deux tables nouvelles. Retour arrière destructif refusé : restauration vérifiée.
+
 Date initiale : 01/10/2026. Mise à jour Phase 3.E : 07/10/2026. Catalogue/boutiques/prix et opérations stock décrivent l'implémentation autorisée ; les parties des phases suivantes restent proposées.
 
 Référence : [roadmap.md](roadmap.md), sections 3.5, 4 et 5. Documents associés : [conversion-strategie.md](conversion-strategie.md) et [contrats.md](contrats.md).

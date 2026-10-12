@@ -1,5 +1,13 @@
 # QPOS — Contrats communs
 
+## Livraison administration Phase 6 — 12/10/2026
+
+L'audit Phase 6 partage la transaction des modifications utilisateurs/rôles/permissions, paramètres, devises et profil/récupération. Avant/après limités à une whitelist ; mots de passe/hashes/tokens/secrets/données bancaires exclus, IP/UA non collectés par défaut. Consultation `audit_view` paginée ; événements globaux réservés à l'Admin global, événements boutique limités aux affectations actives. Événements append-only, dates stockées UTC et lues en Africa/Douala. Aucun succès journalisé après rollback ni événement historique inventé. Les refus d'accès restent des refus HTTP ; pas de journalisation rétroactive des phases 0–5. Rétention et archivage externe à traiter en exploitation.
+
+Le dernier Admin global actif est protégé par un verrou partagé entre suspension, retrait de rôle et suppression. Une attribution locale ne permet pas de modifier les définitions globales ni une cible affectée à une autre boutique. `sale_create` ne donne pas automatiquement le droit d'ouvrir une caisse ; vendeurs et caissiers conservent leurs capacités distinctes, les rôles restent cumulables.
+
+Les paramètres persistants utilisent `system_settings` ; `config/system.php` reste la référence de repli. Aucune réécriture de PHP ou `.env` depuis un écran. Paramètres communs sous gestion globale et permission de l'onglet ; codes XAF/BDT et devises utilisées protégés. Le seed vide choisit XAF sans convertir les historiques ni écraser une configuration existante.
+
 Date initiale : 01/10/2026. Les contrats initiaux restent proposés sauf décisions validées ; sections 4–6 et 8–9 complétées selon les validations et implémentations Phases 2–3.E, jusqu'au 07/10/2026.
 
 Références : [roadmap.md](roadmap.md), [schema-cible.md](schema-cible.md), [conversion-strategie.md](conversion-strategie.md). Ce document ne crée aucun service ni automatisation. Aucun nouvel ID Dxx. Les paramètres non fixés restent **à proposer**, même si une valeur indicative est présentée.

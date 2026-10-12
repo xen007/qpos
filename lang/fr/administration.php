@@ -1,0 +1,27 @@
+<?php
+return [
+    'user_history'=>'Ce compte possède un historique métier et doit être conservé. Vous pouvez le suspendre.',
+    'all_categories'=>'Toutes les catégories', 'all_brands'=>'Toutes les marques', 'all_statuses'=>'Tous les statuts', 'reset_filters'=>'Réinitialiser les filtres',
+    'audit'=>'Journal d’audit', 'audit_immutable'=>'Les événements d’audit ne peuvent pas être modifiés ou supprimés.',
+    'migration_required'=>'Appliquez la migration Phase 6 avant de modifier l’administration.',
+    'invalid_setting'=>'Ce paramètre ne peut pas être enregistré.',
+    'last_admin'=>'Le dernier administrateur global actif doit conserver son accès. Ajoutez un autre administrateur actif avant cette action.',
+    'permission_in_use'=>'Cette permission est utilisée par l’application ou attribuée à un rôle/utilisateur ; son code ne peut pas être modifié ou supprimé.',
+    'currency_default'=>'La devise par défaut ne peut pas être supprimée.',
+    'currency_used'=>'Une devise utilisée par les documents doit conserver son code.',
+    'global_settings'=>'Ces paramètres communs sont modifiables par l’administrateur global.',
+    'xaf_default'=>'Les opérations natives utilisent XAF. Les autres devises restent disponibles pour les historiques.',
+    'event'=>'Action', 'object'=>'Objet', 'actor'=>'Utilisateur', 'before'=>'Avant', 'after'=>'Après', 'result'=>'Résultat',
+    'global_event'=>'Administration globale', 'no_events'=>'Aucun événement pour ces filtres.', 'audit_detail'=>'Détail de l’événement',
+    'from'=>'Du', 'until'=>'Au', 'all'=>'Tous', 'correlation'=>'Référence de suivi', 'recorded_at'=>'Enregistré le',
+    'actor_id'=>'ID de l’utilisateur',
+    'unknown_actor'=>'Utilisateur non authentifié ou système', 'success'=>'Réussi',
+    'objects'=>['user'=>'Utilisateur','role'=>'Rôle','permission'=>'Permission','system'=>'Paramètres','currency'=>'Devise'],
+    'events'=>[
+        'user'=>['created'=>'Utilisateur créé','updated'=>'Utilisateur modifié','deleted'=>'Utilisateur supprimé','suspended'=>'Utilisateur suspendu','activated'=>'Utilisateur réactivé','profile_updated'=>'Profil modifié','password_reset'=>'Mot de passe réinitialisé'],
+        'role'=>['created'=>'Rôle créé','updated'=>'Rôle modifié','deleted'=>'Rôle supprimé','permissions_updated'=>'Permissions du rôle modifiées','permissions_registered'=>'Permissions natives du rôle enregistrées'],
+        'permission'=>['created'=>'Permission créée','updated'=>'Permission modifiée','deleted'=>'Permission supprimée'],
+        'settings'=>['updated'=>'Paramètres modifiés'],
+        'currency'=>['created'=>'Devise créée','updated'=>'Devise modifiée','deleted'=>'Devise supprimée','default_changed'=>'Devise par défaut modifiée'],
+    ],
+];

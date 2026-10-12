@@ -31,7 +31,8 @@
             @endforeach
         </nav>
 
-        <div class="space-y-6">
+        <fieldset class="min-w-0 space-y-6 border-0 p-0" @disabled(!$canManage)>
+            @if (!$canManage)<p class="text-sm text-qpos-muted">{{ __('administration.global_settings') }}</p>@endif
             {{-- 1. Informations du site --}}
             @can('website_settings')
                 <div data-qpos-tab-panel="website-info" class="hidden">
@@ -285,8 +286,6 @@
                                     class="{{ readConfig('is_live') == 1 ? 'hidden' : '' }}">
                                     <x-backend.textarea name="close_msg" :label="__('Close Message')"
                                         :value="readConfig('close_msg')" :placeholder="__('Close Message')" rows="4" />
-                                    {{-- Le controleur websiteStatusUpdate() n'enregistre que is_live :
-                                         ce message n'est donc pas conserve (voir la documentation). --}}
                                 </div>
                             </div>
 
@@ -339,7 +338,7 @@
                     </x-backend.card>
                 </div>
             @endcan
-        </div>
+        </fieldset>
     </div>
 @endsection
 

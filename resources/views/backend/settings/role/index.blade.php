@@ -3,13 +3,13 @@
 @section('title', __('Roles'))
 
 @section('page-actions')
-    @can('role_create')
+    @if ($canManage && auth()->user()->can('role_create'))
         <button type="button" data-qpos-modal-open="#roleModal"
             class="qpos-button qpos-button-md qpos-button-primary inline-flex items-center gap-2 rounded-lg bg-qpos-brand px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
             <x-backend.icon name="fas fa-plus-circle" />
             {{ __('Add New') }}
         </button>
-    @endcan
+    @endif
 @endsection
 
 @section('content')
@@ -38,13 +38,15 @@
                                         <x-backend.icon name="fas fa-cog" />
                                     </a>
 
-                                    @if ($role->name !== 'Admin')
+                                    @if ($canManage && $role->name !== 'Admin')
+                                        @can('role_update')
                                         <button type="button" data-qpos-modal-open="#editRole-{{ $role->id }}"
                                             title="{{ __('Edit Role') }}" aria-label="{{ __('Edit Role') }}"
                                             class="{{ $iconButton }}">
                                             <x-backend.icon name="fas fa-pencil-alt" />
                                         </button>
-
+                                        @endcan
+                                        @can('role_delete')
                                         <form action="{{ route('backend.admin.roles.delete', $role->id) }}"
                                             method="POST"
                                             onsubmit="return confirm(@js(__('Are you sure you want to delete this item?')))">
@@ -55,6 +57,7 @@
                                                 <x-backend.icon name="fas fa-trash-alt" />
                                             </button>
                                         </form>
+                                        @endcan
                                     @endif
                                 </div>
                             </td>
@@ -65,7 +68,7 @@
         </div>
     </x-backend.card>
 
-    @can('role_create')
+    @if ($canManage && auth()->user()->can('role_create'))
         <x-backend.modal id="roleModal" :title="__('Add new role')" :action="route('backend.admin.roles.create')"
             :submit-label="__('Submit')">
             <div>
@@ -75,11 +78,11 @@
                     class="qpos-control mt-1 w-full rounded-lg border border-qpos-line bg-qpos-surface px-3 py-2 text-sm text-qpos-ink placeholder:text-qpos-muted focus:border-qpos-brand focus:outline-none">
             </div>
         </x-backend.modal>
-    @endcan
+    @endif
 
     {{-- Une modale d'edition par role modifiable (le role Admin n'est pas modifiable). --}}
     @foreach ($roles as $role)
-        @continue ($role->name === 'Admin')
+        @continue (!$canManage || !auth()->user()->can('role_update') || $role->name === 'Admin')
 
         <x-backend.modal id="editRole-{{ $role->id }}" :title="__('Edit Role')"
             :action="route('backend.admin.roles.update', $role->id)" method="PUT" :submit-label="__('Save changes')">

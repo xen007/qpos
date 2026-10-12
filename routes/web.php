@@ -28,7 +28,6 @@ use App\Http\Controllers\Backend\SystemSettingsController;
 use App\Http\Controllers\Backend\UserManagementController;
 use App\Http\Controllers\Backend\WebsiteSettingController;
 use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Middleware\SetPointOfSaleContext;
 use App\Support\PermissionRoutes;
@@ -57,23 +56,22 @@ Route::post('/language', [LanguageController::class, 'update'])
     ->name('language.update');
 
 // authentication
-Route::match(['get', 'post'], 'login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
+Route::match(['get', 'post'], 'login', [AuthController::class, 'login'])->middleware('throttle:qpos-login')->name('login');
 
 Route::post('logout', [AuthController::class, 'logout'])->name('logout');
-Route::match(['get', 'post'], 'forget-password', [AuthController::class, 'forgetPassword'])->middleware('throttle:5,1')->name('forget.password');
-Route::match(['get', 'post'], 'new-password', [AuthController::class, 'newPassword'])->middleware('throttle:5,1')->name('new.password');
-Route::match(['get', 'post'], 'password-reset', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.reset');
-Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:3,1')->name('resend.otp');
+Route::match(['get', 'post'], 'forget-password', [AuthController::class, 'forgetPassword'])->middleware('throttle:qpos-forgot')->name('forget.password');
+Route::match(['get', 'post'], 'new-password', [AuthController::class, 'newPassword'])->middleware('throttle:qpos-new-password')->name('new.password');
+Route::match(['get', 'post'], 'password-reset', [AuthController::class, 'resetPassword'])->middleware('throttle:qpos-reset')->name('password.reset');
+Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('throttle:qpos-resend')->name('resend.otp');
 
-// google auth
-Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback'])->name('auth.google.handle.callback');
 
 // ====================== /FRONTEND =====================
 
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+    Route::get('audit',[\App\Http\Controllers\Backend\AuditLogController::class,'index'])->name('audit.index')->middleware('permission:audit_view');
+    Route::get('audit/{id}',[\App\Http\Controllers\Backend\AuditLogController::class,'show'])->whereNumber('id')->name('audit.show')->middleware('permission:audit_view');
     Route::get('pending-sales',[\App\Http\Controllers\Backend\PendingSaleController::class,'index'])->name('pending.index');
     Route::post('pending-sales',[\App\Http\Controllers\Backend\PendingSaleController::class,'submit'])->name('pending.submit')->middleware('permission:pending_sale_prepare');
     Route::post('pending-sales/{id}/take',[\App\Http\Controllers\Backend\PendingSaleController::class,'take'])->whereNumber('id')->name('pending.take')->middleware('permission:pending_sale_collect');
@@ -239,7 +237,7 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         // website settings
         Route::prefix('website')->group(function () {
             Route::controller(WebsiteSettingController::class)->prefix('general')->group(function () {
-                Route::get('/', 'websiteGeneral')->name('settings.website.general')->middleware('permission:website_settings');
+                Route::get('/', 'websiteGeneral')->name('settings.website.general')->middleware('permission:website_settings|contact_settings|socials_settings|style_settings|custom_settings|notification_settings|website_status_settings|invoice_settings');
                 Route::post('update-info', 'websiteInfoUpdate')->name('settings.website.info.update')->middleware('permission:website_settings');
                 Route::post('update-contacts', 'websiteContactsUpdate')->name('settings.website.contacts.update')->middleware('permission:contact_settings');
                 Route::post('update-social-links', 'websiteSocialLinkUpdate')->name('settings.website.social.link.update')->middleware('permission:socials_settings');

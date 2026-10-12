@@ -61,12 +61,8 @@ if (!function_exists('terms')) {
 if (!function_exists('writeConfig')) {
     function writeConfig($key, $value)
     {
-        config(['system.' . $key => $value]);
-        $fp = fopen(base_path() . '/config/system.php', 'w');
-        fwrite($fp, '<?php return ' . var_export(config('system'), true) . ';');
-        fclose($fp);
-
-        return @$value;
+        app(\App\Services\SystemSettings::class)->update([$key=>$value]);
+        return $value;
     }
 }
 

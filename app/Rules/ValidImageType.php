@@ -42,7 +42,16 @@ class ValidImageType implements Rule
         // The content must be a decodable image of an allowed type
         $imageInfo = @getimagesize($value->getRealPath());
 
-        return $imageInfo !== false && in_array($imageInfo[2], self::ALLOWED_IMAGE_TYPES, true);
+        if ($imageInfo === false || !in_array($imageInfo[2], self::ALLOWED_IMAGE_TYPES,true)
+            || $imageInfo[0] > 8192 || $imageInfo[1] > 8192 || $imageInfo[0]*$imageInfo[1] > 16000000) {
+            return false;
+        }
+        // A valid header alone does not guarantee the image can be decoded.
+        // Reject corrupt images before the upload handler can produce an HTTP 500.
+        $decoded=@imagecreatefromstring(file_get_contents($value->getRealPath()));
+        if ($decoded===false) return false;
+        imagedestroy($decoded);
+        return true;
     }
 
     public function message()

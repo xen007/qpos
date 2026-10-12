@@ -41,9 +41,22 @@ class ProductController extends Controller
     {
 
         if ($request->ajax() && $request->has('draw')) {
-            $shop = $request->attributes->get('point_of_sale');
+            $shop = \App\Support\StockContext::shop($request);
+            $filters = $request->validate([
+                'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+                'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
+                'status' => ['nullable', 'in:0,1'],
+                'search.value' => ['nullable', 'string', 'max:255'],
+                'length' => ['sometimes', 'integer', 'min:1', 'max:100'],
+                'start' => ['sometimes', 'integer', 'min:0'],
+            ]);
             $products = Product::query()->with('unit')->latest();
-            if ($shop) { app(\App\Services\StockAvailability::class)->attach($products, $shop->id); }
+            foreach (['category_id', 'brand_id', 'status'] as $field) {
+                if (isset($filters[$field]) && $filters[$field] !== '') {
+                    $products->where('products.'.$field, $filters[$field]);
+                }
+            }
+            app(\App\Services\StockAvailability::class)->attach($products, $shop->id);
             return DataTables::of($products)
                 ->filter(function ($query) use ($request) {
                     $search = $request->input('search.value');
@@ -140,7 +153,11 @@ class ProductController extends Controller
             // Return the results as a JSON response
             return ProductResource::collection($products);
         }
-        return view('backend.products.index');
+        \App\Support\StockContext::shop($request);
+        return view('backend.products.index', [
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'brands' => Brand::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**

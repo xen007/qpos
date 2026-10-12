@@ -27,6 +27,7 @@ class CartController extends Controller
 
     public function index(Request $r)
     {
+        StockContext::shop($r);
         if (! $r->wantsJson()) {
             return view('backend.cart.index');
         }

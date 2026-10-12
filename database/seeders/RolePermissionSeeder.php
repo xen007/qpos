@@ -84,6 +84,7 @@ class RolePermissionSeeder extends Seeder
             'role_update',
             'role_delete',
             'permission_view',
+            'audit_view',
             //user
             'user_create',
             'user_view',

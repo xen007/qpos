@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Services\AdministrationAudit;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -31,8 +33,8 @@ class AuthController extends Controller
 
             $request->validate(
                 [
-                    'email' => 'required',
-                    'password' => 'required'
+                    'email' => 'required|string|email|max:254',
+                    'password' => 'required|string|max:255',
                 ]
             );
 
@@ -40,7 +42,7 @@ class AuthController extends Controller
                 return redirect()->back()->with('error', __('Incorrect email or password'));
             }
 
-            $user = User::where('email', $request->email)->first();
+            $user = User::where('email', $request->email)->firstOrFail();
             if ($user->is_suspended == 1) {
                 return redirect()->back()->with('error', __('Your account is temporarily suspended'));
             }
@@ -155,18 +157,21 @@ class AuthController extends Controller
     {
         if ($request->isMethod('post')) {
             $request->validate([
-                'password' => 'required|confirmed|min:6',
+                'password' => 'required|string|confirmed|min:8|max:255',
             ]);
 
             $verifiedUserId = $request->session()->get('password-reset-verified-user');
             $user = $verifiedUserId ? User::find($verifiedUserId) : null;
 
             if ($user && hash_equals((string) $user->email, (string) $request->session()->get('reset-email'))) {
-                $user->password = Hash::make($request->password);
-                $user->remember_token = Str::random(60);
-                $user->save();
-
-                ForgetPassword::where('user_id', $user->id)->delete();
+                DB::transaction(function () use ($user,$request) {
+                    $user=User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+                    $user->password = Hash::make($request->password);
+                    $user->remember_token = Str::random(60);
+                    $user->save();
+                    ForgetPassword::where('user_id',$user->id)->delete();
+                    app(AdministrationAudit::class)->record('user.password_reset','user',$user->id,[],['password_changed'=>true]);
+                });
                 $request->session()->forget([
                     'user_id',
                     'reset-email',
@@ -263,52 +268,40 @@ class AuthController extends Controller
         if (demoUserCheck($user->email)) {
             return back()->with('error', __('Cannot update details of demo user'));
         }
-        // dd($request->all());
         $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:254|unique:users,email,' . $user->id,
             'profile_image' => ['file', new ValidImageType, 'max:2048']
         ]);
 
-        if ($request->name !== $user->name) {
-            $user->name = $request->name;
-        }
-
-        if ($request->email !== $user->email) {
-            $user->email = $request->email;
-            $user->google_id = null;
-        }
-
-        if ($request->hasFile("profile_image")) {
-            $user->profile_image = $this->fileHandler->fileUploadAndGetPath($request->file("profile_image"), "/public/media/users");
-        }
-
-        if ($request->current_password || $request->new_password || $request->confirm_password) {
-
+        $changePassword=$request->filled('current_password') || $request->filled('new_password') || $request->filled('new_password_confirmation');
+        if ($changePassword) {
             $request->validate([
-                'new_password' => 'required|min:6|confirmed',
+                'new_password' => 'required|string|min:8|max:255|confirmed',
+                'current_password' => 'required|string|max:255',
             ]);
-
-            if ($user->is_google_registered) {
-                $user->is_google_registered = false;
-            } else {
-                $request->validate([
-                    'current_password' => 'required',
-                ]);
-
-                $currentPassword = $request->current_password;
-
-                if (!Hash::check($currentPassword, $user->password)) {
-                    throw ValidationException::withMessages([
-                        'current_password' => __('The current password is incorrect'),
-                    ]);
-                }
-            }
-
-            $user->password = bcrypt($request->new_password);
         }
-
-        $user->save();
+        $oldImage=null;$newImage=null;
+        try {
+            DB::transaction(function () use ($request,$changePassword,&$oldImage,&$newImage) {
+                $user=User::whereKey(auth()->id())->lockForUpdate()->firstOrFail();
+                if($changePassword && !Hash::check($request->current_password,$user->password)) {
+                    throw ValidationException::withMessages(['current_password'=>__('The current password is incorrect')]);
+                }
+                abort_unless(\Illuminate\Support\Facades\Schema::hasTable('audit_logs'),503,__('administration.migration_required'));
+                $before=['name'=>$user->name,'email'=>$user->email];
+                $user->name=$request->name;$user->email=$request->email;
+                if($request->hasFile('profile_image')) {
+                    $oldImage=$user->profile_image;
+                    $newImage=$this->fileHandler->fileUploadAndGetPath($request->file('profile_image'),'/public/media/users');
+                    $user->profile_image=$newImage;
+                }
+                if($changePassword){$user->password=Hash::make($request->new_password);$user->is_google_registered=false;}
+                $user->save();
+                app(AdministrationAudit::class)->record('user.profile_updated','user',$user->id,$before,['name'=>$user->name,'email'=>$user->email,'password_changed'=>$changePassword,'profile_image_changed'=>$newImage!==null],\App\Support\UserAdministration::auditShop($user,$user));
+            });
+        } catch (\Throwable $e) {if($newImage)$this->fileHandler->secureUnlink($newImage);throw $e;}
+        if($oldImage)$this->fileHandler->secureUnlink($oldImage);
 
         return back()->with('success', __('Updated Successfully'));
     }
@@ -322,7 +315,7 @@ class AuthController extends Controller
                 return redirect()->route('backend.admin.dashboard');
             }
 
-            if ($user->can('sale_create')) {
+            if ($user->hasAnyPermission(['sale_create','pending_sale_prepare'])) {
                 return redirect()->route('backend.admin.cart.index');
             }
 

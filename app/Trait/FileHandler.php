@@ -11,12 +11,10 @@ class FileHandler
 {
     public function uploadToPublic($file, $path = "/assets/images")
     {
-        $file_name = time() . "_" . uniqid() . "_" . $file->getClientOriginalName();
+        $file_name = time() . "_" . bin2hex(random_bytes(16)) . "." . $this->extensionFromMimeType($file->getMimeType());
         $storingPath = public_path() . $path . "/" . $file_name;
 
-        if (!file_exists($path)) {
-            Storage::makeDirectory($path);
-        }
+        File::ensureDirectoryExists(dirname($storingPath));
 
         Image::make($file->getRealPath())->resize(null, 400, function ($constraint) {
             $constraint->aspectRatio();

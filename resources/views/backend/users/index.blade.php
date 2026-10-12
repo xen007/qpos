@@ -122,22 +122,22 @@
                         searchable: false,
                         className: 'text-right',
                         render: (value, type, row) => {
-                            const items = [{
+                            const items = [];
+                            if (row.capabilities.edit) items.push({
                                     type: 'link',
                                     url: withId(config.routes.edit, row.id),
                                     label: config.labels.edit,
                                     icon: 'fas fa-edit',
-                                },
-                                {
+                                });
+                            if (row.capabilities.delete) items.push({
                                     type: 'form',
                                     url: withId(config.routes.destroy, row.id),
                                     label: config.labels.delete,
                                     icon: 'fas fa-trash-alt',
                                     confirm: config.labels.confirm,
-                                },
-                            ];
+                                });
 
-                            items.push(row.is_suspended ? {
+                            if (row.capabilities.suspend) items.push(row.is_suspended ? {
                                 type: 'form',
                                 url: withId(config.routes.activate, row.id),
                                 label: config.labels.activate,

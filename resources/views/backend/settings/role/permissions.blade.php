@@ -37,7 +37,7 @@
                     <label for="customSwitch{{ $data->id }}"
                         class="flex cursor-pointer items-center gap-3 rounded-lg border border-qpos-line px-3 py-2 text-sm text-qpos-ink transition hover:bg-qpos-page">
                         <input type="checkbox" id="customSwitch{{ $data->id }}" name="permissions[]"
-                            value="{{ $data->name }}" @checked((bool) $per_found)
+                            value="{{ $data->id }}" @checked((bool) $per_found) @disabled(!$canManage || $role->name === 'Admin')
                             class="h-4 w-4 rounded border-qpos-line accent-qpos-brand focus:outline-none focus:ring-2 focus:ring-qpos-brand/40">
                         <span>{{ snakeToTitle($data->name) }}</span>
                     </label>
@@ -45,7 +45,7 @@
             </div>
 
             <div class="mt-6 flex justify-end">
-                <button type="submit"
+                <button type="submit" @disabled(!$canManage || $role->name === 'Admin')
                     class="qpos-button qpos-button-md qpos-button-primary rounded-lg bg-qpos-brand px-6 py-2 text-sm font-semibold text-white transition hover:opacity-90">
                     {{ __('Submit') }}
                 </button>

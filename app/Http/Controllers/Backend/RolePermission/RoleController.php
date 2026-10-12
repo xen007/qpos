@@ -2,42 +2,47 @@
 
 namespace App\Http\Controllers\Backend\RolePermission;
 
-use app;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 use Illuminate\Support\Facades\DB;
+use App\Support\{RoleAssignment, UserAdministration};
+use App\Services\AdministrationAudit;
 
 class RoleController extends Controller
 {
     // show roles page
     public function index()
     { 
-        $roles = Role::all();
-        $permissions = Permission::all();
-        return view('backend.settings.role.index', compact('roles', 'permissions'));
+        $roles = Role::where('guard_name','web')->get();
+        $permissions = Permission::where('guard_name','web')->get();
+        $canManage=RoleAssignment::globalManager(auth()->user());
+        return view('backend.settings.role.index', compact('roles', 'permissions','canManage'));
     }
 
     // create new role
     public function store(Request $request)
     {
+        abort_unless(RoleAssignment::globalManager($request->user()),403);
         $request->validate([
             'name' => 'required|string|max:255|unique:roles,name'
         ]);
 
-        if (Role::create($request->only('name'))) {
+        DB::transaction(function () use ($request) {
+            UserAdministration::lock();
+            $role=Role::create(['name'=>$request->name,'guard_name'=>'web']);
+            app(AdministrationAudit::class)->record('role.created','role',$role->id,[],['name'=>$role->name]);
+        });
             return back()->with('success', __('Role created successfully'));
-        } else {
-            return back()->with('error', __('Something went wrong. Please try again.'));
-        }
     }
 
     // update a role
     public function update(Request $request, $id)
     {
-        $role = Role::findOrFail($id);
+        abort_unless(RoleAssignment::globalManager($request->user()),403);
+        $role = Role::where('guard_name','web')->findOrFail($id);
         $request->validate([
             'name' => "required|string|max:255|unique:roles,name," . $id
         ]);
@@ -47,9 +52,13 @@ class RoleController extends Controller
         }
 
         if ($role) {
-            $role->update([
-                'name' => $request->name
-            ]);
+            DB::transaction(function () use ($id,$request) {
+                UserAdministration::lock();
+                $role=Role::whereKey($id)->where('guard_name','web')->lockForUpdate()->firstOrFail();
+                $before=['name'=>$role->name];
+                $role->update(['name'=>$request->name]);
+                app(AdministrationAudit::class)->record('role.updated','role',$role->id,$before,['name'=>$role->name]);
+            });
             return back()->with('success', __('Role has been updated'));
         } else {
             return back()->with('error', __('The selected role could not be found.'));
@@ -59,17 +68,20 @@ class RoleController extends Controller
     // show permissions
     public function show($id)
     {
-        $role = Role::findOrFail($id);
-        $permissions = Permission::all();
+        $role = Role::where('guard_name','web')->findOrFail($id);
+        $permissions = Permission::where('guard_name','web')->get();
 
-        return view('backend.settings.role.permissions', compact('permissions', 'role'));
+        $canManage=RoleAssignment::globalManager(auth()->user());
+        return view('backend.settings.role.permissions', compact('permissions', 'role','canManage'));
     }
 
     // delete a role
     public function destroy($id)
     {
+        abort_unless(RoleAssignment::globalManager(auth()->user()),403);
         $result = DB::transaction(function () use ($id) {
-            $role = Role::whereKey($id)->lockForUpdate()->firstOrFail();
+            UserAdministration::lock();
+            $role = Role::whereKey($id)->where('guard_name','web')->lockForUpdate()->firstOrFail();
             if ($role->name === 'Admin') {
                 return 'admin';
             }
@@ -78,7 +90,9 @@ class RoleController extends Controller
                 return 'assigned';
             }
 
+            $before=['name'=>$role->name,'permissions'=>$role->permissions->pluck('name')->all()];
             $role->delete();
+            app(AdministrationAudit::class)->record('role.deleted','role',$id,$before);
             return 'deleted';
         });
 
@@ -94,21 +108,27 @@ class RoleController extends Controller
     // update permissions of a role
     public function updatePermission(Request $request, $id)
     {
-        // Reset cached roles and permissions
-        app()[PermissionRegistrar::class]->forgetCachedPermissions();
-        if ($role = Role::findOrFail($id)) {
+        abort_unless(RoleAssignment::globalManager($request->user()),403);
+        if ($role = Role::where('guard_name','web')->findOrFail($id)) {
             // admin role has everything
             if ($role->name === 'Admin') {
-                $role->syncPermissions(Permission::all());
                 return to_route('backend.admin.roles')->with('warning', __('The administrator role always has all permissions.'));
             }
             
             $validated = $request->validate([
                 'permissions' => ['sometimes', 'array'],
-                'permissions.*' => ['integer', 'exists:permissions,id'],
+                'permissions.*' => ['integer','distinct', \Illuminate\Validation\Rule::exists('permissions','id')->where('guard_name','web')],
             ]);
             $permissions = $validated['permissions'] ?? [];
-            $role->syncPermissions($permissions);
+            DB::transaction(function () use ($id,$permissions) {
+                UserAdministration::lock();
+                $role=Role::whereKey($id)->where('guard_name','web')->lockForUpdate()->firstOrFail();
+                $before=['permissions'=>$role->permissions->pluck('name')->sort()->values()->all()];
+                $selected=Permission::whereIn('id',$permissions)->where('guard_name','web')->get();
+                $role->syncPermissions($selected);
+                app(AdministrationAudit::class)->record('role.permissions_updated','role',$role->id,$before,['permissions'=>$selected->pluck('name')->sort()->values()->all()]);
+            });
+            app(PermissionRegistrar::class)->forgetCachedPermissions();
             return back()->with('success', __('Permissions updated for :role.', ['role' => $role->name]));
         } else {
             return back()->with('error', __('The selected role could not be found.'));
@@ -119,7 +139,7 @@ class RoleController extends Controller
     public function roleWisePermissions($id)
     {
         if ($id != '') {
-            $data = Role::findOrFail($id);
+            $data = Role::where('guard_name','web')->findOrFail($id);
             return response()->json($data->permissions, 200);
         }
         return response()->json('', 200);

@@ -14,6 +14,29 @@
 
 @section('content')
     <div class="qpos-product-catalogue qpos-touch-workspace">
+    <x-backend.card>
+        <form id="catalogue-filters" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label class="text-sm font-medium text-qpos-ink" for="catalogue-category">{{ __('Category') }}
+                <select id="catalogue-category" name="category_id" class="qpos-control mt-1 w-full">
+                    <option value="">{{ __('administration.all_categories') }}</option>
+                    @foreach ($categories as $category)<option value="{{ $category->id }}">{{ $category->name }}</option>@endforeach
+                </select>
+            </label>
+            <label class="text-sm font-medium text-qpos-ink" for="catalogue-status">{{ __('Status') }}
+                <select id="catalogue-status" name="status" class="qpos-control mt-1 w-full">
+                    <option value="">{{ __('administration.all_statuses') }}</option>
+                    <option value="1">{{ __('Active') }}</option><option value="0">{{ __('Inactive') }}</option>
+                </select>
+            </label>
+            <label class="text-sm font-medium text-qpos-ink" for="catalogue-brand">{{ __('Brand') }}
+                <select id="catalogue-brand" name="brand_id" class="qpos-control mt-1 w-full">
+                    <option value="">{{ __('administration.all_brands') }}</option>
+                    @foreach ($brands as $brand)<option value="{{ $brand->id }}">{{ $brand->name }}</option>@endforeach
+                </select>
+            </label>
+            <button type="reset" class="qpos-button qpos-button-md qpos-button-primary self-end">{{ __('administration.reset_filters') }}</button>
+        </form>
+    </x-backend.card>
     <x-backend.card :padded="false">
         <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table id="datatables" class="w-full border-collapse text-sm">
@@ -77,7 +100,7 @@
             const withId = (template, id) => template.replace(':id', id);
             const escapeHtml = window.qposTableActions.escapeHtml;
 
-            $('#datatables').DataTable({
+            const table = $('#datatables').DataTable({
                 createdRow: (row) => {
                     const headings = Array.from(document.querySelectorAll('#datatables thead th')).map(th => th.textContent.trim());
                     Array.from(row.cells).forEach((cell, index) => cell.dataset.label = headings[index]);
@@ -86,7 +109,10 @@
                 serverSide: true,
                 ordering: true,
                 ajax: {
-                    url: config.ajax
+                    url: config.ajax,
+                    data: (data) => {
+                        for (const [key, value] of new FormData(document.getElementById('catalogue-filters'))) data[key] = value;
+                    },
                 },
 
                 columns: [{
@@ -172,6 +198,9 @@
                     },
                 ]
             });
+            $('#catalogue-filters').on('change', 'select', () => table.ajax.reload());
+            $('#catalogue-filters').on('submit', (event) => { event.preventDefault(); table.ajax.reload(); });
+            $('#catalogue-filters').on('reset', () => { setTimeout(() => table.ajax.reload(), 0); });
         });
     </script>
 @endpush

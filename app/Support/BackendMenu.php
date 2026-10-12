@@ -43,6 +43,7 @@ class BackendMenu
             $items[] = self::item('Dashboard', 'fas fa-tachometer-alt', 'backend.admin.dashboard');
             $items[] = self::item('Statistics', 'fas fa-chart-bar', 'backend.admin.reporting.statistics');
         }
+        if ($user->can('audit_view')) $items[]=self::item('administration.audit','fas fa-list','backend.admin.audit.index',['backend.admin.audit.*']);
 
         if ($user->can('sale_create')) {
             $items[] = self::item('POS', 'fas fa-cart-plus', 'backend.admin.cart.index');

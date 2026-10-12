@@ -21,7 +21,8 @@ class SaleWorkflowPermissionSeeder extends Seeder
             $admin->givePermissionTo($names);
         }
         foreach (Role::where('guard_name', 'web')->get() as $role) {
-            if ($role->hasPermissionTo('sale_create')) {
+            // Preparing a sale never implies permission to operate a cash session.
+            if (in_array($role->name, ['cashier','Demo Cashier'], true)) {
                 $role->givePermissionTo('cash_session_manage');
             }
             if ($role->hasPermissionTo('sale_update')) {

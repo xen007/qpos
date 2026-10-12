@@ -1,0 +1,27 @@
+<?php
+return [
+    'user_history'=>'This account has business history and must be retained. You can suspend it.',
+    'all_categories'=>'All categories', 'all_brands'=>'All brands', 'all_statuses'=>'All statuses', 'reset_filters'=>'Reset filters',
+    'audit'=>'Audit log', 'audit_immutable'=>'Audit events cannot be changed or deleted.',
+    'migration_required'=>'Apply the Phase 6 migration before changing administration settings.',
+    'invalid_setting'=>'This setting cannot be saved.',
+    'last_admin'=>'The last active global administrator must retain access. Add another active administrator before this action.',
+    'permission_in_use'=>'This permission is used by the application or assigned to a role/user; its code cannot be renamed or deleted.',
+    'currency_default'=>'The default currency cannot be deleted.',
+    'currency_used'=>'A currency used by documents must retain its code.',
+    'global_settings'=>'These shared settings can be changed by the global administrator.',
+    'xaf_default'=>'Native operations use XAF. Other currencies remain available for historical documents.',
+    'event'=>'Action', 'object'=>'Object', 'actor'=>'User', 'before'=>'Before', 'after'=>'After', 'result'=>'Result',
+    'global_event'=>'Global administration', 'no_events'=>'No events match these filters.', 'audit_detail'=>'Event details',
+    'from'=>'From', 'until'=>'Until', 'all'=>'All', 'correlation'=>'Tracking reference', 'recorded_at'=>'Recorded at',
+    'actor_id'=>'User ID',
+    'unknown_actor'=>'Unauthenticated user or system', 'success'=>'Succeeded',
+    'objects'=>['user'=>'User','role'=>'Role','permission'=>'Permission','system'=>'Settings','currency'=>'Currency'],
+    'events'=>[
+        'user'=>['created'=>'User created','updated'=>'User updated','deleted'=>'User deleted','suspended'=>'User suspended','activated'=>'User activated','profile_updated'=>'Profile updated','password_reset'=>'Password reset'],
+        'role'=>['created'=>'Role created','updated'=>'Role updated','deleted'=>'Role deleted','permissions_updated'=>'Role permissions updated','permissions_registered'=>'Native role permissions registered'],
+        'permission'=>['created'=>'Permission created','updated'=>'Permission updated','deleted'=>'Permission deleted'],
+        'settings'=>['updated'=>'Settings updated'],
+        'currency'=>['created'=>'Currency created','updated'=>'Currency updated','deleted'=>'Currency deleted','default_changed'=>'Default currency changed'],
+    ],
+];
