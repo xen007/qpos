@@ -138,6 +138,7 @@ class RolePermissionSeeder extends Seeder
 
         $salesPermissions = [
             'pending_sale_prepare',
+            'customer_view',
             //sale
             'sale_create',
             'sale_view',

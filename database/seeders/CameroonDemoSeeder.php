@@ -8,8 +8,8 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\{DB, Hash};
-use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\{Permission, Role};
+use Spatie\Permission\PermissionRegistrar;
 
 /** Demonstration only: deliberately refuses every production database. */
 final class CameroonDemoSeeder extends Seeder
@@ -24,8 +24,7 @@ final class CameroonDemoSeeder extends Seeder
         if (! app()->runningInConsole() || (! $isolatedAuditCopy && ! $explicitLocalDatabase)) {
             throw new \RuntimeException('CameroonDemoSeeder requires an isolated audit copy or an explicitly selected local demo/test database.');
         }
-        $credentials = [];
-        DB::transaction(function () use (&$credentials) {
+        DB::transaction(function () {
             \App\Models\Currency::firstOrCreate(['code'=>'XAF'],['name'=>'Franc CFA BEAC','symbol'=>'FCFA']);
             DB::table('currencies')->update(['active'=>false]);
             DB::table('currencies')->where('code','XAF')->update(['active'=>true]);
@@ -38,6 +37,18 @@ final class CameroonDemoSeeder extends Seeder
                 $shops[$code] = PointOfSale::firstOrCreate(['code' => $code], ['name' => $name, 'is_active' => true]);
             }
             $shop = $shops['MAIN'];
+            foreach ($shops as $demoShop) {
+                DB::table('point_of_sale_settings')->updateOrInsert(
+                    ['point_of_sale_id' => $demoShop->id],
+                    [
+                        'pending_sale_enabled' => true,
+                        'pending_expiry_minutes' => 240,
+                        'taken_lease_minutes' => 10,
+                        'orphan_idle_minutes' => 720,
+                        'updated_at' => now('UTC'),
+                    ]
+                );
+            }
             $now = now('Africa/Douala');
             DB::table('reporting_runtime')->insertOrIgnore(['key'=>'demo_seed_date', 'value'=>$now->toDateString()]);
             $day = \Carbon\CarbonImmutable::parse(DB::table('reporting_runtime')->where('key','demo_seed_date')->value('value'), 'Africa/Douala');
@@ -49,13 +60,36 @@ final class CameroonDemoSeeder extends Seeder
             foreach ($roles as $name=>$permissions) {
                 // Definitions affect only this guarded demo database.
                 $role=Role::firstOrCreate(['name'=>$name,'guard_name'=>'web']);
-                $available=DB::table('permissions')->whereIn('name',$permissions)->pluck('name')->all();
+                $available = collect($permissions)->map(
+                    fn (string $permission) => Permission::firstOrCreate([
+                        'name' => $permission,
+                        'guard_name' => 'web',
+                    ])
+                );
                 $role->syncPermissions($available);
             }
+            $cashSessionPermission = Permission::firstOrCreate([
+                'name' => 'cash_session_manage',
+                'guard_name' => 'web',
+            ]);
+            Role::where('name', 'Admin')->where('guard_name', 'web')->firstOrFail()
+                ->givePermissionTo($cashSessionPermission);
             foreach ([['Admin','admin','Admin'],['Marie','marie','Demo Cashier'],['Pauline','pauline','Demo Cashier'],['Jean','jean','Demo Seller'],['Pierre','pierre','Demo Stock']] as [$name,$login,$role]) {
-                $email=$login.'@qpos.test';$user=User::where('email',$email)->first();
-                if (!$user) { $password=Str::password(24);$user=User::create(['name'=>$name,'username'=>'demo-'.$login,'email'=>$email,'password'=>Hash::make($password),'is_suspended'=>false]);$credentials[$email]=$password; }
-                $user->assignRole($role);
+                $email=$login.'@qpos.test';
+                $password = match ($login) {
+                    'admin' => 'admin1234',
+                    'marie' => 'marie1234',
+                    'pauline' => 'pauline1234',
+                    'jean' => 'jean1234',
+                    'pierre' => 'pierre1234',
+                };
+                $user = User::updateOrCreate(['email' => $email], [
+                    'name' => $name,
+                    'username' => 'demo-'.$login,
+                    'password' => Hash::make($password),
+                    'is_suspended' => false,
+                ]);
+                $user->syncRoles($role);
                 $assignedShops = $login === 'admin' ? $shops : ['MAIN' => $shop];
                 $user->pointOfSales()->sync(collect($assignedShops)->mapWithKeys(fn ($assignedShop) => [$assignedShop->id => ['is_active' => true]])->all());
                 DB::table('users')->where('id',$user->id)->update(['preferred_point_of_sale_id'=>$shop->id]);
@@ -108,7 +142,7 @@ final class CameroonDemoSeeder extends Seeder
                 }
             }
         });
-        if($credentials)file_put_contents(sys_get_temp_dir().'/qpos-seed-credentials.txt',json_encode($credentials,JSON_PRETTY_PRINT|JSON_THROW_ON_ERROR));
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     private function products(): array
