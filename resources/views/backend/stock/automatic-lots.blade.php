@@ -1,4 +1,3 @@
-@extends('backend.layouts.master')
 @extends('backend.master-tailwind')
 @section('title', __('Lots automatiques'))
 @section('content')
