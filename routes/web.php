@@ -70,6 +70,13 @@ Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('thr
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+    Route::get('notifications', [\App\Http\Controllers\Backend\NotificationController::class,'feed'])->name('notifications.feed');
+    Route::post('notifications/read-all', [\App\Http\Controllers\Backend\NotificationController::class,'readAll'])->name('notifications.read-all');
+    Route::post('notifications/{id}/read', [\App\Http\Controllers\Backend\NotificationController::class,'read'])->whereUuid('id')->name('notifications.read');
+    Route::get('notification-preferences', [\App\Http\Controllers\Backend\NotificationController::class,'preferences'])->name('notifications.preferences');
+    Route::post('notification-preferences', [\App\Http\Controllers\Backend\NotificationController::class,'savePreferences'])->name('notifications.preferences.save');
+    Route::get('settings/operational-notifications',[\App\Http\Controllers\Backend\NotificationSettingsController::class,'index'])->name('notifications.settings')->middleware(['role:Admin','permission:system_monitor']);
+    Route::post('settings/operational-notifications',[\App\Http\Controllers\Backend\NotificationSettingsController::class,'update'])->name('notifications.settings.save')->middleware(['role:Admin','permission:system_monitor']);
     Route::get('audit',[\App\Http\Controllers\Backend\AuditLogController::class,'index'])->name('audit.index')->middleware('permission:audit_view');
     Route::get('audit/{id}',[\App\Http\Controllers\Backend\AuditLogController::class,'show'])->whereNumber('id')->name('audit.show')->middleware('permission:audit_view');
     Route::get('pending-sales',[\App\Http\Controllers\Backend\PendingSaleController::class,'index'])->name('pending.index');

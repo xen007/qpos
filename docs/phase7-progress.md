@@ -4,7 +4,7 @@
 
 - **OK 7.A**, commit `72b75a5` : audit initial, 158 observations sur 78 URL et correction de vue lots automatiques.
 - **OK 7.B**, commit `8504ebc` : shop_admin, droits directs avec motif/audit, boutique fixe et références stock. 13 contrôles service/SQL et 20 HTTP sur copie ; fixtures annulées.
-- **OK fonctionnel 7.C**, commit à enregistrer : composants, POS, dashboard/statistiques. Les limites d'accessibilité ci-dessous restent ouvertes pour 7.H ; aucune certification WCAG globale.
+- **OK fonctionnel 7.C**, commit `07fb0c7` : composants, POS, dashboard/statistiques. Les limites d'accessibilité ci-dessous restent ouvertes pour 7.H ; aucune certification WCAG globale.
 
 ## Livraison 7.C
 
@@ -34,4 +34,4 @@ Lots automatiques : composants communs, IDs uniques, ancienne saisie/erreur limi
 
 ## Suite
 
-7.D en préparation : notifications durables, préférences, file et portées. 7.E–7.H non commencés. Source qpos non migrée Phase7, aucun seed source/envoi externe/push. Déploiement contrôlé et nettoyage prévus en 7.H.
+OK 7.D interne, commit a enregistrer. Voir phase7-notifications.md. 7.E-H restent a faire ; source non migree, aucun envoi externe/push/seed source.

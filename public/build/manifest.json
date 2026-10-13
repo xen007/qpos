@@ -23,7 +23,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-C2gY7qzt.css",
+    "file": "assets/app-Beuv7wvd.css",
     "name": "app",
     "names": [
       "app.css"
@@ -98,6 +98,12 @@
     "file": "assets/frontend-DGK2r0-Z.js",
     "name": "frontend",
     "src": "resources/js/frontend.js",
+    "isEntry": true
+  },
+  "resources/js/notifications.js": {
+    "file": "assets/notifications-yk80pTU2.js",
+    "name": "notifications",
+    "src": "resources/js/notifications.js",
     "isEntry": true
   },
   "resources/js/shell.js": {

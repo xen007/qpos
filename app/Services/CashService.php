@@ -84,7 +84,7 @@ class CashService
                 Op::fail('reason', 'Explain the cash difference.');
             }
             $s->update(['state' => 'closed', 'active_user_id' => null, 'counted_amount' => (string) $count, 'expected_amount' => (string) $expected, 'difference' => (string) $diff, 'closed_at' => now('UTC'), 'handover_to_user_id' => $target, 'reason' => $data['reason'] ?? null]);
-
+            app(NotificationSignals::class)->cashClosed($s);
             return $s;
         }, 3);
     }

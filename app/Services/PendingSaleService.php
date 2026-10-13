@@ -17,6 +17,7 @@ final class PendingSaleService
     private function event(int $id, ?int $user, string $kind, ?string $reason=null, array $payload=[]): void
     {
         DB::table('pending_sale_events')->insert(['pending_sale_id'=>$id,'user_id'=>$user,'kind'=>$kind,'reason'=>$reason,'payload'=>json_encode($payload,JSON_THROW_ON_ERROR),'occurred_at'=>now('UTC')]);
+        app(NotificationSignals::class)->pending($id,$kind,$payload['seller_id']??null);
     }
     public function refresh(int $shop): void
     {

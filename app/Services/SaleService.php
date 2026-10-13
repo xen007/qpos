@@ -176,7 +176,7 @@ class SaleService
             }
             PosCart::where('user_id', $user)->where('point_of_sale_id', $shop)->where('cart_id', $data['cart_id'])->delete();
             $this->assertBalance($order);
-
+            app(NotificationSignals::class)->sale($order);
             return $order->fresh();
         });
     }

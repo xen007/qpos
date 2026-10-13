@@ -87,6 +87,7 @@ final class PurchaseService
                 'shipping' => (string)$shipping, 'grand_total' => (string)$grand,
                 'payment_status'=>$supplier->is_internal ? 'not_applicable' : ($grand->isZero() ? 'paid' : 'unpaid')])->save();
             if ($lines) $this->receive($purchase, $lines, $shop, $userId, 'purchase:'.$purchase->id.':initial');
+            app(NotificationSignals::class)->purchase($purchase);
             return $purchase->fresh(['items', 'supplier', 'receipts.items']);
         }, 3);
     }

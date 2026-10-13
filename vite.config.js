@@ -12,6 +12,7 @@ export default defineConfig({
                 "resources/js/theme.js",
                 "resources/js/frontend.js",
                 "resources/js/shell.js",
+                "resources/js/notifications.js",
                 "resources/js/table-actions.js",
                 "resources/js/backend-toast.jsx",
                 "resources/css/app.css",

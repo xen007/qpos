@@ -22,13 +22,14 @@ final class AdministrationAudit
             $correlation = (string) Str::uuid();
             $request->attributes->set('administration_correlation', $correlation);
         }
-        AuditLog::create([
+        $audit=AuditLog::create([
             'actor_id'=>Auth::id(), 'point_of_sale_id'=>$shopId,
             'event'=>$event, 'object_type'=>$type, 'object_id'=>$id,
             'old_values'=>$this->filter($before), 'new_values'=>$this->filter($after),
             'result'=>'success', 'reason'=>$reason, 'correlation_id'=>$correlation,
             'occurred_at'=>now('UTC'), 'recorded_at'=>now('UTC'),
         ]);
+        app(NotificationSignals::class)->administration($audit);
     }
 
     private function filter(array $values): array

@@ -1161,5 +1161,7 @@
     "Only an inactive, unpaused open session can be supervised.": "Seule une session ouverte, inactive et hors pause peut être clôturée sous supervision.",
     "Resolve open cash sessions, pending sales and remaining stock before deactivating this store.": "Traitez les sessions ouvertes, les ventes en attente et le stock restant avant de désactiver cette boutique.",
     "Store": "Boutique",
-    "Open": "Ouverte"
+    "Open": "Ouverte",
+    "Sign in to continue": "Connectez-vous pour continuer.",
+    "My stores": "Mes boutiques"
 }

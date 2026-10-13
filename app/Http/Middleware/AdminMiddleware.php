@@ -22,13 +22,14 @@ class AdminMiddleware
             return $next($request);
         }
 
-        $message=$user?->is_suspended?__('Your account is temporarily suspended'):__('Your account is not authorized');
+        $message=!$user?__('Sign in to continue'):($user->is_suspended?__('Your account is temporarily suspended'):__('Your account is not authorized'));
         if ($user) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
         }
 
-        return redirect()->route('login')->with('error', $message);
+        if($request->expectsJson())return response()->json(['message'=>$message],$user?403:401);
+        return redirect()->route('login')->with($user?'error':'warning', $message);
     }
 }

@@ -15,8 +15,9 @@ final class SystemSettings
         'custom_css','note_to_customer_invoice','is_show_logo_invoice','is_show_site_invoice','is_show_phone_invoice','is_show_email_invoice','is_show_address_invoice','is_show_customer_invoice','is_show_note_invoice','receiptMaxwidth',
         'site_palette','multi_shop_enabled','default_expiry_months','auto_generate_lots','default_lot_prefix','allow_sale_without_lot',
         'daily_summary_email_enabled','daily_summary_email_recipients',
+        'notification_critical_sale_threshold','notification_low_stock_threshold',
     ];
-    public const AUDITABLE = ['is_live','site_name','site_url','site_palette','multi_shop_enabled','default_expiry_months','auto_generate_lots','default_lot_prefix','allow_sale_without_lot','daily_summary_email_enabled','receiptMaxwidth'];
+    public const AUDITABLE = ['is_live','site_name','site_url','site_palette','multi_shop_enabled','default_expiry_months','auto_generate_lots','default_lot_prefix','allow_sale_without_lot','daily_summary_email_enabled','receiptMaxwidth','notification_critical_sale_threshold','notification_low_stock_threshold'];
 
     public function load(): void
     {

@@ -16,7 +16,11 @@ final class SummaryDeliveryService
         if (! $approval->enabled()) return $result + ['disabled' => true];
         $stale = DB::table('summary_deliveries')->where('state', 'sending')->where('claimed_at', '<', now('UTC')->subMinutes(10))->pluck('id');
         foreach ($stale as $id) {
-            $result['ambiguous'] += DB::table('summary_deliveries')->where('id', $id)->where('state', 'sending')->update(['state' => 'ambiguous', 'last_error' => 'delivery_confirmation_missing']);
+            $result['ambiguous'] += DB::transaction(function()use($id){
+                $changed=DB::table('summary_deliveries')->where('id',$id)->where('state','sending')->update(['state'=>'ambiguous','last_error'=>'delivery_confirmation_missing']);
+                if($changed)app(NotificationSignals::class)->summaryDelivery((int)$id);
+                return $changed;
+            },3);
         }
         $ids = DB::table('summary_deliveries')->whereIn('state', ['pending', 'retry'])->where('next_attempt_at', '<=', now('UTC'))->orderBy('id')->limit(min($limit, 100))->pluck('id');
         foreach ($ids as $id) {
@@ -84,5 +88,6 @@ final class SummaryDeliveryService
     private function attempt(object $d, string $result, ?string $error): void
     {
         DB::table('summary_delivery_attempts')->insert(['summary_delivery_id' => $d->id, 'attempt' => $d->attempts + 1, 'result' => $result, 'recorded_at' => now('UTC'), 'error_code' => $error]);
+        app(NotificationSignals::class)->summaryDelivery((int)$d->id);
     }
 }

@@ -1159,5 +1159,7 @@
     "Stock or prices changed. Review and confirm the updated pending sale.": "Stock or prices changed. Review and confirm the updated pending sale.",
     "Resolve pending sales before disabling handoff.": "Resolve pending sales before disabling handoff.",
     "Only an inactive, unpaused open session can be supervised.": "Only an inactive, unpaused open session can be supervised.",
-    "Resolve open cash sessions, pending sales and remaining stock before deactivating this store.": "Resolve open cash sessions, pending sales and remaining stock before deactivating this store."
+    "Resolve open cash sessions, pending sales and remaining stock before deactivating this store.": "Resolve open cash sessions, pending sales and remaining stock before deactivating this store.",
+    "Sign in to continue": "Sign in to continue.",
+    "My stores": "My stores"
 }

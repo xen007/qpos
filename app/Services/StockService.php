@@ -720,8 +720,10 @@ class StockService
             'created_at' => $now,
             'updated_at' => $now,
         ]);
-        return ProductStock::query()->where('point_of_sale_id', $shopId)->where('product_id', $productId)
+        $stock = ProductStock::query()->where('point_of_sale_id', $shopId)->where('product_id', $productId)
             ->lockForUpdate()->firstOrFail();
+        app(NotificationSignals::class)->stockBaseline($stock);
+        return $stock;
     }
 
     private function lockBatchStock(int $shopId, int $batchId): BatchStock

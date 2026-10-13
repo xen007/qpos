@@ -29,6 +29,10 @@ return [
     */
 
     'connections' => [
+        'notification_database' => [
+            'driver'=>'database', 'connection'=>null, 'table'=>'notification_jobs',
+            'queue'=>'qpos-notifications', 'retry_after'=>120, 'after_commit'=>true,
+        ],
 
         'sync' => [
             'driver' => 'sync',

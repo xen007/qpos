@@ -24,6 +24,7 @@
         @endcan
 
         <x-language-switcher variant="tailwind" />
+        @include('backend.notifications.panel')
 
         <button type="button" data-theme-toggle aria-pressed="false" aria-label="{{ __('Toggle color theme') }}"
             title="{{ __('Toggle color theme') }}"

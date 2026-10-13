@@ -2,6 +2,7 @@
 
 // Compatibility names used by existing views; every icon is rendered from Lucide.
 return [
+    'fa-bell' => 'bell',
     'fa-tachometer-alt' => 'layout-dashboard', 'fa-box' => 'package',
     'fa-cart-plus' => 'shopping-cart', 'fa-shopping-cart' => 'shopping-cart',
     'fa-chart-bar' => 'chart-no-axes-combined', 'fa-chart-pie' => 'chart-pie',

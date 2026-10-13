@@ -24,5 +24,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrap();
         app(\App\Services\SystemSettings::class)->load();
+        \App\Models\ProductStock::updated(static function(\App\Models\ProductStock $stock){
+            app(\App\Services\NotificationSignals::class)->stockChanged($stock);
+        });
     }
 }

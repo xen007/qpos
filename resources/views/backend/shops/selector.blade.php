@@ -20,11 +20,10 @@
         <span class="text-sm font-medium">{{ $selectedPointOfSale?->name }}</span>
     @endif
     @if(config('system.multi_shop_enabled', true))
-    @can('viewAny', \App\Models\PointOfSale::class)
+    @if(auth()->user()->hasAnyPermission(['point_of_sale_create','point_of_sale_update','point_of_sale_assign','point_of_sale_manage_all'])&&auth()->user()->can('viewAny',\App\Models\PointOfSale::class))
         <a class="qpos-button qpos-button-sm qpos-button-secondary" href="{{ route('backend.admin.shops.index') }}">{{ __('Manage stores') }}</a>
-    @endcan
+    @endif
     @else
-        @php($mainShop = \App\Models\PointOfSale::find(1))
-        @if($mainShop && auth()->user()->can('update',$mainShop))<a class="qpos-button qpos-button-sm qpos-button-secondary" href="{{ route('backend.admin.shops.edit',$mainShop) }}">{{ __('Edit MAIN') }}</a>@endif
+        @if($selectedPointOfSale && auth()->user()->can('update',$selectedPointOfSale))<a class="qpos-button qpos-button-sm qpos-button-secondary" href="{{ route('backend.admin.shops.edit',$selectedPointOfSale) }}">{{ __('Edit store') }}</a>@endif
     @endif
 </div>

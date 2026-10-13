@@ -50,7 +50,7 @@ class BackendMenu
         }
         if ($user->hasAnyPermission(['pending_sale_prepare','pending_sale_collect'])) $items[] = self::item('Pending sales','fas fa-cart-plus','backend.admin.pending.index');
         if ($user->can('cash_session_manage')) {
-            $items[] = self::item('Cash sessions', 'fas fa-cash-register', 'backend.admin.cash.index', ['backend.admin.cash.*']);
+            $items[] = self::item('Cash sessions', 'fas fa-cash-register', 'backend.admin.cash.index');
             $items[] = self::item('reporting.workday', 'fas fa-cash-register', 'backend.admin.reporting.workday');
         }
         if($user->can('cash_session_supervise')&&$user->hasRole('Admin')) $items[]=self::item('Cash supervision','fas fa-cash-register','backend.admin.cash.supervision');
@@ -82,7 +82,8 @@ class BackendMenu
         ]);
 
         if ($user->can('point_of_sale_view') && PointOfSaleContext::ready()) {
-            $items[] = self::item('Stores', 'fas fa-store', 'backend.admin.shops.index', ['backend.admin.shops.*']);
+            $management=$user->hasAnyPermission(['point_of_sale_create','point_of_sale_update','point_of_sale_assign','point_of_sale_manage_all']);
+            if($management||\App\Models\PointOfSale::accessibleBy($user)->count()>1)$items[] = self::item($management?'Stores':'My stores', 'fas fa-store', 'backend.admin.shops.index', ['backend.admin.shops.*']);
         }
 
         if ($user->can('pricing_view') && PricingSchema::ready()) {
@@ -168,6 +169,8 @@ class BackendMenu
         $items[] = self::group('Reports', 'fas fa-chart-bar', $reports);
         // --- Reglages -------------------------------------------------------
         $settings = self::group('Website Settings', 'fas fa-cog', [
+            RoleAssignment::globalManager($user)&&$user->can('system_monitor')
+                ? self::item('notifications.settings','fas fa-bell','backend.admin.notifications.settings') : null,
             $user->hasRole('Admin') && $user->hasAllPermissions(['daily_summary_close', 'daily_summary_view', 'reports_summary', 'reports_sales', 'reports_inventory', 'user_view', 'point_of_sale_manage_all'])
                 ? self::item('reporting.summary_settings', 'fas fa-envelope', 'backend.admin.reporting.summary-settings') : null,
             $user->hasAnyPermission([
@@ -240,7 +243,7 @@ class BackendMenu
             'label' => __($label),
             'icon' => $icon,
             'url' => route($route, $parameters).$urlSuffix,
-            'active' => request()->routeIs(array_merge([$route], $extraPatterns)),
+            'active' => request()->routeIs(array_merge([$route], $extraPatterns)) && collect($parameters)->every(fn($value,$key)=>(string)request()->route($key)===(string)$value),
             'children' => [],
         ];
     }

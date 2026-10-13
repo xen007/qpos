@@ -185,6 +185,11 @@ textarea.qpos-control { min-height: 104px; resize: vertical; }
 .qpos-page-content { min-width: 0; }
 .qpos-page-content > .grid > *, .qpos-card { min-width: 0; }
 .qpos-control { font-size: 14px; }
+.qpos-notification-panel { position: fixed; inset: 12px 12px 12px auto; margin: 0; width: min(420px, calc(100vw - 24px)); max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); height: auto; padding: 20px; border: 1px solid var(--qpos-border); border-radius: 16px; background: var(--qpos-surface); color: var(--qpos-text); overflow-y: auto; box-shadow: var(--qpos-shadow); }
+.qpos-notification-panel::backdrop { background: rgb(0 0 0 / 35%); }
+.qpos-notification-item { padding: 12px; border: 1px solid var(--qpos-border); border-radius: 10px; overflow-wrap: anywhere; }
+.qpos-notification-item.is-unread { border-left: 4px solid var(--qpos-brand); }
+@media (max-width: 480px) { .qpos-topbar { height: auto; min-height: 80px; padding-top: 10px; padding-bottom: 10px; } .qpos-topbar > div:last-child { flex-wrap: wrap; row-gap: 8px; } }
 .qpos-shell-control, .qpos-icon-button { min-height: 44px; }
 .qpos-icon-button { min-width: 44px; }
 .qpos-shell .dataTables_wrapper :is(input, select) { min-height: 44px; border-color: var(--qpos-control-border); }

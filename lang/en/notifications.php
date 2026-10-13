@@ -1,0 +1,6 @@
+<?php
+return [
+ 'settings'=>'Operational alert thresholds','threshold_notice'=>'Leave the critical sale threshold blank to disable this alert. Low stock uses available base units. This page enables no external messaging.','critical_threshold'=>'Critical sale from (XAF)','low_threshold'=>'Low stock below (base units)',
+ 'title'=>'Notifications','unread'=>'Unread notifications','read_all'=>'Mark all read','read'=>'Mark read','more'=>'Load previous','empty'=>'No notifications','error'=>'Notifications unavailable. Please retry.','preferences'=>'Notification preferences','preferences_notice'=>'These settings apply to future internal alerts. They never grant additional access.','saved'=>'Preferences saved',
+ 'types'=>['sale_critical'=>'Sale above critical threshold','stock_low'=>'Low stock','stock_out'=>'Out of stock','expiry'=>'Expiry to review','debt_overdue'=>'Overdue customer debt','cart_pending'=>'Sale awaiting checkout','cart_completed'=>'Your sale was collected','summary_sent'=>'Daily summary sent','purchase_created'=>'New supplier order','cash_variance'=>'Cash closure with variance','session_orphan'=>'Inactive cash session to review','backup_failed'=>'Backup failed','email_failed'=>'Email delivery failed','user_created'=>'New user account','role_changed'=>'Role or access changed'],
+];
