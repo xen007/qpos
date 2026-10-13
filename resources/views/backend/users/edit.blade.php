@@ -3,11 +3,6 @@
 @section('title', __('Update User'))
 
 @section('content')
-    @php
-        // La liste ne permet qu'un role : on preselectionne celui de l'utilisateur.
-        $currentRoleId = $user->roles->first()?->id;
-    @endphp
-
     <x-backend.card>
         <form action="{{ route('backend.admin.user.edit', $user->id) }}" method="post" class="accountForm"
             enctype="multipart/form-data">
@@ -22,6 +17,7 @@
 
                 {{-- Le mot de passe laisse vide conserve l'actuel (StoreUserRequest/UpdateUserRequest). --}}
                 @include('backend.users.roles', ['selectedRoles'=>old('roles',$user->roles->pluck('id')->all())])
+                @include('backend.users.access')
 
                 <x-backend.input name="password" type="password" :label="__('Login password')"
                     :placeholder="__('Leave blank to keep current password.')" autocomplete="new-password" />

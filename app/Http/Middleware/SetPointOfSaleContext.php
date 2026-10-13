@@ -19,13 +19,15 @@ class SetPointOfSaleContext
             $user = $request->user();
             if ($user && !$user->is_suspended && $user->getRoleNames()->isNotEmpty() && $user->can('point_of_sale_access')) {
                 $choices = PointOfSale::accessibleBy($user)->orderBy('name')->get();
+                $fixed=$user->fixed_point_of_sale_id;
+                if($fixed) $choices=$choices->where('id',(int)$fixed)->values();
                 if ($request->has($contextField)) {
                     $data = $request->validate([$contextField => ['required', 'integer']]);
                     $selected = $choices->firstWhere('id', (int) $data[$contextField]);
                     abort_unless($selected, 403);
                     Gate::authorize('view', $selected);
                 } else {
-                    $preferred = $request->session()->get('active_point_of_sale_id', $user->preferred_point_of_sale_id);
+                    $preferred = $fixed ?: $request->session()->get('active_point_of_sale_id', $user->preferred_point_of_sale_id);
                     $selected = $choices->firstWhere('id', (int) $preferred);
                     if (!$selected && $choices->count() === 1) {
                         $selected = $choices->first();
@@ -43,6 +45,7 @@ class SetPointOfSaleContext
         View::share('selectedPointOfSale', $selected);
         View::share('pointOfSaleContextReady', PointOfSaleContext::ready());
         View::share('multipleActivePointsOfSale', PointOfSaleContext::ready() && PointOfSale::active()->count() > 1);
+        View::share('fixedWorkingShop', (bool)$request->user()?->fixed_point_of_sale_id);
         return $next($request);
     }
 }

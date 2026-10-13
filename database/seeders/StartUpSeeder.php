@@ -32,6 +32,7 @@ class StartUpSeeder extends Seeder
             PricingPermissionSeeder::class,
             SaleWorkflowPermissionSeeder::class,
             ReportingPermissionSeeder::class,
+            AdministrationAccessSeeder::class,
         ]);
     }
 }

@@ -15,6 +15,7 @@
                     required />
 
                 @include('backend.users.roles', ['selectedRoles'=>old('roles',[])])
+                @include('backend.users.access')
 
                 <x-backend.input name="password" type="password" :label="__('Login password')"
                     :placeholder="__('Enter your password')" autocomplete="new-password" required />

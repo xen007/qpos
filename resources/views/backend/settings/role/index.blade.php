@@ -14,22 +14,27 @@
 
 @section('content')
     @php
-        $iconButton = 'flex h-9 w-9 items-center justify-center rounded-lg border border-qpos-line text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink';
+        $iconButton = 'flex h-11 w-11 items-center justify-center rounded-lg border border-qpos-line text-qpos-muted transition hover:bg-qpos-page hover:text-qpos-ink';
     @endphp
 
     <x-backend.card :padded="false">
+        <p class="p-4 text-sm text-qpos-muted">{{ __('phase7.role_description') }}</p>
         <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table class="w-full border-collapse text-sm">
                 <thead>
                     <tr class="border-b border-qpos-line text-left text-xs font-semibold uppercase tracking-wide text-qpos-muted">
                         <th class="px-3 py-3">{{ __('Name') }}</th>
+                        <th class="px-3 py-3">{{ __('Role & Permissions') }}</th>
+                        <th class="px-3 py-3">{{ __('Users') }}</th>
                         <th class="px-3 py-3 text-right">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($roles as $role)
                         <tr class="border-b border-qpos-line/60 last:border-0">
-                            <td class="px-3 py-3 text-qpos-ink">{{ $role->name }}</td>
+                            <td class="px-3 py-3 text-qpos-ink">{{ \App\Support\UserAccessSettings::label($role->name) }}</td>
+                            <td class="px-3 py-3"><details><summary class="min-h-11 cursor-pointer">{{ $role->permissions->count() }}</summary><p class="max-w-md break-words">{{ $role->permissions->pluck('name')->join(', ') }}</p></details></td>
+                            <td class="px-3 py-3 tabular-nums">{{ $role->scoped_users_count }}</td>
                             <td class="px-3 py-3">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{{ route('backend.admin.roles.show', $role->id) }}"
@@ -38,7 +43,7 @@
                                         <x-backend.icon name="fas fa-cog" />
                                     </a>
 
-                                    @if ($canManage && $role->name !== 'Admin')
+                                    @if ($canManage && !in_array($role->name,['Admin','shop_admin'],true))
                                         @can('role_update')
                                         <button type="button" data-qpos-modal-open="#editRole-{{ $role->id }}"
                                             title="{{ __('Edit Role') }}" aria-label="{{ __('Edit Role') }}"
@@ -82,7 +87,7 @@
 
     {{-- Une modale d'edition par role modifiable (le role Admin n'est pas modifiable). --}}
     @foreach ($roles as $role)
-        @continue (!$canManage || !auth()->user()->can('role_update') || $role->name === 'Admin')
+        @continue (!$canManage || !auth()->user()->can('role_update') || in_array($role->name,['Admin','shop_admin'],true))
 
         <x-backend.modal id="editRole-{{ $role->id }}" :title="__('Edit Role')"
             :action="route('backend.admin.roles.update', $role->id)" method="PUT" :submit-label="__('Save changes')">

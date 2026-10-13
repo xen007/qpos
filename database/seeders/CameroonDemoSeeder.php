@@ -55,7 +55,7 @@ final class CameroonDemoSeeder extends Seeder
             $roles = [
                 'Demo Cashier'=>['sale_create','cash_session_manage','sale_view','customer_view','point_of_sale_access','pending_sale_collect'],
                 'Demo Seller'=>['sale_create','customer_view','point_of_sale_access','pending_sale_prepare'],
-                'Demo Stock'=>['product_view','stock_view','stock_adjust','stock_inventory','point_of_sale_access'],
+                'Demo Stock'=>['product_view','stock_view','stock_inventory','purchase_view','purchase_receive','point_of_sale_access'],
             ];
             foreach ($roles as $name=>$permissions) {
                 // Definitions affect only this guarded demo database.

@@ -63,7 +63,7 @@ class UserManagementController extends Controller
                         'suspend'=>$allowed && $actor->can('user_suspend')];
                 })
                 ->addColumn('roles', function ($data) {
-                    return $data->roles->pluck('name')->join(', ');
+                    return $data->roles->map(fn($role)=>\App\Support\UserAccessSettings::label($role->name))->join(', ');
                 })
                 ->toJson();
         }
@@ -115,6 +115,9 @@ class UserManagementController extends Controller
             try {
             DB::transaction(function () use ($request,$selectedRoles,&$newImage) {
             UserAdministration::lock();
+            $actor=$request->user()->fresh();
+            abort_unless($actor && !$actor->is_suspended && $actor->can('user_create'),403);
+            $selectedRoles=RoleAssignment::resolve($actor,$request->input('roles'));
             $newUser = new User();
             $newUser->name = $request->name;
             $newUser->email = $request->email;
@@ -135,6 +138,7 @@ class UserManagementController extends Controller
                 $newUser->pointOfSales()->attach($shop->id,['is_active'=>true]);
                 $shopId=$shop->id;
             }
+            \App\Support\UserAccessSettings::apply($request,$newUser,true);
             app(AdministrationAudit::class)->record('user.created','user',$newUser->id,[],['name'=>$newUser->name,'email'=>$newUser->email,'roles'=>$selectedRoles->pluck('name')->all()],$shopId);
             });
             } catch (\Throwable $e) { if($newImage)$this->fileHandler->secureUnlink($newImage); throw $e; }
@@ -142,7 +146,8 @@ class UserManagementController extends Controller
             return to_route('backend.admin.users')->with('success', __('User added successfully'));
         } else {
             $roles = \App\Support\RoleAssignment::choices($request->user());
-            return view('backend.users.create', compact('roles'));
+            $access=\App\Support\UserAccessSettings::form($request->user(),null);
+            return view('backend.users.create', compact('roles','access'));
         }
     }
 
@@ -162,8 +167,10 @@ class UserManagementController extends Controller
             $change = DB::transaction(function () use ($request, $id,&$newImage) {
                 UserAdministration::lock();
                 $user=User::with('roles')->whereKey($id)->lockForUpdate()->firstOrFail();
-                RoleAssignment::protectTarget($request->user(),$user);
-                $roles = \App\Support\RoleAssignment::resolve($request->user(),$request->input('roles'));
+                $actor=$request->user()->fresh();
+                abort_unless($actor && !$actor->is_suspended && $actor->can('user_update'),403);
+                RoleAssignment::protectTarget($actor,$user);
+                $roles = \App\Support\RoleAssignment::resolve($actor,$request->input('roles'));
                 UserAdministration::protectLast($user,$roles->contains('name','Admin'));
                 $before=['name'=>$user->name,'email'=>$user->email,'roles'=>$user->getRoleNames()->all()];
 
@@ -183,6 +190,7 @@ class UserManagementController extends Controller
                 }
                 $user->save();
                 $user->syncRoles($roles->all());
+                \App\Support\UserAccessSettings::apply($request,$user);
                 app(AdministrationAudit::class)->record('user.updated','user',$user->id,$before,['name'=>$user->name,'email'=>$user->email,'roles'=>$roles->pluck('name')->all(),'password_changed'=>$request->filled('password'),'profile_image_changed'=>$request->hasFile('profile_image')],UserAdministration::auditShop($request->user(),$user));
 
                 return ['allowed' => true, 'old_image' => $request->hasFile('profile_image') ? $oldImage : null];
@@ -203,7 +211,8 @@ class UserManagementController extends Controller
             }
 
             $roles = \App\Support\RoleAssignment::choices($request->user());
-            return view('backend.users.edit', compact('user', 'roles'));
+            $access=\App\Support\UserAccessSettings::form($request->user(),$user);
+            return view('backend.users.edit', compact('user', 'roles','access'));
         }
     }
 

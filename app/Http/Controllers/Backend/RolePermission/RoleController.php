@@ -16,7 +16,10 @@ class RoleController extends Controller
     // show roles page
     public function index()
     { 
-        $roles = Role::where('guard_name','web')->get();
+        $roles = Role::where('guard_name','web')->with('permissions')->get();
+        $scope=UserAdministration::query(auth()->user())->select('users.id');
+        $counts=DB::table('model_has_roles')->where('model_type',\App\Models\User::class)->whereIn('model_id',$scope)->selectRaw('role_id, COUNT(*) as total')->groupBy('role_id')->pluck('total','role_id');
+        foreach($roles as $role)$role->setAttribute('scoped_users_count',$counts[$role->id]??0);
         $permissions = Permission::where('guard_name','web')->get();
         $canManage=RoleAssignment::globalManager(auth()->user());
         return view('backend.settings.role.index', compact('roles', 'permissions','canManage'));
@@ -47,7 +50,7 @@ class RoleController extends Controller
             'name' => "required|string|max:255|unique:roles,name," . $id
         ]);
 
-        if ($role->name === 'Admin' && $request->name !== 'Admin') {
+        if (in_array($role->name,['Admin','shop_admin'],true) && $request->name !== $role->name) {
             return back()->with('error', __('The administrator role name cannot be changed.'));
         }
 
@@ -82,7 +85,7 @@ class RoleController extends Controller
         $result = DB::transaction(function () use ($id) {
             UserAdministration::lock();
             $role = Role::whereKey($id)->where('guard_name','web')->lockForUpdate()->firstOrFail();
-            if ($role->name === 'Admin') {
+            if (in_array($role->name,['Admin','shop_admin'],true)) {
                 return 'admin';
             }
 
@@ -120,6 +123,10 @@ class RoleController extends Controller
                 'permissions.*' => ['integer','distinct', \Illuminate\Validation\Rule::exists('permissions','id')->where('guard_name','web')],
             ]);
             $permissions = $validated['permissions'] ?? [];
+            if($role->name==='shop_admin'){
+                $selected=Permission::whereIn('id',$permissions)->pluck('name')->all();
+                abort_unless(count(array_diff($selected,\App\Support\UserAccessSettings::shopAdminCapabilities()))===0,403);
+            }
             DB::transaction(function () use ($id,$permissions) {
                 UserAdministration::lock();
                 $role=Role::whereKey($id)->where('guard_name','web')->lockForUpdate()->firstOrFail();

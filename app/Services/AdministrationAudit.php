@@ -10,9 +10,9 @@ use Illuminate\Support\Str;
 
 final class AdministrationAudit
 {
-    private const FIELDS = ['name','email','is_suspended','roles','permissions','password_changed','profile_image_changed','code','symbol','active','settings','changed_keys'];
+    private const FIELDS = ['name','email','is_suspended','roles','permissions','fixed_point_of_sale_id','password_changed','profile_image_changed','code','symbol','active','settings','changed_keys'];
 
-    public function record(string $event, string $type, int|string|null $id, array $before = [], array $after = [], ?int $shopId = null): void
+    public function record(string $event, string $type, int|string|null $id, array $before = [], array $after = [], ?int $shopId = null, ?string $reason = null): void
     {
         abort_unless(Schema::hasTable('audit_logs'), 503, __('administration.migration_required'));
         if (DB::transactionLevel() < 1) throw new \LogicException('Administrative audit must share the mutation transaction.');
@@ -26,7 +26,7 @@ final class AdministrationAudit
             'actor_id'=>Auth::id(), 'point_of_sale_id'=>$shopId,
             'event'=>$event, 'object_type'=>$type, 'object_id'=>$id,
             'old_values'=>$this->filter($before), 'new_values'=>$this->filter($after),
-            'result'=>'success', 'correlation_id'=>$correlation,
+            'result'=>'success', 'reason'=>$reason, 'correlation_id'=>$correlation,
             'occurred_at'=>now('UTC'), 'recorded_at'=>now('UTC'),
         ]);
     }

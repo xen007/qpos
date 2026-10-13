@@ -8,7 +8,7 @@ final class RoleAssignment
     public static function globalManager(User $actor): bool { return !$actor->is_suspended && $actor->hasRole('Admin') && $actor->hasAllPermissions(['role_update','point_of_sale_manage_all']); }
     public static function choices(User $actor)
     {
-        return Role::with('permissions')->where('guard_name','web')->orderBy('name')->get()->filter(fn($role)=>self::globalManager($actor) || ($role->name!=='Admin' && !$role->permissions->contains('name','point_of_sale_manage_all') && $role->permissions->every(fn($p)=>$actor->can($p->name))));
+        return Role::with('permissions')->where('guard_name','web')->orderBy('name')->get()->filter(fn($role)=>self::globalManager($actor) || (!in_array($role->name,['Admin','shop_admin'],true) && $role->permissions->every(fn($p)=>in_array($p->name,UserAccessSettings::DELEGABLE,true) && $actor->can($p->name))));
     }
     public static function resolve(User $actor, array $ids)
     {
