@@ -13,7 +13,7 @@
 
         <div class="min-w-0">
             <p class="text-xs font-semibold uppercase tracking-wide text-qpos-muted">{{ $label }}</p>
-            <p class="mt-1 text-2xl font-semibold tabular-nums text-qpos-ink">{{ $value }}</p>
+            <p class="qpos-stat-value mt-1 text-2xl font-semibold tabular-nums text-qpos-ink">{{ $value }}</p>
             @if ($hint)
                 <p class="mt-1 text-xs text-qpos-muted">{{ $hint }}</p>
             @endif

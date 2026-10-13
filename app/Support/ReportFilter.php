@@ -27,7 +27,7 @@ final class ReportFilter
             'shop_id' => 'nullable|integer|min:1', 'seller_id' => 'nullable|integer|min:1',
             'category_id' => 'nullable|integer|min:1', 'product_id' => 'nullable|integer|min:1',
             'session_id'=>'nullable|integer|min:1', 'cashier_id'=>'nullable|integer|min:1',
-            'period' => 'nullable|in:day,week,month,custom', 'date' => 'nullable|date_format:Y-m-d',
+            'period' => 'nullable|in:day,week,month,year,custom', 'date' => 'nullable|date_format:Y-m-d',
             'date_from' => 'nullable|date_format:Y-m-d', 'date_to' => 'nullable|date_format:Y-m-d|after_or_equal:date_from',
             'start_date' => 'nullable|date_format:Y-m-d', 'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
         ]);
@@ -42,6 +42,7 @@ final class ReportFilter
         [$f->start, $f->end] = match ($f->period) {
             'day' => [$anchor, $anchor->addDay()],
             'week' => [$anchor->startOfWeek(), $anchor->startOfWeek()->addWeek()],
+            'year' => [$anchor->startOfYear(), $anchor->startOfYear()->addYear()],
             'custom' => [CarbonImmutable::parse($v['date_from'] ?? $v['start_date'] ?? $anchor->subDays(29)->toDateString(), 'Africa/Douala')->startOfDay(), CarbonImmutable::parse($v['date_to'] ?? $v['end_date'] ?? $anchor->toDateString(), 'Africa/Douala')->startOfDay()->addDay()],
             default => [$anchor->startOfMonth(), $anchor->startOfMonth()->addMonth()],
         };

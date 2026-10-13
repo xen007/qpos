@@ -1,5 +1,6 @@
 <?php
 return [
+    'date_or_hour'=>'Date / local hour',
     'global_admin'=>'Global administrator', 'shop_admin'=>'Shop administrator',
     'additional_permissions'=>'Additional permissions', 'role_rights'=>'Permissions inherited from roles',
     'direct_rights'=>'Direct permissions', 'direct_notice'=>'Removing a role does not remove a direct permission. Rights not editable here are retained.',
@@ -9,4 +10,11 @@ return [
     'access_reason'=>'Reason for access change', 'reason_required'=>'Explain the permission grant, revocation or fixed shop change.',
     'finish_operations'=>'Finish cash sessions and pending preparations in the other shop before fixing this shop.',
     'role_description'=>'Roles define capabilities; assignments define the authorized shops.',
+    'comparison'=>'Comparison','indicator'=>'Metric','current_period'=>'Selected period','comparison_period'=>'Comparison period','change'=>'Difference','percent'=>'Change',
+    'previous_period'=>'Previous period of equal duration','previous_year'=>'Same period, previous year','year'=>'Year',
+    'comparison_notice'=>'Same scope and filters. Change = difference / absolute previous value; zero baseline: —.',
+    'period_in_progress'=>'Current period: totals may still change. The comparison uses the full periods shown.',
+    'top'=>'5 highest product sales','flop'=>'5 lowest product sales',
+    'ranking_notice'=>'Ranked by net sales among products with activity in the period, including returns. Products without activity are excluded.',
+    'chart_values'=>'View chart values','adjust_filters'=>'Adjust selection','export_excel'=>'Export Excel','export_pdf'=>'Export PDF',
 ];

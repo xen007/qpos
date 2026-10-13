@@ -6,7 +6,7 @@
             </select>
         </label>
         <label class="text-sm">{{ __('reporting.period') }}<select name="period" class="qpos-control block w-full">
-            @foreach(['day','week','month','custom'] as $p)<option value="{{ $p }}" @selected($filter->period === $p)>{{ __('reporting.'.$p) }}</option>@endforeach
+            @foreach(['day','week','month','year','custom'] as $p)<option value="{{ $p }}" @selected($filter->period === $p)>{{ $p==='year'?__('phase7.year'):__('reporting.'.$p) }}</option>@endforeach
         </select></label>
         <label class="text-sm">{{ __('reporting.anchor_date') }}<input type="date" name="date" value="{{ request('date', now('Africa/Douala')->toDateString()) }}" class="qpos-control block"></label>
         <label class="text-sm">{{ __('reporting.date_from') }}<input type="date" name="date_from" value="{{ $filter->start->toDateString() }}" class="qpos-control block"></label>
@@ -26,6 +26,7 @@
             <label>{{ __('reporting.cashier') }}<select name="cashier_id" class="qpos-control"><option value="">{{ __('All') }}</option>@foreach($cashiers as $cashier)<option value="{{ $cashier->id }}" @selected($filter->cashier===$cashier->id)>{{ $cashier->name }}</option>@endforeach</select></label>
             <label>{{ __('reporting.cash_session') }}<input type="number" min="1" name="session_id" list="report-sessions" value="{{ $filter->session }}" class="qpos-control"><datalist id="report-sessions">@foreach($sessions as $session)<option value="{{ $session->id }}">#{{ $session->id }}</option>@endforeach</datalist></label>
         @endif
+        @if(request()->routeIs('backend.admin.reporting.statistics'))<label class="text-sm">{{ __('phase7.comparison') }}<select class="qpos-control block w-full" name="comparison"><option value="previous" @selected(request('comparison','previous')==='previous')>{{ __('phase7.previous_period') }}</option><option value="year" @selected(request('comparison')==='year')>{{ __('phase7.previous_year') }}</option></select></label>@endif
         <button class="qpos-button qpos-button-primary qpos-button-md">{{ __('Apply') }}</button>
     </form>
     <p class="mt-3 text-sm text-qpos-muted">{{ $filter->label() }} · {{ __('reporting.custom_hint') }}</p>

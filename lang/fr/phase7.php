@@ -1,5 +1,6 @@
 <?php
 return [
+    'date_or_hour'=>'Date / heure locale',
     'global_admin'=>'Administrateur global', 'shop_admin'=>'Administrateur de boutique',
     'additional_permissions'=>'Permissions additionnelles', 'role_rights'=>'Droits hérités des rôles',
     'direct_rights'=>'Droits directs', 'direct_notice'=>'Retirer un rôle ne retire pas un droit direct. Les droits non modifiables ici sont conservés.',
@@ -9,4 +10,11 @@ return [
     'access_reason'=>'Motif du changement des accès', 'reason_required'=>'Indiquez le motif de l’attribution, du retrait ou du changement de boutique fixe.',
     'finish_operations'=>'Terminez les sessions de caisse et préparations de l’autre boutique avant de fixer cette boutique.',
     'role_description'=>'Les rôles définissent les capacités ; les affectations définissent les boutiques autorisées.',
+    'comparison'=>'Comparaison', 'indicator'=>'Indicateur','current_period'=>'Période sélectionnée','comparison_period'=>'Période comparée','change'=>'Écart','percent'=>'Variation',
+    'previous_period'=>'Période précédente de même durée','previous_year'=>'Même période, année précédente','year'=>'Année',
+    'comparison_notice'=>'Même portée et mêmes filtres. Variation = écart / valeur absolue précédente ; base nulle : —.',
+    'period_in_progress'=>'Période en cours : les totaux peuvent encore évoluer. La comparaison porte sur les périodes complètes indiquées.',
+    'top'=>'5 meilleures ventes produits','flop'=>'5 plus faibles ventes produits',
+    'ranking_notice'=>'Classement par ventes nettes des produits ayant une activité sur la période ; retours inclus. Les produits sans activité sont absents.',
+    'chart_values'=>'Consulter les valeurs du graphique','adjust_filters'=>'Modifier la sélection','export_excel'=>'Exporter Excel','export_pdf'=>'Exporter PDF',
 ];

@@ -46,9 +46,12 @@
         setDrawer(false);
 
         drawerToggles.forEach((toggle) =>
-            toggle.addEventListener("click", () =>
-                setDrawer(drawer.classList.contains("-translate-x-full"))
-            )
+            toggle.addEventListener("click", (event) => {
+                event.stopPropagation();
+                // The toolbar opens; the drawer's own control closes.
+                // A repeated pointer activation must not toggle an opening drawer shut.
+                setDrawer(!drawer.contains(toggle));
+            })
         );
 
         overlay?.addEventListener("click", () => setDrawer(false));

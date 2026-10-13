@@ -82,6 +82,7 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     Route::post('settings/daily-summary', [\App\Http\Controllers\Backend\ReportingController::class, 'summarySettingsUpdate'])->name('reporting.summary-settings.update')->middleware(['permission:daily_summary_close', 'permission:user_view', 'permission:point_of_sale_manage_all', 'role:Admin']);
     Route::controller(\App\Http\Controllers\Backend\ReportingController::class)->prefix('reporting')->name('reporting.')->group(function () {
         Route::get('statistics', 'statistics')->name('statistics')->middleware('permission:dashboard_view');
+        Route::get('statistics/export/{format}', 'statisticsExport')->name('statistics.export')->middleware('permission:dashboard_view');
         Route::get('workday', 'workday')->name('workday')->middleware('permission:cash_session_manage');
         Route::get('summaries', 'summaries')->name('summaries')->middleware('permission:daily_summary_view');
         Route::get('summaries/{id}', 'summary')->whereNumber('id')->name('summary')->middleware('permission:daily_summary_view');

@@ -63,6 +63,32 @@
 .qpos-totals > :is(div, label) { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .qpos-totals > label > .qpos-control { width: 120px; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .qpos-totals > label > span { flex: 1; }
+.qpos-payment-block { display: grid; gap: 16px; margin: 0; padding: 16px; border: 1px solid var(--qpos-border); border-radius: 12px; min-width: 0; }
+.qpos-payment-block > legend { padding: 0 6px; color: var(--qpos-brand-ink); font-weight: 650; }
+.qpos-totals .qpos-field { display: grid; grid-template-columns: minmax(0,1fr); align-items: stretch; gap: 8px; }
+.qpos-totals .qpos-field > .qpos-control { width: 100%; min-width: 0; }
+.qpos-totals .qpos-field > input[type='number'] { text-align: right; font-variant-numeric: tabular-nums; }
+.qpos-totals select.qpos-control { text-align: left; }
+.qpos-shell main :is(button, a.qpos-button) { min-height: 44px; }
+.qpos-report-table { width: 100%; border-collapse: collapse; }
+.qpos-report-table :is(th,td) { padding: 12px; text-align: left; border-bottom: 1px solid var(--qpos-border); }
+.qpos-report-table .qpos-number { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.qpos-chart-values > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.qpos-quick-context { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.qpos-filter-disclosure { margin-block: 16px; }
+.qpos-filter-disclosure > summary { cursor: pointer; min-height: 44px; font-weight: 650; }
+@media (max-width: 639px) {
+    .qpos-shell .qpos-control { font-size: 16px; }
+    .qpos-shop-picker { flex-basis: 100%; display: grid; grid-template-columns: minmax(0,1fr) auto; }
+    .qpos-shop-picker > label { grid-column: 1 / -1; }
+    .qpos-shell .qpos-topbar :is(button,a) { min-height: 44px; }
+    .qpos-quick-dashboard-cards { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .qpos-quick-dashboard-cards .qpos-stat-icon { display: none; }
+    .qpos-quick-dashboard-cards .qpos-stat-card { padding: 14px; }
+    .qpos-quick-dashboard-cards .qpos-stat-value { font-size: 20px; overflow-wrap: anywhere; }
+    .qpos-shell .qpos-shell-control { min-height: 44px; min-width: 44px; }
+    .qpos-shell main :is(.qpos-icon-button,.dt-paging-button) { min-height: 44px; min-width: 44px; }
+}
 .qpos-total-highlight { padding: 16px 0; border-top: 1px solid var(--qpos-border); border-bottom: 1px solid var(--qpos-border); color: var(--qpos-brand-ink); font-weight: 700; }
 .qpos-total-highlight > strong { font-size: 25px; font-variant-numeric: tabular-nums; }
 .qpos-check-row { font-size: 12px; color: var(--qpos-muted); }

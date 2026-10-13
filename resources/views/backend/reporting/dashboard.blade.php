@@ -3,18 +3,18 @@
 @section('content')
     @if(($orphanCount??0)>0)<p role="alert" class="my-4 rounded-lg border p-4"><a href="{{ route('backend.admin.cash.supervision') }}">{{ __('Inactive cash sessions require review') }}: {{ $orphanCount }}</a></p>@endif
 <div class="qpos-touch-workspace">
-    @include('backend.reporting.filters')
-    @include('backend.reporting.navigation')
-    <p class="text-sm text-qpos-muted">{{ __('reporting.native_notice') }}</p>
-    <div class="my-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="qpos-quick-context"><p class="text-sm text-qpos-muted">{{ $filter->label() }} · {{ __('reporting.native_notice') }}</p><a class="qpos-button qpos-button-md qpos-button-secondary" href="{{ route('backend.admin.reporting.statistics', request()->query()) }}">{{ __('Statistics') }}</a></div>
+    <div class="qpos-quick-dashboard-cards my-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <x-backend.stat-card :label="__('reporting.net_sales')" :value="\App\Support\SaleFormat::moneyDisplay($summary['net_sales']).' XAF'" icon="fas fa-tags" />
         <x-backend.stat-card :label="__('reporting.gross_margin')" :value="\App\Support\SaleFormat::moneyDisplay($summary['gross_margin']).' XAF'" icon="fas fa-chart-bar" :hint="$summary['incomplete_cost'] ? __('reporting.incomplete_margin') : null" />
         <x-backend.stat-card :label="__('Customers served')" :value="$clients" icon="fas fa-user-circle" :hint="__('Registered customers in selected period')" />
         <x-backend.stat-card :label="__('Low stock')" :value="$lowStock" icon="fas fa-box" :hint="__('Current available stock below 10 base units, excluding shortages')" />
     </div>
-    <a class="qpos-button qpos-button-md qpos-button-secondary" href="{{ route('backend.admin.reporting.statistics', request()->query()) }}">{{ __('Statistics') }}</a>
-    <x-backend.card :title="__('reporting.daily_sales')"><div class="relative h-80"><canvas data-report-chart="daily" role="img" aria-label="{{ __('reporting.daily_sales') }}"></canvas></div></x-backend.card>
-    <x-backend.card :title="__('reporting.peaks')"><div class="relative h-80"><canvas data-report-chart="hours" role="img" aria-label="{{ __('reporting.peaks') }}"></canvas></div></x-backend.card>
+    <details class="qpos-filter-disclosure" @if($filter->salesOnly()) open @endif><summary>{{ __('reporting.filters') }} · {{ __('phase7.adjust_filters') }}</summary>@include('backend.reporting.filters')</details>
+    <div class="grid gap-4 xl:grid-cols-2">
+    <x-backend.card :title="__('reporting.daily_sales')"><div class="relative h-64"><canvas data-report-chart="daily" role="img" aria-label="{{ __('reporting.daily_sales') }}"></canvas></div>@include('backend.reporting.chart-values',['values'=>$daily,'title'=>__('reporting.daily_sales')])</x-backend.card>
+    <x-backend.card :title="__('reporting.peaks')"><div class="relative h-64"><canvas data-report-chart="hours" role="img" aria-label="{{ __('reporting.peaks') }}"></canvas></div>@include('backend.reporting.chart-values',['values'=>$peaks['rows'],'title'=>__('reporting.peaks')])</x-backend.card>
+    </div>
 </div>
 @endsection
 @push('script')

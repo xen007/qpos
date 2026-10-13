@@ -70,7 +70,7 @@
 .qpos-breadcrumbs a { color: var(--qpos-brand-ink); }
 .qpos-breadcrumbs .qpos-icon { width: 15px; height: 15px; }
 .qpos-button, .qpos-shell main :is(button, a).bg-qpos-brand { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 10px; font-family: inherit; font-weight: 650; line-height: 1.4; cursor: pointer; text-decoration: none; transition: background-color .15s, box-shadow .15s; }
-.qpos-button-sm { padding: 8px 12px; min-height: 36px; font-size: 12px; }
+.qpos-button-sm { padding: 8px 12px; min-height: 44px; font-size: 13px; }
 .qpos-button-md { padding: 10px 16px; min-height: 44px; font-size: 13px; }
 .qpos-button-lg { padding: 13px 22px; min-height: 48px; font-size: 14px; }
 .qpos-button-primary { background: var(--qpos-brand); color: white; box-shadow: 0 3px 8px color-mix(in srgb, var(--qpos-brand) 15%, transparent); }
@@ -92,7 +92,7 @@
 .qpos-stat-icon { color: var(--qpos-brand-ink); background: var(--qpos-brand-soft); }
 .qpos-stat-card:nth-child(even) .qpos-stat-icon { color: var(--qpos-accent-ink); background: var(--qpos-accent-soft); }
 .qpos-stat-icon .qpos-icon { width: 24px; height: 24px; }
-.qpos-control { display: block; box-sizing: border-box; min-height: 44px; padding: 10px 13px; border: 1px solid var(--qpos-control-border); border-radius: 10px; background: var(--qpos-surface); color: var(--qpos-text); font-family: inherit; font-size: 13px; line-height: 1.5; transition: border-color .15s, box-shadow .15s; }
+.qpos-control { display: block; box-sizing: border-box; min-height: 44px; padding: 10px 13px; border: 1px solid var(--qpos-control-border); border-radius: 10px; background: var(--qpos-surface); color: var(--qpos-text); font-family: inherit; font-size: 14px; line-height: 1.5; transition: border-color .15s, box-shadow .15s; }
 .qpos-control::placeholder { color: var(--qpos-muted); opacity: .85; }
 .qpos-control:focus { border-color: var(--qpos-brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--qpos-brand) 14%, transparent); outline: none; }
 .qpos-control[aria-invalid='true'] { border-color: var(--qpos-danger); }
@@ -228,7 +228,7 @@ textarea.qpos-control { min-height: 104px; resize: vertical; }
     .qpos-shell [data-qpos-invoice] tr { break-inside: avoid; }
 }
 
-.qpos-shell :where(a, button, input, select, textarea):focus-visible {
+.qpos-shell :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
     outline: 2px solid var(--qpos-focus, #1e5f74);
     outline-offset: 3px;
 }

@@ -55,7 +55,37 @@ class ReportingController extends Controller
     public function statistics(Request $r)
     {
         $dashboard = $this->dashboard($r);
-        return view('backend.reporting.statistics', $dashboard->getData());
+        $data=$dashboard->getData();
+        $mode=$r->validate(['comparison'=>'nullable|in:previous,year'])['comparison']??'previous';
+        abort_if($data['filter']->cashier!==null||$data['filter']->session!==null,422,__('reporting.sales_filters_only'));
+        $analysis=app(\App\Services\StatisticsService::class)->analyze($data['filter'],$mode,$data['summary']);
+        return view('backend.reporting.statistics', $data+compact('analysis'));
+    }
+
+    public function statisticsExport(Request $r,string $format)
+    {
+        abort_unless(in_array($format,['xlsx','pdf'],true),404);
+        $data=$this->statistics($r)->getData();$analysis=$data['analysis'];$filter=$data['filter'];
+        $rows=[['QPOS',__('Statistics')],[$filter->label()],[$analysis['previous_filter']->label()],[__('reporting.scope'),implode(', ',$filter->shops)],['XAF',__('reporting.cost_notice')]];
+        if($analysis['period_in_progress'])$rows[]=[__('phase7.period_in_progress')];
+        if($analysis['incomplete_cost'])$rows[]=[__('reporting.incomplete_margin')];
+        $money=fn($value)=>$value===null?'—':\App\Support\SaleFormat::moneyDisplay($value);
+        $rows[]=[__('phase7.indicator'),__('phase7.current_period'),__('phase7.comparison_period'),__('phase7.change'),__('phase7.percent')];
+        foreach($analysis['comparison'] as $row)$rows[]=[__('reporting.'.$row['key']),$row['key']==='sales_count'?($row['current']??'—'):$money($row['current']),$row['key']==='sales_count'?($row['previous']??'—'):$money($row['previous']),$row['key']==='sales_count'?($row['delta']??'—'):$money($row['delta']),$row['percent']===null?'—':$money($row['percent']).' %'];
+        foreach(['top','flop'] as $kind){$rows[]=[__('phase7.'.$kind),__('phase7.ranking_notice')];foreach($analysis[$kind] as $row)$rows[]=[$row['label'],$money($row['net_sales']),$money($row['cogs']),$money($row['gross_margin'])];}
+        $rows[]=[__('reporting.daily_sales')];foreach($analysis['daily'] as $i=>$row)$rows[]=[$row['label'],$money($row['value']),$analysis['previous_daily'][$i]['label']??'—',$money($analysis['previous_daily'][$i]['value']??null)];
+        $rows[]=[__('reporting.treasury')];
+        $rows[]=array_map(fn($key)=>__('reporting.'.$key),['method','incoming','outgoing','expenses','net']);
+        foreach($data['summary']['treasury'] as $row)$rows[]=[__('reporting.'.($row['method']==='cash'?'cash_method':$row['method'])),$money($row['incoming']),$money($row['outgoing']),$money($row['expenses']),$money($row['net'])];
+        $rows[]=[__('reporting.peaks'),__('reporting.average_notice',['days'=>$data['peaks']['days']])];
+        $rows[]=array_map(fn($key)=>__('reporting.'.$key),['hour','net_sales','average','days']);
+        foreach($data['peaks']['rows'] as $row)$rows[]=[$row['hour'],$money($row['net_sales']),$money($row['average']),$row['days']];
+        foreach(['peaks','troughs'] as $rank)$rows[]=[__('reporting.top_'.$rank),implode('; ',array_map(fn($row)=>$row['hour'].' ('.$money($row['average']).' XAF)',$data['peaks'][$rank]))];
+        foreach(['saleable_value','unsaleable_value','unknown_quantity','foreign_quantity'] as $key)$rows[]=[__('reporting.'.$key),str_contains($key,'quantity')?\App\Support\SaleFormat::decimal($data['stock'][$key]):$money($data['stock'][$key]),__('reporting.stock_current')];
+        foreach(['cash_difference','new_debt','native_debt','open_sessions','unknown_quantity'] as $key)$rows[]=[__('reporting.'.$key),in_array($key,['open_sessions','unknown_quantity'],true)?($data['summary'][$key]??'—'):$money($data['summary'][$key]??null)];
+        $filename='qpos-statistics-'.$filter->start->toDateString().'.'.$format;
+        if($format==='xlsx')return Excel::download(new ReportExport($rows,[],'statistics'),$filename);
+        return Pdf::loadView('backend.reporting.statistics-pdf',$data)->setPaper('a4','landscape')->download($filename);
     }
 
     public function index(Request $r, string $type)

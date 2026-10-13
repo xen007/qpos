@@ -22,6 +22,15 @@ if (reportPayload) {
             data: { labels: rows.map(r => hourly ? r.hour : r.label), datasets: [{ label: data.label + " (XAF)", data: rows.map(r => Number(hourly ? r.average : r.value)), backgroundColor: c.brand, borderColor: c.brand, borderWidth: 2 }] },
             options: { responsive: true, maintainAspectRatio: false, animation: false, plugins: { legend: { labels: { color: c.ink } } }, scales: { x: { ticks: { color: c.ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: c.ink }, grid: { color: c.line } } } },
         }));
+        if(!hourly&&Array.isArray(data.previous_daily)){
+            const chart=charts.at(-1);
+            chart.data.datasets.push({label:data.previous_label+' (XAF)',data:data.daily.map((_,i)=>Number(data.previous_daily[i]?.value||0)),borderColor:c.ink,backgroundColor:c.ink,borderDash:[6,4],borderWidth:2,pointRadius:0});
+            chart.options.plugins.tooltip={callbacks:{label:context=>{
+                const row=context.datasetIndex===1?data.previous_daily[context.dataIndex]:data.daily[context.dataIndex];
+                return context.dataset.label+': '+new Intl.NumberFormat(window.qposLocale==='fr'?'fr-FR':'en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).format(context.parsed.y)+' · '+(row?.label||'');
+            }}};
+            chart.update('none');
+        }
     });
     new MutationObserver(() => {
         const c = palette();
@@ -32,6 +41,7 @@ if (reportPayload) {
             chart.options.scales.y.grid.color = c.line;
             chart.data.datasets[0].backgroundColor = c.brand;
             chart.data.datasets[0].borderColor = c.brand;
+            if(chart.data.datasets[1]){chart.data.datasets[1].borderColor=c.ink;chart.data.datasets[1].backgroundColor=c.ink;}
             chart.update("none");
         });
     }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-palette"] });

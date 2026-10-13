@@ -23,7 +23,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-D6WbTixa.css",
+    "file": "assets/app-C2gY7qzt.css",
     "name": "app",
     "names": [
       "app.css"
@@ -41,7 +41,7 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-CRTGVh99.js",
+    "file": "assets/app-BiwczEw8.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -64,7 +64,7 @@
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-DXX6xFm5.js",
+    "file": "assets/Pos-DWNHoHQW.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
@@ -77,7 +77,7 @@
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-Clqs9bqu.js",
+    "file": "assets/Purchase-Ccl2F7cI.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,
@@ -89,7 +89,7 @@
     ]
   },
   "resources/js/dashboard.js": {
-    "file": "assets/dashboard-C_qXReaE.js",
+    "file": "assets/dashboard-Cs86TZg8.js",
     "name": "dashboard",
     "src": "resources/js/dashboard.js",
     "isEntry": true
@@ -101,7 +101,7 @@
     "isEntry": true
   },
   "resources/js/shell.js": {
-    "file": "assets/shell-BjKr2Eun.js",
+    "file": "assets/shell-BtlRNZFo.js",
     "name": "shell",
     "src": "resources/js/shell.js",
     "isEntry": true

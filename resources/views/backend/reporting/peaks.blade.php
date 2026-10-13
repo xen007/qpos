@@ -3,3 +3,4 @@
     @foreach(['peaks','troughs'] as $k)<x-backend.card :title="__('reporting.top_'.$k)"><ol class="list-inside list-decimal">@foreach($peaks[$k] as $p)<li>{{ $p['hour'] }} — {{ \App\Support\SaleFormat::moneyDisplay($p['average']) }} XAF</li>@endforeach</ol></x-backend.card>@endforeach
 </div>
 <div class="my-4 rounded-lg border border-qpos-line bg-qpos-surface p-4"><div class="relative h-80"><canvas data-report-chart="hours" role="img" aria-label="{{ __('reporting.peaks') }}"></canvas></div></div>
+@include('backend.reporting.chart-values',['values'=>array_map(fn($row)=>['label'=>$row['hour'],'value'=>$row['average']],$peaks['rows']),'title'=>__('reporting.peaks')])
