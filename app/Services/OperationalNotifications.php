@@ -63,6 +63,7 @@ final class OperationalNotifications
                         $user=User::whereKey($user->id)->sharedLock()->first();
                         if(!$user)continue;
                         if(!NotificationCatalog::allowed($user,$event))continue;
+                        app(ExternalAlertService::class)->enqueue($event,$user);
                         $key=hash('sha256',$event->event_key.'|'.$user->id.'|database');
                         if(DB::table('notification_deliveries')->where('delivery_key',$key)->exists())continue;
                         $enabled=$this->enabled($user,$event->kind);$uuid=(string)Str::uuid();

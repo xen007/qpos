@@ -34,4 +34,7 @@ Lots automatiques : composants communs, IDs uniques, ancienne saisie/erreur limi
 
 ## Suite
 
-OK 7.D interne, commit a enregistrer. Voir phase7-notifications.md. 7.E-H restent a faire ; source non migree, aucun envoi externe/push/seed source.
+OK 7.D interne, commit d319d9f. Voir phase7-notifications.md. 7.E-H restent a faire ; source non migree, aucun envoi externe/push/seed source.
+
+OK 7.E.1 : 13 controles email quotidien Mail::fake, rollback, aucun envoi. Source SMTP incomplet et envois desactives. Voir phase7-email.md ; 7.E reste en cours.
+\n**OK 7.E** (commit à enregistrer) : transports optionnels, réglages/préférences, 29 contrôles factices, concurrence réelle/worker, 21 régressions internes. Voir phase7-email.md, limites SMTP/réception/navigateur explicites. Suite 7.F.\n

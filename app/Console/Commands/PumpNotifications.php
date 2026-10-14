@@ -12,6 +12,9 @@ final class PumpNotifications extends Command
     {
         if(!$notifications->ready()){$this->error('Notification migration required.');return self::FAILURE;}
         $limit=(int)$this->option('limit');$counts=$this->option('no-scan')?[]:$scan->run($limit);
-        $counts['queued']=$notifications->pump($limit);$this->info(json_encode($counts,JSON_THROW_ON_ERROR));return self::SUCCESS;
+        $counts['queued']=$notifications->pump($limit);
+        $external=app(\App\Services\ExternalAlertService::class);
+        $counts['external_queued']=$external->pump(min($limit,20));
+        $counts['external_checked']=$external->refreshAccepted(min($limit,20));$this->info(json_encode($counts,JSON_THROW_ON_ERROR));return self::SUCCESS;
     }
 }

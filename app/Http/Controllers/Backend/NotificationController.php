@@ -65,13 +65,23 @@ final class NotificationController extends Controller
     public function preferences(Request $r)
     {
         $user=$this->user($r);$kinds=$this->kinds($user);$notifications=app(OperationalNotifications::class);
-        return view('backend.notifications.preferences',compact('kinds','notifications','user'));
+        $external=app(\App\Services\ExternalAlertService::class);
+        return view('backend.notifications.preferences',compact('kinds','notifications','user','external'));
     }
 
     public function savePreferences(Request $r)
     {
-        $user=$this->user($r);$v=$r->validate(['enabled'=>'nullable|array|max:15','enabled.*'=>'string|distinct']);$kinds=$this->kinds($user);$enabled=$v['enabled']??[];
+        $user=$this->user($r);$v=$r->validate(['enabled'=>'nullable|array|max:15','enabled.*'=>'string|distinct','external'=>'nullable|array:email,sms,whatsapp','external.*'=>'nullable|array|max:5','external.*.*'=>'string|distinct']);$kinds=$this->kinds($user);$enabled=$v['enabled']??[];
         abort_unless(count(array_diff($enabled,$kinds))===0,403);
+        $external=app(\App\Services\ExternalAlertService::class);
+        $channels=$external->availableChannels($user);
+        $externalKinds=array_values(array_intersect($kinds,\App\Services\ExternalAlertService::KINDS));
+        foreach($v['external']??[] as $channel=>$selected)abort_unless(in_array($channel,$channels,true)&&!array_diff($selected,$externalKinds),403);
+        DB::transaction(function()use($user,$channels,$externalKinds,$v){
+            foreach($channels as $channel)foreach($externalKinds as $kind)DB::table('notification_preferences')->updateOrInsert(
+                ['user_id'=>$user->id,'kind'=>$kind,'channel'=>$channel],
+                ['enabled'=>in_array($kind,$v['external'][$channel]??[],true),'updated_at'=>now('UTC'),'created_at'=>now('UTC')]);
+        });
         DB::transaction(function()use($user,$kinds,$enabled){foreach($kinds as $kind)DB::table('notification_preferences')->updateOrInsert(['user_id'=>$user->id,'kind'=>$kind,'channel'=>'database'],['enabled'=>in_array($kind,$enabled,true),'updated_at'=>now('UTC'),'created_at'=>now('UTC')]);});
         return back()->with('success',__('notifications.saved'));
     }
