@@ -19,7 +19,8 @@ final class NotificationRelevance
         }
         if(in_array($event->kind,['stock_low','stock_out'],true)){
             $qty=BigDecimal::of(app(StockService::class)->available((int)$event->point_of_sale_id,(int)$event->source_id));
-            return $event->kind==='stock_out'?$qty->isZero():($qty->isPositive()&&$qty->isLessThan(config('system.notification_low_stock_threshold',config('notifications.low_stock_threshold','10'))));
+            $policy=app(StockPolicyService::class)->effective((int)$event->point_of_sale_id,(int)$event->source_id);
+            return $policy['alerts_enabled']&&($event->kind==='stock_out'?$qty->isZero():($qty->isPositive()&&$qty->isLessThanOrEqualTo($policy['minimum'])));
         }
         if($event->kind==='debt_overdue'){
             $order=Order::find($event->source_id);return $order&&$order->currency_code==='XAF'&&$order->sale_state!=='legacy'&&BigDecimal::of($order->due)->isPositive()&&$order->due_date&&$order->due_date<now('Africa/Douala')->toDateString();

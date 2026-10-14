@@ -3,6 +3,8 @@
 @section('title', __('Update Product'))
 
 @section('content')
+@can('stock_policy_manage')<a class="qpos-button qpos-button-md qpos-button-secondary mb-4" href="{{ route('backend.admin.replenishment.policies',['product_id'=>$product->id]) }}">{{ __('replenishment.policies') }}</a>@endcan
+
     @if ($catalogueUnitsReady)
         @can('update', $product)
             <a class="qpos-button qpos-button-md qpos-button-secondary mb-4 inline-flex" href="{{ route('backend.admin.products.units.index', $product) }}">{{ __('Packagings and barcodes') }}</a>

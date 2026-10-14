@@ -1,8 +1,9 @@
 # Réapprovisionnement — progression
 
-Base : main, fe7e79d. Périmètre A–H approuvé le 14/10/2026.
+Base main fe7e79d ; périmètre A–H approuvé le 14/10/2026.
 
-- A : en cours — cartographie, contrats, copie restaurable.
-- B–H : à réaliser.
+- OK A : cartographie/contrats, copie restaurée 93 tables ; fc90aed.
+- OK B : politiques héritées produit/boutique, seuils décimaux, audit, écran FR/EN, alertes unifiées. 24 contrôles service/SQL/HTTP réussis sur copie, fixtures annulées. Aucune preuve visuelle récente annoncée.
+- C–H : à réaliser.
 
-Les écritures de simulation restent sur une nouvelle copie. Aucun secret, historique, compte ou stock source ne sera réinitialisé. Les bons utilisent les services d'achat/réception existants. Après chaque lot vérifié : checkpoint, preuves privées et commit local explicitement sélectionné. Aucun push.
+Copie : qpos_test_replenishment_20261014 ; preuves privées storage/app/replenishment. Source non migrée pour ce module, comptes et .env inchangés. Commits locaux sélectionnés par lot ; aucun push.

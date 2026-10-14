@@ -80,17 +80,20 @@ final class NotificationSignals
 
     private function stockState(ProductStock $stock,bool $initializeOnly): void
     {
-        $threshold=(string)config('system.notification_low_stock_threshold',config('notifications.low_stock_threshold','10'));
+        $policy=app(StockPolicyService::class)->effective((int)$stock->point_of_sale_id,(int)$stock->product_id);
+        $threshold=$policy['minimum'];
         $quantity=BigDecimal::of(app(StockService::class)->available((int)$stock->point_of_sale_id,(int)$stock->product_id));
-        $zone=$quantity->isZero()?'out':($quantity->isLessThan($threshold)?'low':'normal');
+        $zone=$quantity->isZero()?'out':($quantity->isLessThanOrEqualTo($threshold)?'low':'normal');
         $key='stock:'.$stock->point_of_sale_id.':'.$stock->product_id;
-        $value=$zone.'|'.$threshold;
+        $value=$zone.'|'.$threshold.'|'.(int)$policy['alerts_enabled'];
         DB::table('notification_states')->insertOrIgnore(['key'=>$key,'value'=>$value,'generation'=>0,'created_at'=>now('UTC'),'updated_at'=>now('UTC')]);
         $state=DB::table('notification_states')->where('key',$key)->lockForUpdate()->first();
         if($initializeOnly||$state->value===$value)return;
         $prior=explode('|',$state->value)[0];$generation=$state->generation+1;
         DB::table('notification_states')->where('key',$key)->update(['value'=>$value,'generation'=>$generation,'updated_at'=>now('UTC')]);
-        $kind=$zone==='out'&&$prior!=='out'?'stock_out':($zone==='low'&&$prior==='normal'?'stock_low':null);
-        if($kind)app(OperationalNotifications::class)->record($kind,$key.':'.$generation,(int)$stock->point_of_sale_id,(int)$stock->product_id,['quantity'=>(string)$quantity,'threshold'=>$threshold]);
+        $parts=explode('|',$state->value);
+        $changedPolicy=($parts[1]??null)!==$threshold || (int)($parts[2]??1)!==(int)$policy['alerts_enabled'];
+        $kind=$zone==='out'&&($prior!=='out'||$changedPolicy)?'stock_out':($zone==='low'&&($prior==='normal'||$changedPolicy)?'stock_low':null);
+        if($kind&&$policy['alerts_enabled'])app(OperationalNotifications::class)->record($kind,$key.':'.$kind.':'.now('Africa/Douala')->toDateString(),(int)$stock->point_of_sale_id,(int)$stock->product_id,['quantity'=>(string)$quantity,'threshold'=>$threshold,'trigger'=>$changedPolicy?'policy_recheck':'crossing']);
     }
 }

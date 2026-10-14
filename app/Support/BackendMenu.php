@@ -139,6 +139,7 @@ class BackendMenu
         ]);
 
         // --- Achats ---------------------------------------------------------
+        if ($user->can('stock_policy_manage')) $items[] = self::item('replenishment.policies','fas fa-sliders-h','backend.admin.replenishment.policies');
         $items[] = self::group('Purchase', 'fas fa-shopping-bag', [
             $user->can('purchase_view')
                 ? self::item('Purchase List', 'fas fa-circle', 'backend.admin.purchase.index')
