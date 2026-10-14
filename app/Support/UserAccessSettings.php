@@ -15,6 +15,7 @@ final class UserAccessSettings
     public const DELEGABLE = [
         'point_of_sale_access','point_of_sale_view','product_view','customer_view','customer_create','customer_update','customer_sales',
         'supplier_view','purchase_view','purchase_create','purchase_update','purchase_receive','purchase_pay','purchase_cancel',
+        'stock_policy_manage','purchase_order_view','purchase_order_create','purchase_order_update','purchase_order_delete','purchase_order_approve','purchase_order_send','purchase_order_receive','purchase_order_cancel','purchase_order_surplus','purchase_order_export','purchase_suggestion_manage',
         'stock_view','stock_transfer_dispatch','stock_transfer_receive','stock_inventory',
         'sale_create','sale_view','sale_collect','sale_discount','sale_return','customer_credit_manage',
         'pending_sale_prepare','pending_sale_collect','cash_session_manage','cash_movement_create',

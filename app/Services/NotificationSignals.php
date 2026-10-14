@@ -94,6 +94,11 @@ final class NotificationSignals
         $parts=explode('|',$state->value);
         $changedPolicy=($parts[1]??null)!==$threshold || (int)($parts[2]??1)!==(int)$policy['alerts_enabled'];
         $kind=$zone==='out'&&($prior!=='out'||$changedPolicy)?'stock_out':($zone==='low'&&($prior==='normal'||$changedPolicy)?'stock_low':null);
-        if($kind&&$policy['alerts_enabled'])app(OperationalNotifications::class)->record($kind,$key.':'.$kind.':'.now('Africa/Douala')->toDateString(),(int)$stock->point_of_sale_id,(int)$stock->product_id,['quantity'=>(string)$quantity,'threshold'=>$threshold,'trigger'=>$changedPolicy?'policy_recheck':'crossing']);
+        if($kind&&$policy['alerts_enabled']){
+            $dailyKey=$key.':'.$kind.':'.now('Africa/Douala')->toDateString();
+            $eventKey=hash('sha256',$kind.'|'.$dailyKey.'|'.$stock->point_of_sale_id);
+            if(!DB::table('notification_events')->where('event_key',$eventKey)->exists())
+                app(OperationalNotifications::class)->record($kind,$dailyKey,(int)$stock->point_of_sale_id,(int)$stock->product_id,['quantity'=>(string)$quantity,'threshold'=>$threshold,'trigger'=>$changedPolicy?'policy_recheck':'crossing']);
+        }
     }
 }

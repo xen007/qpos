@@ -74,6 +74,18 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
     Route::post('supplier-catalog',[\App\Http\Controllers\Backend\SupplierCatalogController::class,'store'])->name('replenishment.suppliers.save')->middleware('permission:supplier_catalog_manage');
     Route::get('replenishment-options',[\App\Http\Controllers\Backend\ReplenishmentOptionsController::class,'index'])->name('replenishment.options')->middleware('permission:sale_create|purchase_create|purchase_order_create');
     Route::post('quick-products',[ProductController::class,'store'])->name('replenishment.quick-store')->middleware('permission:product_create');
+    Route::prefix('purchase-orders')->name('purchase-orders.')->middleware('permission:purchase_order_view')->controller(\App\Http\Controllers\Backend\PurchaseOrderController::class)->group(function(){
+        Route::get('/','index')->name('index');
+        Route::get('create','create')->name('create')->middleware('permission:purchase_order_create');
+        Route::get('products','products')->name('products')->middleware('permission:purchase_order_create|purchase_order_update');
+        Route::post('/','store')->name('store')->middleware('permission:purchase_order_create');
+        Route::get('export/{format}','export')->whereIn('format',['pdf','xlsx'])->name('export')->middleware('permission:purchase_order_export');
+        Route::get('{id}/edit','edit')->whereNumber('id')->name('edit')->middleware('permission:purchase_order_update');
+        Route::post('{id}/edit','update')->whereNumber('id')->name('update')->middleware('permission:purchase_order_update');
+        Route::get('{id}/export/{format}','detailExport')->whereNumber('id')->whereIn('format',['pdf','xlsx'])->name('detail-export')->middleware('permission:purchase_order_export');
+        Route::get('{id}','show')->whereNumber('id')->name('show');
+        Route::post('{id}/{action}','action')->whereNumber('id')->whereIn('action',['approve','issue','confirm','delete'])->name('action');
+    });
     Route::get('stock-policies',[\App\Http\Controllers\Backend\StockPolicyController::class,'index'])->name('replenishment.policies')->middleware('permission:stock_policy_manage');
     Route::post('stock-policies',[\App\Http\Controllers\Backend\StockPolicyController::class,'store'])->name('replenishment.policies.save')->middleware('permission:stock_policy_manage');
     Route::get('system-status',[\App\Http\Controllers\Backend\OperationalStatusController::class,'index'])->name('operations.index')->middleware(['role:Admin','permission:system_monitor']);

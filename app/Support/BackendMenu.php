@@ -139,6 +139,7 @@ class BackendMenu
         ]);
 
         // --- Achats ---------------------------------------------------------
+        if ($user->can('purchase_order_view')) $items[] = self::item('replenishment.orders','fas fa-file-alt','backend.admin.purchase-orders.index');
         if ($user->can('supplier_catalog_manage')) $items[] = self::item('replenishment.suppliers','fas fa-truck','backend.admin.replenishment.suppliers');
         if ($user->can('stock_policy_manage')) $items[] = self::item('replenishment.policies','fas fa-sliders-h','backend.admin.replenishment.policies');
         $items[] = self::group('Purchase', 'fas fa-shopping-bag', [
