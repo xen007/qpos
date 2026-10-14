@@ -12,7 +12,7 @@ final class ExternalAlertService
 {
     public const KINDS=['sale_critical','stock_out','cash_variance','backup_failed','session_orphan'];
     public const CHANNELS=['email','sms','whatsapp'];
-    public function ready(): bool { return Schema::hasTable('notification_outbound'); }
+    public function ready(): bool { return \App\Support\OperationalSchema::has('notification_outbound'); }
     public function settings(): array { return (array)config('system.external_alerts',[]); }
 
     public function channelReady(string $channel,string $locale='fr'): bool {

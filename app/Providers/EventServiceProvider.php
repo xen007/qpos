@@ -25,7 +25,12 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Event::listen(\Illuminate\Auth\Events\Login::class, static function($event){
+            if($event->user instanceof \App\Models\User) app(\App\Services\AuthenticationAudit::class)->record('auth.login',$event->user);
+        });
+        Event::listen(\Illuminate\Auth\Events\Logout::class, static function($event){
+            if($event->user instanceof \App\Models\User) app(\App\Services\AuthenticationAudit::class)->record('auth.logout',$event->user);
+        });
     }
 
     /**

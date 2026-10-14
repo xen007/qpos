@@ -151,7 +151,7 @@
                                 },
                                 {
                                     type: 'link',
-                                    url: documentUrl(config.routes.posInvoice, row),
+                                    url: documentUrl(config.routes.posInvoice, row) + "?print=1&print_nonce=" + (window.crypto?.randomUUID?.() || (Date.now().toString(36)+"-"+Math.random().toString(36).slice(2))),
                                     label: config.labels.posReceipt,
                                     icon: 'fas fa-file-invoice',
                                 },

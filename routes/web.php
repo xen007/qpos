@@ -69,7 +69,7 @@ Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('thr
 
 // ====================== BACKEND =======================
 
-Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class,\App\Http\Middleware\RecordUserActivity::class])->group(function () {
     Route::get('system-status',[\App\Http\Controllers\Backend\OperationalStatusController::class,'index'])->name('operations.index')->middleware(['role:Admin','permission:system_monitor']);
     Route::post('system-status/settings',[\App\Http\Controllers\Backend\OperationalStatusController::class,'settings'])->name('operations.settings')->middleware(['role:Admin','permission:system_monitor']);
     Route::post('system-status/backups',[\App\Http\Controllers\Backend\OperationalStatusController::class,'run'])->name('operations.backup')->middleware(['role:Admin','permission:system_monitor','throttle:3,1']);
@@ -185,6 +185,8 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::post('inventories/{id}/items/{item}/count', 'count')->whereNumber(['id', 'item'])->name('inventories.count')->middleware('permission:stock_inventory');
         Route::post('inventories/{id}/validate', 'validateInventory')->whereNumber('id')->name('inventories.validate')->middleware('permission:stock_inventory');
         Route::post('inventories/{id}/cancel', 'cancelInventory')->whereNumber('id')->name('inventories.cancel')->middleware('permission:stock_inventory');
+        Route::get('initial', [\App\Http\Controllers\Backend\InitialStockController::class,'index'])->name('initial')->middleware('permission:stock_opening_approve');
+        Route::post('initial', [\App\Http\Controllers\Backend\InitialStockController::class,'store'])->name('initial.store')->middleware('permission:stock_opening_approve');
         Route::get('openings', 'openings')->name('openings')->middleware('permission:stock_opening_approve');
         Route::get('openings/{product}', 'opening')->whereNumber('product')->name('openings.show')->middleware('permission:stock_opening_approve');
         Route::post('openings/{product}', 'approveOpening')->whereNumber('product')->name('openings.approve')->middleware('permission:stock_opening_approve');

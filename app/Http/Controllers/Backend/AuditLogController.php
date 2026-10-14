@@ -62,7 +62,17 @@ class AuditLogController extends Controller
         if(!empty($filters['from'])) $query->where('audit_logs.recorded_at','>=',CarbonImmutable::createFromFormat('!Y-m-d',$filters['from'],'Africa/Douala')->utc()->format('Y-m-d H:i:s'));
         if(!empty($filters['until'])) $query->where('audit_logs.recorded_at','<',CarbonImmutable::createFromFormat('!Y-m-d',$filters['until'],'Africa/Douala')->addDay()->utc()->format('Y-m-d H:i:s'));
         $events=$this->withNames($query)->orderByDesc('audit_logs.recorded_at')->orderByDesc('audit_logs.id')->paginate($filters['per_page']??25)->withQueryString();
-        return view('backend.administration.audit-index',compact('events','eventChoices','objectChoices','shops','filters','actors'));
+        $activity=collect();
+        if(Schema::hasTable('user_activity')){
+            $activityQuery=\Illuminate\Support\Facades\DB::table('user_activity as a')->join('users as u','u.id','=','a.user_id')
+                ->leftJoin('points_of_sale as s','s.id','=','a.scope_shop_id');
+            if(!RoleAssignment::globalManager($request->user())) $activityQuery->whereIn('a.scope_shop_id',$shops->pluck('id'));
+            if(!empty($filters['actor_id']))$activityQuery->where('a.user_id',(int)$filters['actor_id']);
+            if(!empty($filters['point_of_sale_id']))$activityQuery->where('a.scope_shop_id',(int)$filters['point_of_sale_id']);
+            $activity=$activityQuery->select('a.user_id','a.last_seen_at','u.name','u.is_suspended','s.name as shop')
+                ->orderByDesc('a.last_seen_at')->limit(50)->get();
+        }
+        return view('backend.administration.audit-index',compact('events','eventChoices','objectChoices','shops','filters','actors','activity'));
     }
 
     public function show(Request $request,string $id)

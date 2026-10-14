@@ -4,4 +4,4 @@
 <p>{{ __($payment->direction) }} · {{ __(App\Services\PaymentMethodService::LABELS[$payment->method] ?? $payment->method) }} · {{ __('Received') }}: {{ App\Support\SaleFormat::moneyDisplay($payment->received_amount) }} XAF · {{ __('Change') }}: {{ App\Support\SaleFormat::moneyDisplay($payment->change_amount) }} XAF · {{ __('Allocated') }}: {{ App\Support\SaleFormat::moneyDisplay($payment->net_amount) }} XAF</p>
 @if(isset($snapshot['balance_before']))<p>{{ __('Balance before payment') }}: {{ App\Support\SaleFormat::moneyDisplay($snapshot['balance_before']) }} XAF<br>{{ __('Balance after payment') }}: {{ App\Support\SaleFormat::moneyDisplay($snapshot['balance_after']) }} XAF</p>@endif
 @if($payment->external_reference)<p>{{ __('External reference') }}: {{ $payment->external_reference }}</p>@endif
-<p>{{ __('This receipt preserves the balance at payment time.') }}</p><button onclick="window.print()">{{ __('Print') }}</button></body></html>
+<p>{{ __('This receipt preserves the balance at payment time.') }}</p>@include('backend.phase7.document-actions')</body></html>

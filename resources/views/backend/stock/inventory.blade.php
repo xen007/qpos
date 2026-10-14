@@ -19,14 +19,14 @@
                 @foreach($values['baseline'] as $bucketKey=>$quantity)@php([$batchId,$bucket]=explode(':',$bucketKey))
                 <tr><td class="p-2">{{ $batchId==='0' ? __('Without documented lot') : ($batches->get((int)$batchId)?->batch_number ?: '#'.$batchId) }} · {{ $bucket==='saleable' ? __('Saleable bucket before expiry exclusions') : __($bucket) }}
                     @if($batchId!=='0')<span class="block text-xs text-qpos-muted">{{ __($batches->get((int)$batchId)?->expiry_status ?? 'unknown') }} {{ $batches->get((int)$batchId)?->expires_on }}</span>@endif</td>
-                    <td class="p-2">{{ $quantity }}</td><td class="p-2"><input name="counts[{{ $bucketKey }}]" value="{{ $values['counts'][$bucketKey] ?? '' }}" class="qpos-control w-40" inputmode="decimal" required aria-label="{{ __('Physical count') }} {{ $bucketKey }}" @disabled($inventory->status!=='counting' || $item->counted_at)></td></tr>
+                    <td class="p-2">{{ App\Support\SaleFormat::quantityDisplay($quantity) }}</td><td class="p-2"><input name="counts[{{ $bucketKey }}]" value="{{ isset($values['counts'][$bucketKey]) ? App\Support\SaleFormat::decimal($values['counts'][$bucketKey]) : '' }}" class="qpos-control w-40" inputmode="decimal" required aria-label="{{ __('Physical count') }} {{ $bucketKey }}" @disabled($inventory->status!=='counting' || $item->counted_at)></td></tr>
                 @endforeach
             </tbody></table></div>
             @if($inventory->status==='counting' && !$item->counted_at)<button class="qpos-button qpos-button-md qpos-button-primary">{{ __('Save completed count') }}</button>@endif
             @if($item->counted_at)<p class="text-sm">{{ __('Count completed') }} : {{ $item->counted_at }}</p>@endif
         </form>
         @endif
-        @if($item->adjustments)@foreach(json_decode($item->adjustments,true) as $adjustment)<p class="text-sm mt-2">{{ __('Adjustment') }} #{{ $adjustment['movement_id'] }} · {{ $adjustment['key'] }} · {{ $adjustment['delta'] }} → {{ $adjustment['target'] }}</p>@endforeach @endif
+        @if($item->adjustments)@foreach(json_decode($item->adjustments,true) as $adjustment)<p class="text-sm mt-2">{{ __('Adjustment') }} #{{ $adjustment['movement_id'] }} · {{ $adjustment['key'] }} · {{ App\Support\SaleFormat::quantityDisplay($adjustment['delta']) }} → {{ App\Support\SaleFormat::quantityDisplay($adjustment['target']) }}</p>@endforeach @endif
     </section>
     @endforeach
     @if($inventory->status==='counting')

@@ -228,6 +228,7 @@ class PurchaseController extends Controller
         foreach ($purchase->paymentAllocations as $allocation) $paid = $allocation->payment->direction === 'outgoing' ? $paid->plus($allocation->amount) : $paid->minus($allocation->amount);
         $purchase->setAttribute('paid_amount', $purchase->payment_status === 'unknown' ? null : (string)$paid);
         $purchase->setAttribute('due_amount', $purchase->payment_status === 'unknown' ? null : (($purchase->cancelled_at || $purchase->payment_status === 'not_applicable') ? '0.000000' : (string)\Brick\Math\BigDecimal::of((string)$purchase->grand_total)->minus($paid)));
-        return view('backend.purchase.products', compact('id', 'purchase'));
+        $expiryClasses=app(\App\Services\ProductExpiryClass::class)->forProducts($purchase->items->pluck('product_id'));
+        return view('backend.purchase.products', compact('id', 'purchase','expiryClasses'));
     }
 }

@@ -16,8 +16,11 @@ return [
     'from'=>'From', 'until'=>'Until', 'all'=>'All', 'correlation'=>'Tracking reference', 'recorded_at'=>'Recorded at',
     'actor_id'=>'User ID',
     'unknown_actor'=>'Unauthenticated user or system', 'success'=>'Succeeded',
-    'objects'=>['user'=>'User','role'=>'Role','permission'=>'Permission','system'=>'Settings','currency'=>'Currency'],
+    'objects'=>['expense_category'=>'Expense category','initial_stock'=>'Documented startup stock','user'=>'User','role'=>'Role','permission'=>'Permission','system'=>'Settings','currency'=>'Currency'],
     'events'=>[
+        'expense_category'=>['saved'=>'Expense category saved'],
+        'auth'=>['login'=>'Login','logout'=>'Logout'],
+        'stock'=>['initial_documented'=>'Documented startup contribution'],
         'user'=>['created'=>'User created','updated'=>'User updated','deleted'=>'User deleted','suspended'=>'User suspended','activated'=>'User activated','profile_updated'=>'Profile updated','password_reset'=>'Password reset'],
         'role'=>['created'=>'Role created','updated'=>'Role updated','deleted'=>'Role deleted','permissions_updated'=>'Role permissions updated','permissions_registered'=>'Native role permissions registered'],
         'permission'=>['created'=>'Permission created','updated'=>'Permission updated','deleted'=>'Permission deleted'],

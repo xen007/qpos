@@ -34,7 +34,13 @@ Lots automatiques : composants communs, IDs uniques, ancienne saisie/erreur limi
 
 ## Suite
 
-OK 7.D interne, commit d319d9f. Voir phase7-notifications.md. 7.E-H restent a faire ; source non migree, aucun envoi externe/push/seed source.
+OK 7.D interne, commit d319d9f. Voir phase7-notifications.md. 7.G-H restent à faire ; source non migree, aucun envoi externe/push/seed source.
 
 OK 7.E.1 : 13 controles email quotidien Mail::fake, rollback, aucun envoi. Source SMTP incomplet et envois desactives. Voir phase7-email.md ; 7.E reste en cours.
-\n**OK 7.E**, commit 2286d69 : transports optionnels, réglages/préférences, 29 contrôles factices, concurrence réelle/worker, 21 régressions internes. Voir phase7-email.md, limites SMTP/réception/navigateur explicites. Suite 7.F.\n\n**OK 7.F fonctionnel** (commit à enregistrer) : sauvegarde complète/archives/restauration, S3 facultatif simulé, rétention, workers et état système. 29 contrôles + 7 rétention/RPO + 5 ZIP + verrou/worker réels ; 39 régressions natives. Voir phase7-backups.md et BACKUP-RESTORE.md. Source non migrée, externes non configurés, nouvelle UI navigateur à contrôler en H. Suite 7.G, ajouts propriétaire toujours ouverts.\n
+
+**OK 7.E**, commit 2286d69 : transports optionnels, réglages/préférences, 29 contrôles factices, concurrence réelle/worker, 21 régressions internes. Voir phase7-email.md, limites SMTP/réception/navigateur explicites. Suite 7.F.
+
+**OK 7.F fonctionnel** commit `60dd423` : sauvegarde complète/archives/restauration, S3 facultatif simulé, rétention, workers et état système. 29 contrôles + 7 rétention/RPO + 5 ZIP + verrou/worker réels ; 39 régressions natives. Voir phase7-backups.md et BACKUP-RESTORE.md. Source non migrée, externes non configurés, nouvelle UI navigateur à contrôler en H. Suite 7.G, ajouts propriétaire toujours ouverts.
+
+
+**OK fonctionnel 7.G** : UX/exploitation et ajouts propriétaire, 87 contrôles ciblés (83 HTTP/SQL + 4 simulations impression), 39 régressions natives + 29 externes simulées. 27 syntaxes, 2 JSON, 2 scripts Windows CheckOnly, build Vite et garde CSS OK. Voir phase7-exploitation.md ; nouvelle UI visuelle reste ouverte pour H. Source non migrée et tâche Windows non installée. Suite 7.H.

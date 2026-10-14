@@ -16,8 +16,11 @@ return [
     'from'=>'Du', 'until'=>'Au', 'all'=>'Tous', 'correlation'=>'Référence de suivi', 'recorded_at'=>'Enregistré le',
     'actor_id'=>'ID de l’utilisateur',
     'unknown_actor'=>'Utilisateur non authentifié ou système', 'success'=>'Réussi',
-    'objects'=>['user'=>'Utilisateur','role'=>'Rôle','permission'=>'Permission','system'=>'Paramètres','currency'=>'Devise'],
+    'objects'=>['expense_category'=>'Catégorie de dépenses','initial_stock'=>'Stock initial documenté','user'=>'Utilisateur','role'=>'Rôle','permission'=>'Permission','system'=>'Paramètres','currency'=>'Devise'],
     'events'=>[
+        'expense_category'=>['saved'=>'Catégorie de dépenses enregistrée'],
+        'auth'=>['login'=>'Connexion','logout'=>'Déconnexion'],
+        'stock'=>['initial_documented'=>'Apport initial documenté'],
         'user'=>['created'=>'Utilisateur créé','updated'=>'Utilisateur modifié','deleted'=>'Utilisateur supprimé','suspended'=>'Utilisateur suspendu','activated'=>'Utilisateur réactivé','profile_updated'=>'Profil modifié','password_reset'=>'Mot de passe réinitialisé'],
         'role'=>['created'=>'Rôle créé','updated'=>'Rôle modifié','deleted'=>'Rôle supprimé','permissions_updated'=>'Permissions du rôle modifiées','permissions_registered'=>'Permissions natives du rôle enregistrées'],
         'permission'=>['created'=>'Permission créée','updated'=>'Permission modifiée','deleted'=>'Permission supprimée'],

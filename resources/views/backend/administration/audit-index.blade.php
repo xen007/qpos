@@ -1,6 +1,13 @@
 @extends('backend.master-tailwind')
 @section('title', __('administration.audit'))
 @section('content')
+    <x-backend.card :title="__('Recent account activity')">
+        <p class="text-sm text-qpos-muted">{{ __('Last observed authorized request, updated at most once a minute. Recent activity does not prove that a browser is still connected. Login and logout events are listed in the audit below.') }}</p>
+        <ul class="mt-3 space-y-2">
+        @forelse($activity as $a)<li>{{ $a->name }} #{{ $a->user_id }} · {{ $a->shop??__('administration.global_event') }} · {{ \Carbon\CarbonImmutable::parse($a->last_seen_at,'UTC')->timezone('Africa/Douala')->format('d/m/Y H:i') }} @if($a->is_suspended) · {{ __('Suspended') }}@endif</li>
+        @empty<li>{{ __('No recent account activity recorded.') }}</li>@endforelse
+        </ul>
+    </x-backend.card>
     <x-backend.card>
         <form method="get" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <x-backend.input name="from" type="date" :label="__('administration.from')" :value="$filters['from'] ?? ''" />

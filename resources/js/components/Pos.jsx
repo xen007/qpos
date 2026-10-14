@@ -12,6 +12,7 @@ import {money, quantity, normalizeInput, validXafPayment} from "../utils/pos-for
 
 const uuid = () => crypto.randomUUID();
 const whole = value => validXafPayment(value) ? BigInt(normalizeInput(value || "0").split(".")[0]) : 0n;
+const printQuery = () => "?auto_print=1&print_nonce="+(window.crypto?.randomUUID?.() || (Date.now().toString(36)+"-"+Math.random().toString(36).slice(2)));
 const base = path => String(window.qposBaseUrl || "").replace(/\/$/, "") + path;
 
 export default function Pos() {
@@ -111,7 +112,7 @@ export default function Pos() {
             }
             succeeded=true;savePending(null);sessionStorage.removeItem("qpos-exchange");
             const id=response.data.order?.id;
-            window.location.href=base(id?"/admin/orders/pos-invoice/"+id:"/admin/sale-corrections/"+response.data.correction.id);
+            window.location.href=base(id?"/admin/orders/pos-invoice/"+id:"/admin/sale-corrections/"+response.data.correction.id)+printQuery();
         }catch(e){
             if(e.response){
                 if(e.response.status===419 || e.response.status>=500){toast.error(translate("Checkout outcome uncertain. Retry the same operation."));return;}

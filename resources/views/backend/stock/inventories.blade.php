@@ -6,8 +6,9 @@
     <form method="post" action="{{ route('backend.admin.stock.inventories.create') }}" class="space-y-4">
         @csrf<input type="hidden" name="operation_key" value="{{ $key }}">
         @if($selectedPointOfSale)<input type="hidden" name="operation_point_of_sale_id" value="{{ $selectedPointOfSale->id }}">@endif
-        <fieldset><legend>{{ __('Products to count') }}</legend><div class="grid gap-2 lg:grid-cols-3 max-h-80 overflow-y-auto mt-2">
-            @foreach($products as $product)<label class="flex gap-2 text-sm"><input type="checkbox" name="product_ids[]" value="{{ $product->id }}">{{ $product->sku }} · {{ $product->name }}</label>@endforeach
+        <x-backend.selection-controls scope="inventory-products" :limit="2000" :description="__('Selection applies to the displayed product list, up to 2000 products.')" />
+        <fieldset id="inventory-products"><legend>{{ __('Products to count') }}</legend><div class="grid gap-2 lg:grid-cols-3 max-h-80 overflow-y-auto mt-2">
+            @foreach($products as $product)<label class="flex gap-2 text-sm"><input type="checkbox" name="product_ids[]" value="{{ $product->id }}" @checked(in_array($product->id,old('product_ids',[])))>{{ $product->sku }} · {{ $product->name }}</label>@endforeach
         </div></fieldset>
         <label class="block">{{ __('Reason') }}<textarea required maxlength="5000" name="reason" class="qpos-control mt-1 w-full"></textarea></label>
         <button class="qpos-button qpos-button-md qpos-button-primary">{{ __('Start inventory') }}</button>

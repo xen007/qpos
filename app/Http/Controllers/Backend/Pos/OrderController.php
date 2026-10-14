@@ -64,14 +64,14 @@ class OrderController extends Controller
     {
         $order = $this->document($id);
 
-        return $order->currency_code ? view('backend.phase4.sale-document', ['order' => $order, 'ticket' => false]) : view('backend.orders.print-invoice', compact('order'));
+        return $order->currency_code ? view('backend.phase4.sale-document', ['order' => $order, 'ticket' => false,'launchPrint'=>\App\Support\ReceiptPrinting::requested($order->point_of_sale_id)]) : view('backend.orders.print-invoice', compact('order'));
     }
 
     public function posInvoice($id)
     {
         $order = $this->document($id);
 
-        return $order->currency_code ? view('backend.phase4.sale-document', ['order' => $order, 'ticket' => true]) : view('backend.orders.pos-invoice', ['order' => $order, 'maxWidth' => '80mm']);
+        return $order->currency_code ? view('backend.phase4.sale-document', ['order' => $order, 'ticket' => true,'launchPrint'=>\App\Support\ReceiptPrinting::requested($order->point_of_sale_id)]) : view('backend.orders.pos-invoice', ['order' => $order, 'maxWidth' => '80mm']);
     }
 
     public function collection(Request $r, $id)

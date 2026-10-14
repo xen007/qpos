@@ -9,7 +9,7 @@ use Illuminate\Support\Str;
 
 final class OperationalNotifications
 {
-    public function ready(): bool { return Schema::hasTable('notification_events'); }
+    public function ready(): bool { return \App\Support\OperationalSchema::has('notification_events'); }
 
     public function record(string $kind,string $key,?int $shop=null,?int $source=null,array $payload=[],?int $target=null): ?int
     {

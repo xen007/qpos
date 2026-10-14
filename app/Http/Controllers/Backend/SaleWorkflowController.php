@@ -106,7 +106,7 @@ class SaleWorkflowController extends Controller
         $order = StockDocumentAccess::query(Order::query(), $r)->findOrFail($p->allocations->first()->order_id);
         abort_unless($p->receipt_snapshot && (int) $p->receipt_snapshot['order_id'] === $order->id, 404);
 
-        return view('backend.phase4.receipt', ['payment' => $p, 'snapshot' => $p->receipt_snapshot]);
+        return view('backend.phase4.receipt', ['payment' => $p, 'snapshot' => $p->receipt_snapshot,'launchPrint'=>\App\Support\ReceiptPrinting::requested($order->point_of_sale_id)]);
     }
 
     public function returns(Request $r, int $order)
@@ -140,7 +140,7 @@ class SaleWorkflowController extends Controller
         $order = StockDocumentAccess::query(Order::query(), $r)->findOrFail($doc->order_id);
         $items = DB::table('return_items')->join('order_products', 'order_products.id', '=', 'return_items.order_product_id')->where('sale_correction_id', $doc->id)->select('return_items.*', 'order_products.product_label_snapshot')->get();
 
-        return view('backend.phase4.correction-document', compact('doc', 'order', 'items'));
+        return view('backend.phase4.correction-document', compact('doc', 'order', 'items')+['launchPrint'=>\App\Support\ReceiptPrinting::requested($order->point_of_sale_id)]);
     }
 
     public function exchangePreview(Request $r, int $order)
@@ -156,24 +156,36 @@ class SaleWorkflowController extends Controller
         $categories = DB::table('expense_categories')->orderBy('name')->get();
         $expenses = DB::table('expenses')->where('point_of_sale_id', $shop)->latest()->paginate(30);
 
-        return view('backend.phase4.expenses', compact('categories', 'expenses'));
+        $methods=app(\App\Services\PaymentMethodService::class)->choices($shop);
+        return view('backend.phase4.expenses', compact('categories', 'expenses','methods')+['canManageCategories'=>\App\Support\RoleAssignment::globalManager($r->user())]);
     }
 
     public function category(Request $r)
     {
-        $data = $r->validate(['name' => 'required|string|max:255', 'id' => 'nullable|integer', 'is_active' => 'nullable|boolean']);
-        if (! empty($data['id'])) {
-            DB::table('expense_categories')->where('id', $data['id'])->update(['name' => $data['name'], 'is_active' => (bool) ($data['is_active'] ?? false), 'updated_at' => now('UTC')]);
-        } else {
-            DB::table('expense_categories')->insert(['name' => $data['name'], 'is_active' => true, 'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
-        }
+        $data = $r->validate(['name' => 'required|string|max:255', 'id' => 'nullable|integer|min:1', 'is_active' => 'nullable|boolean']);
+        DB::transaction(function()use($r,$data){
+            DB::table('roles')->where('name','Admin')->where('guard_name','web')->lockForUpdate()->first();
+            $actor=User::whereKey($r->user()->id)->lockForUpdate()->firstOrFail();
+            abort_unless(\App\Support\RoleAssignment::globalManager($actor)&&$actor->can('expense_manage'),403);
+            if (!empty($data['id'])) {
+                $before=DB::table('expense_categories')->where('id',$data['id'])->lockForUpdate()->firstOrFail();
+                DB::table('expense_categories')->where('id',$before->id)->update(['name'=>$data['name'],'is_active'=>(bool)($data['is_active']??false),'updated_at'=>now('UTC')]);
+                $id=$before->id;
+            } else {
+                $before=null;
+                $id=DB::table('expense_categories')->insertGetId(['name'=>$data['name'],'is_active'=>true,'created_at'=>now('UTC'),'updated_at'=>now('UTC')]);
+            }
+            app(\App\Services\AdministrationAudit::class)->record('expense_category.saved','expense_category',$id,
+                $before?['name'=>$before->name,'active'=>(bool)$before->is_active]:[],
+                ['name'=>$data['name'],'active'=>$before?(bool)($data['is_active']??false):true]);
+        },3);
 
         return back()->with('success', __('Expense category saved'));
     }
 
     public function expense(Request $r)
     {
-        $data = $r->validate(['operation_key' => 'required|string|max:64', 'expense_category_id' => 'required|integer', 'amount' => 'required|string', 'method' => 'required|string|max:24,transfer', 'description' => 'required|string|max:500', 'external_reference' => 'nullable|string|max:128']);
+        $data = $r->validate(['operation_key' => 'required|string|max:64', 'expense_category_id' => 'required|integer', 'amount' => 'required|string', 'method' => 'required|string|max:24', 'description' => 'required|string|max:500', 'external_reference' => 'nullable|string|max:128']);
         $shop = StockContext::shop($r)->id;
         $user = $r->user()->id;
         DB::transaction(function () use ($data, $shop, $user) {
@@ -185,6 +197,7 @@ class SaleWorkflowController extends Controller
 
                 return;
             }
+            app(\App\Services\PaymentMethodService::class)->validate($shop,$data['method'],$data['external_reference']??null);
             $s = app(CashService::class)->active($user, $shop);
             DB::table('expense_categories')->where('id', $data['expense_category_id'])->where('is_active', true)->firstOrFail();
             $v = Op::money($data['amount']);

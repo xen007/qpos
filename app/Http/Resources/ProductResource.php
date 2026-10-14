@@ -27,6 +27,7 @@ class ProductResource extends JsonResource
             'quantity' => $this->quantity,
             'expired_quantity' => $this->when(isset($this->stock_expired), $this->stock_expired),
             'allows_fractional' => $this->allows_fractional,
+            'known_expiry_classification' => $this->known_expiry_classification,
             'product_units' => $this->whenLoaded('productUnits', fn () => $this->productUnits
                 ->where('is_active', true)->values()->map(fn ($unit) => [
                     'id' => $unit->id, 'label' => $unit->label, 'code' => $unit->code,

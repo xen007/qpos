@@ -3,7 +3,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\{DB,Schema,Storage};
 final class OperationalBackup
 {
- public function ready():bool {return Schema::hasTable('backup_runs');}
+ public function ready():bool {return \App\Support\OperationalSchema::has('backup_runs');}
  public function enabled():bool {return(bool)config('system.backup_enabled',config('backups.enabled'));}
  public function cloudEnabled():bool {return(bool)config('system.backup_cloud_enabled',false);}
  public function cloudReady():bool {

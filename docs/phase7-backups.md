@@ -1,6 +1,6 @@
 # Phase 7.F — sauvegardes et exploitation
 
-Date : 14/10/2026. État fonctionnel vérifié sur copie ; commit à enregistrer.
+Date : 14/10/2026. État fonctionnel vérifié sur copie ; commit `60dd423`.
 
 ## Livré
 

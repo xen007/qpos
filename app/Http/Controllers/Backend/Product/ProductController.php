@@ -150,6 +150,8 @@ class ProductController extends Controller
             });
             // Get the results
             $products = $products->with(['unit', 'productUnits' => fn ($q) => $q->where('is_active', true)->orderByDesc('is_reference')])->latest()->paginate(20);
+            $classes=app(\App\Services\ProductExpiryClass::class)->forProducts($products->pluck('id'));
+            foreach($products as $product) $product->setAttribute('known_expiry_classification',$classes[$product->id]??null);
             // Return the results as a JSON response
             return ProductResource::collection($products);
         }

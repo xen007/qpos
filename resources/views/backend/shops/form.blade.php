@@ -15,7 +15,8 @@
             <x-backend.switch name="is_active" :label="__('Active')" :checked="$shop->is_active" />
         </div>
         @if ($canAssign)
-            <fieldset class="mt-6">
+            <fieldset id="store-assignment-users" class="mt-6">
+                <x-backend.selection-controls scope="store-assignment-users" :limit="500" :description="__('Selection applies to the displayed users; assignments do not grant permissions.')" />
                 <legend class="mb-3 font-semibold">{{ __('Store assignments') }}</legend>
                 <p class="mb-4 text-sm text-qpos-muted">{{ __('Assignments grant store scope; roles still control capabilities. No user is assigned automatically.') }}</p>
                 <input type="hidden" name="assignment_payload" value="1">
@@ -36,6 +37,8 @@
         @if(auth()->user()->can('payment_methods_manage') && $methods->isNotEmpty())
         <fieldset class="mt-6 grid gap-4"><legend class="font-semibold">{{ __('Store workflow') }}</legend>
             <input type="hidden" name="workflow_payload" value="1">
+            <x-backend.switch name="receipt_auto_print" :label="__('Launch receipt printing after checkout')" :checked="$workflow['receipt_auto_print']" />
+            <p class="text-sm text-qpos-muted">{{ __('Standard browsers show their print dialog. Silent printing requires a separately configured trusted workstation.') }}</p>
             <x-backend.switch name="pending_sale_enabled" :label="__('Seller to cashier handoff')" :checked="$workflow['pending_sale_enabled']" />
             <x-backend.input name="pending_expiry_minutes" :label="__('Pending sale expiry (minutes)')" type="number" min="15" max="1440" :value="$workflow['pending_expiry_minutes']" required />
             <x-backend.input name="taken_lease_minutes" :label="__('Cashier claim duration (minutes)')" type="number" min="1" max="60" :value="$workflow['taken_lease_minutes']" required />
