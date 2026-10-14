@@ -38,7 +38,7 @@ final class NotificationRelevance
         }
         if($event->kind==='session_orphan')return app(CashSupervisionService::class)->query([(int)$event->point_of_sale_id])->where('id',$event->source_id)->where('suspected',1)->where('paused',0)->exists();
         if($event->kind==='purchase_created')return DB::table('purchases')->where('id',$event->source_id)->where('currency_code','XAF')->whereNull('cancelled_at')->exists();
-        if($event->kind==='backup_failed')return Schema::hasTable('backup_runs')&&DB::table('backup_runs')->where('id',$event->source_id)->where('state','failed')->exists();
+        if($event->kind==='backup_failed')return Schema::hasTable('backup_runs')&&DB::table('backup_runs')->where('id',$event->source_id)->where(fn($q)=>$q->where('state','failed')->orWhere('cloud_state','failed'))->exists();
         return true;
     }
 }

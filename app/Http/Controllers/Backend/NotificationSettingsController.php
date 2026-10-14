@@ -24,7 +24,7 @@ final class NotificationSettingsController extends Controller
             'external_present'=>'nullable|boolean','external_locale'=>'nullable|in:fr,en','external_kinds'=>'nullable|array|max:5','external_kinds.*'=>'string|distinct',
             'email_enabled'=>'nullable|boolean','sms_enabled'=>'nullable|boolean','whatsapp_enabled'=>'nullable|boolean',
             'email_destinations'=>'nullable|string|max:5000','sms_destinations'=>'nullable|string|max:1000','whatsapp_destinations'=>'nullable|string|max:1000',
-            'external_consent'=>'nullable|accepted',
+            'external_consent'=>'sometimes|accepted',
         ]);
         $values=['notification_critical_sale_threshold'=>isset($v['critical_threshold'])?(string)$v['critical_threshold']:null,'notification_low_stock_threshold'=>(string)$v['low_threshold']];
         if($r->boolean('external_present')){

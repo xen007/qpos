@@ -16,8 +16,9 @@ final class SystemSettings
         'site_palette','multi_shop_enabled','default_expiry_months','auto_generate_lots','default_lot_prefix','allow_sale_without_lot',
         'daily_summary_email_enabled','daily_summary_email_recipients',
         'notification_critical_sale_threshold','notification_low_stock_threshold','external_alerts',
+        'backup_enabled','backup_cloud_enabled','backup_retention_enabled','backup_retention_days','backup_cloud_bucket','backup_cloud_endpoint','backup_cloud_prefix',
     ];
-    public const AUDITABLE = ['is_live','site_name','site_url','site_palette','multi_shop_enabled','default_expiry_months','auto_generate_lots','default_lot_prefix','allow_sale_without_lot','daily_summary_email_enabled','receiptMaxwidth','notification_critical_sale_threshold','notification_low_stock_threshold','external_alerts'];
+    public const AUDITABLE = ['is_live','site_name','site_url','site_palette','multi_shop_enabled','default_expiry_months','auto_generate_lots','default_lot_prefix','allow_sale_without_lot','daily_summary_email_enabled','receiptMaxwidth','notification_critical_sale_threshold','notification_low_stock_threshold','external_alerts','backup_enabled','backup_cloud_enabled','backup_retention_enabled','backup_retention_days','backup_cloud_bucket','backup_cloud_endpoint','backup_cloud_prefix'];
 
     public function load(): void
     {

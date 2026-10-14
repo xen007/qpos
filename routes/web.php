@@ -70,6 +70,10 @@ Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('thr
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class])->group(function () {
+    Route::get('system-status',[\App\Http\Controllers\Backend\OperationalStatusController::class,'index'])->name('operations.index')->middleware(['role:Admin','permission:system_monitor']);
+    Route::post('system-status/settings',[\App\Http\Controllers\Backend\OperationalStatusController::class,'settings'])->name('operations.settings')->middleware(['role:Admin','permission:system_monitor']);
+    Route::post('system-status/backups',[\App\Http\Controllers\Backend\OperationalStatusController::class,'run'])->name('operations.backup')->middleware(['role:Admin','permission:system_monitor','throttle:3,1']);
+    Route::get('system-status/backups/{run}/download',[\App\Http\Controllers\Backend\OperationalStatusController::class,'download'])->whereNumber('run')->name('operations.download')->middleware(['role:Admin','permission:system_monitor','throttle:10,1']);
     Route::get('notifications', [\App\Http\Controllers\Backend\NotificationController::class,'feed'])->name('notifications.feed');
     Route::post('notifications/read-all', [\App\Http\Controllers\Backend\NotificationController::class,'readAll'])->name('notifications.read-all');
     Route::post('notifications/{id}/read', [\App\Http\Controllers\Backend\NotificationController::class,'read'])->whereUuid('id')->name('notifications.read');

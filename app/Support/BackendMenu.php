@@ -170,6 +170,8 @@ class BackendMenu
         // --- Reglages -------------------------------------------------------
         $settings = self::group('Website Settings', 'fas fa-cog', [
             RoleAssignment::globalManager($user)&&$user->can('system_monitor')
+                ? self::item('operations.title','fas fa-cog','backend.admin.operations.index') : null,
+            RoleAssignment::globalManager($user)&&$user->can('system_monitor')
                 ? self::item('notifications.settings','fas fa-bell','backend.admin.notifications.settings') : null,
             $user->hasRole('Admin') && $user->hasAllPermissions(['daily_summary_close', 'daily_summary_view', 'reports_summary', 'reports_sales', 'reports_inventory', 'user_view', 'point_of_sale_manage_all'])
                 ? self::item('reporting.summary_settings', 'fas fa-envelope', 'backend.admin.reporting.summary-settings') : null,

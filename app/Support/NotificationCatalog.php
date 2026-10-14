@@ -45,6 +45,7 @@ final class NotificationCatalog
             'purchase_created'=>'/admin/purchase/'.$event->source_id,
             'cash_variance'=>'/admin/cash', 'session_orphan'=>'/admin/cash-supervision',
             'stock_low'=>$user&&!$user->can('stock_view')?'/admin/cart':'/admin/stock/expiry-alerts', 'stock_out','expiry'=>'/admin/stock/expiry-alerts',
+            'backup_failed','email_failed'=>'/admin/system-status',
             'user_created'=>'/admin/users', 'role_changed'=>'/admin/settings/website/roles', default=>null,
         };
         $param=$event->kind==='sale_critical'?'shop_id':'operation_point_of_sale_id';

@@ -29,6 +29,10 @@ return [
     */
 
     'connections' => [
+        'backup_database' => [
+            'driver'=>'database','connection'=>'mysql','table'=>'notification_jobs',
+            'queue'=>'qpos-backups','retry_after'=>1800,'after_commit'=>true,
+        ],
         'notification_database' => [
             'driver'=>'database', 'connection'=>null, 'table'=>'notification_jobs',
             'queue'=>'qpos-notifications', 'retry_after'=>120, 'after_commit'=>true,
