@@ -1,6 +1,7 @@
 @extends('backend.master-tailwind')
 @section('title', __('Product Import'))
 @section('content')
+@include('backend.replenishment.quick-product')
 <x-backend.card>
     <p class="mb-4 text-sm text-qpos-muted">{{ __('Preview writes no business data. One error blocks the entire import. Duplicate SKUs require your choice.') }}</p>
     <form method="post" enctype="multipart/form-data" class="space-y-4">

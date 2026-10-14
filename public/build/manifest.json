@@ -23,7 +23,7 @@
     ]
   },
   "resources/css/app.css": {
-    "file": "assets/app-CKzVxcLK.css",
+    "file": "assets/app-BdmWYo3p.css",
     "name": "app",
     "names": [
       "app.css"
@@ -41,7 +41,7 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-CUw4zllE.js",
+    "file": "assets/app-DEve6kpf.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
@@ -64,7 +64,7 @@
     ]
   },
   "resources/js/components/Pos.jsx": {
-    "file": "assets/Pos-CS3zB-Qn.js",
+    "file": "assets/Pos-BrkYpg5Z.js",
     "name": "Pos",
     "src": "resources/js/components/Pos.jsx",
     "isDynamicEntry": true,
@@ -77,7 +77,7 @@
     ]
   },
   "resources/js/components/Purchase/Purchase.jsx": {
-    "file": "assets/Purchase-DB525knb.js",
+    "file": "assets/Purchase-CapF5lPW.js",
     "name": "Purchase",
     "src": "resources/js/components/Purchase/Purchase.jsx",
     "isDynamicEntry": true,

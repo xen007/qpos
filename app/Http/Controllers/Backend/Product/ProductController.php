@@ -57,6 +57,7 @@ class ProductController extends Controller
                 }
             }
             app(\App\Services\StockAvailability::class)->attach($products, $shop->id);
+            \App\Support\ReplenishmentFilters::products($products,$request,$shop->id);
             return DataTables::of($products)
                 ->filter(function ($query) use ($request) {
                     $search = $request->input('search.value');
@@ -90,6 +91,7 @@ class ProductController extends Controller
                 ->addColumn('price_value', fn($data) => $data->catalogue_price_ttc ?? $data->discounted_price)
                 ->addColumn('price_original', fn($data) => $data->catalogue_price_ttc ?? $data->price)
                 ->addColumn('quantity_value', fn($data) => $data->quantity)
+                ->addColumn('stock_state',fn($data)=>app(\App\Services\StockPolicyService::class)->classify((string)($data->quantity??'0'),app(\App\Services\StockPolicyService::class)->effective($shop->id,$data->id))['state'])
                 ->addColumn('unit_short', fn($data) => optional($data->unit)->short_name)
                 // L'URL d'achat porte un parametre de requete : elle est construite
                 // ici, car un gabarit « :sku » serait encode en %3A par le routeur.
@@ -142,11 +144,12 @@ class ProductController extends Controller
             $products = Product::query();
             $shop = \App\Support\StockContext::shop($request);
             app(\App\Services\StockAvailability::class)->attach($products,$shop->id);
+            \App\Support\ReplenishmentFilters::products($products,$request,$shop->id);
 
             // Apply filters based on the search term
             $products = $products->where(function ($query) use ($request) {
                 $query->where('name', 'LIKE', "%{$request->search}%")
-                    ->orWhere('sku', $request->search);
+                    ->orWhere('sku', $request->search)->orWhereHas('productUnits.barcodes',fn($q)=>$q->where('barcode',$request->search)->where('is_active',true));
             });
             // Get the results
             $products = $products->with(['unit', 'productUnits' => fn ($q) => $q->where('is_active', true)->orderByDesc('is_reference')])->latest()->paginate(20);
@@ -218,6 +221,7 @@ class ProductController extends Controller
             $product->save();
         }
 
+        if($request->expectsJson()) return response()->json(['product'=>$product->load('productUnits'),'message'=>__('Product created successfully!')],201);
         return redirect()->route('backend.admin.products.index')->with('success', __('Product created successfully!'));
     }
 

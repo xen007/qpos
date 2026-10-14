@@ -23,6 +23,12 @@ class PurchaseController extends Controller
 
         if ($request->ajax()) {
             $purchases = \App\Support\StockDocumentAccess::query(Purchase::query(),$request)->with('supplier')->withCount(['receipts','paymentAllocations'])->latest();
+            $v=$request->validate(['supplier_id'=>'nullable|integer|exists:suppliers,id','category_id'=>'nullable|integer|exists:categories,id','receipt_status'=>'nullable|in:pending,partial,received,cancelled,unknown','date_from'=>'nullable|date_format:Y-m-d','date_to'=>'nullable|date_format:Y-m-d|after_or_equal:date_from','length'=>'sometimes|integer|min:1|max:100','search.value'=>'nullable|string|max:100']);
+            if($request->filled('supplier_id'))$purchases->where('supplier_id',$v['supplier_id']);
+            if($request->filled('category_id'))$purchases->whereHas('items.product',fn($q)=>$q->where('category_id',$v['category_id']));
+            if($request->filled('receipt_status'))$purchases->where('receipt_status',$v['receipt_status']);
+            if($request->filled('date_from'))$purchases->whereDate('date','>=',$v['date_from']);
+            if($request->filled('date_to'))$purchases->whereDate('date','<=',$v['date_to']);
             return DataTables::of($purchases)
                 ->addIndexColumn()
                 // Colonnes neutres : les pages migrees composent leurs actions

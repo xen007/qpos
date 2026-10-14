@@ -25,6 +25,7 @@ class ProductResource extends JsonResource
             'purchase_price' => $this->purchase_price,
             'discounted_price' => $this->discounted_price,
             'quantity' => $this->quantity,
+            'stock_state'=>app(\App\Services\StockPolicyService::class)->classify((string)($this->quantity??'0'),app(\App\Services\StockPolicyService::class)->effective((int)$request->attributes->get('point_of_sale')?->id,$this->id))['state'],
             'expired_quantity' => $this->when(isset($this->stock_expired), $this->stock_expired),
             'allows_fractional' => $this->allows_fractional,
             'known_expiry_classification' => $this->known_expiry_classification,

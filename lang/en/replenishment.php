@@ -15,5 +15,9 @@ return [
 'estimated_cost'=>'Estimated cost per packaging (XAF)',
 'price_on'=>'Price date',
 'preferred'=>'Preferred supplier',
-'supplier_help'=>'Prices are dated estimates. Multiple suppliers are allowed; at most one preferred supplier per product. Brand never determines the supplier.'
+'supplier_help'=>'Prices are dated estimates. Multiple suppliers are allowed; at most one preferred supplier per product. Brand never determines the supplier.',
+'quick_product'=>'Create product here',
+'fractional'=>'Allow fractional quantities',
+'zero_stock'=>'Catalogue only: zero stock. Actual cost is entered on receipt.',
+'creation_failed'=>'Unable to create product.'
 ];

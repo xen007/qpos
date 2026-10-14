@@ -18,6 +18,7 @@ const base = path => String(window.qposBaseUrl || "").replace(/\/$/, "") + path;
 export default function Pos() {
     const [products,setProducts]=useState([]),[customers,setCustomers]=useState([]),[customerId,setCustomerId]=useState("");
     const [cartId,setCartId]=useState(""),[quote,setQuote]=useState(null),[session,setSession]=useState(null);
+    const [category,setCategory]=useState(""),[supplier,setSupplier]=useState(""),[filterOptions,setFilterOptions]=useState({categories:[],suppliers:[]});
     const [search,setSearch]=useState(""),[barcode,setBarcode]=useState(""),[discount,setDiscount]=useState("0");
     const [cash,setCash]=useState("0"),[card,setCard]=useState("0"),[reference,setReference]=useState(""),[credit,setCredit]=useState("0"),[dueDate,setDueDate]=useState("");
     const [page,setPage]=useState(1),[lastPage,setLastPage]=useState(1),[busy,setBusy]=useState(false),[pending,setPending]=useState(null);
@@ -35,6 +36,7 @@ export default function Pos() {
     const scan=useRef(null),keyPrefix=useRef(""),requestSeq=useRef(0),quoteSeq=useRef(0);
     const refresh=useCallback(()=>{setQuote(null);setVersion(v=>v+1);},[]);
     useEffect(()=> {
+        axios.get("/admin/replenishment-options").then(r=>setFilterOptions(r.data)).catch(()=>{});
         let live=true;const pinned=new URL(window.location.href);if(window.qposOperationShopId){pinned.searchParams.set("operation_point_of_sale_id",window.qposOperationShopId);window.history.replaceState(null,"",pinned.toString());}
         Promise.all([axios.get("/admin/cash/state"),axios.get("/admin/get/customers")]).then(([state,list])=>{
             if(!live)return;
@@ -68,13 +70,14 @@ export default function Pos() {
     },[cartId]);
     const getProducts=useCallback(async(term="",next=1,code="")=>{
         const seq=++requestSeq.current;if(code)markMutation(true);
-        try{const r=await axios.get("/admin/get/products",{params:{search:term,page:next,barcode:code}});
+        try{const r=await axios.get("/admin/get/products",{params:{search:term,page:next,barcode:code,category_id:code?"":category,supplier_id:code?"":supplier}});
             if(seq!==requestSeq.current)return;
-            setProducts(old=>next===1?r.data.data:[...old,...r.data.data]);setPage(next);setLastPage(r.data.meta.last_page);
+            const visible=code?r.data.data:r.data.data.filter(p=>!p.hidden_out);setProducts(old=>next===1?visible:[...old,...visible]);setPage(next);setLastPage(r.data.meta.last_page);
+            if(code&&r.data.data.length===1&&Number(r.data.data[0].quantity)<=0&&Number(r.data.data[0].expired_quantity)<=0){toast.error(translate("replenishment.out"));return;}
             if(code && r.data.data.length===1 && !pending && !handoffId && !handoffOffer){await axios.post("/admin/cart",{cart_id:cartId,product_unit_id:r.data.data[0].id});refresh();toast.success(translate("Cart updated"));}
             else if(code && !r.data.data.length)toast.error(translate("No products found"));
         }catch(e){toast.error(getErrorMessage(e));}finally{if(code)markMutation(false);}
-    },[cartId,pending,refresh,markMutation,handoffId,handoffOffer]);
+    },[cartId,pending,refresh,markMutation,handoffId,handoffOffer,category,supplier]);
     useEffect(()=>{if(!cartId)return;const timer=setTimeout(()=>getProducts(search),250);return()=>clearTimeout(timer);},[search,cartId,getProducts]);
     useEffect(()=>{
         if(!cartId || !customerId || pending || handoffOffer)return;const seq=++quoteSeq.current;
@@ -155,7 +158,7 @@ export default function Pos() {
                 <Field label={translate("Enter Product Barcode")}><input ref={scan} className="qpos-control" value={barcode} disabled={busy||!!pending||!!handoffOffer} onChange={e=>setBarcode(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&barcode.trim()){e.preventDefault();getProducts("",1,barcode.trim());setBarcode("");}}}/></Field>
                 <Field label={translate("Search products")}><input className="qpos-control" type="search" value={search} onChange={e=>setSearch(e.target.value)}/></Field>
             </div>
-            <div className="qpos-products-grid">{products.map(p=><button type="button" className="qpos-product" key={p.id} disabled={busy||!!pending||!!handoffOffer||!!handoffId} onClick={()=>add(p.id)}><img src={window.qposStorageUrl+"/"+p.image} alt="" loading="lazy" onError={e=>{e.target.onerror=null;e.target.src=window.qposFallbackImage;}}/><span className="qpos-product-name">{p.name}</span><span>{translate("Stock in base units")}: {quantity(p.quantity)} · ×{quantity(p.factor)}</span><strong>{money(p.price)} XAF</strong>{Number(p.expired_quantity)>0&&<small>{translate("Expired stock may require confirmation")}: {quantity(p.expired_quantity)}</small>}</button>)}</div>
+            <div className="qpos-search-grid">{["category","supplier"].map(field=><Field key={field} label={translate(field==="category"?"Category":"Supplier")}><select className="qpos-control" value={field==="category"?category:supplier} onChange={e=>(field==="category"?setCategory:setSupplier)(e.target.value)}><option value="">{translate("All")}</option>{filterOptions[field==="category"?"categories":"suppliers"].map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></Field>)}</div><div className="qpos-products-grid">{products.map(p=><button type="button" className="qpos-product" key={p.id} disabled={busy||!!pending||!!handoffOffer||!!handoffId||(Number(p.quantity)<=0&&Number(p.expired_quantity)<=0)} onClick={()=>add(p.id)}><img src={window.qposStorageUrl+"/"+p.image} alt="" loading="lazy" onError={e=>{e.target.onerror=null;e.target.src=window.qposFallbackImage;}}/><span className="qpos-product-name">{p.name}</span><span>{translate("Stock in base units")}: {quantity(p.quantity)} · ×{quantity(p.factor)}</span><strong>{money(p.price)} XAF</strong><small>{translate("replenishment."+p.stock_state)}</small>{Number(p.expired_quantity)>0&&<small>{translate("Expired stock may require confirmation")}: {quantity(p.expired_quantity)}</small>}</button>)}</div>
             {!products.length&&<EmptyState title={translate("No products found")}/>}
             {page<lastPage&&<button type="button" className="qpos-button qpos-button-md qpos-button-secondary" onClick={()=>getProducts(search,page+1)}>{translate("Load more products")}</button>}
         </section>

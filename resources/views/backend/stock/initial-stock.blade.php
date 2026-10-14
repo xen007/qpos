@@ -1,6 +1,7 @@
 @extends('backend.master-tailwind')
 @section('title',__('Documented startup stock'))
 @section('content')
+@include('backend.replenishment.quick-product')
 <div class="space-y-6 qpos-touch-workspace">
 <x-backend.card :title="__('Documented startup stock')">
 <p>{{ __('Enter goods already present before using this product in this store. Enter each lot separately with documentary cost and expiry evidence. This does not create a purchase, supplier debt or cash movement.') }}</p>

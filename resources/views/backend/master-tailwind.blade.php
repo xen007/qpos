@@ -58,7 +58,7 @@
     @endphp
     <script>
         window.qposLocale = @json(app()->getLocale());
-        window.qposTranslations = @json($localeCatalog ?? []);
+        window.qposTranslations = @json(array_merge($localeCatalog ?? [], collect(__('replenishment'))->mapWithKeys(fn($value,$key)=>['replenishment.'.$key=>$value])->all()));
         window.qposIconSprite = @json(asset('icons/lucide/sprite.svg'));
         window.qposIconAliases = @json(config('ui-icons', []));
         window.qposBaseUrl = @json(url('/'));

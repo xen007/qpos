@@ -53,9 +53,13 @@ class CartController extends Controller
                 $q->where('is_reference', true)->whereHas('product', fn ($p) => $p->where('sku', trim($r->barcode)));
             }
         }
+        if($r->filled('category_id')||$r->filled('supplier_id')) $q->whereHas('product',function($p)use($r,$shop){app(StockAvailability::class)->attach($p,$shop);\App\Support\ReplenishmentFilters::products($p,$r,$shop);});
         $page = $q->orderBy('product_id')->orderBy('id')->paginate(48);
-        $data = $page->getCollection()->map(function ($u) {
-            return ['id' => $u->id, 'product_unit_id' => $u->id, 'name' => $u->product->name.' / '.$u->label, 'image' => $u->product->image, 'quantity' => $u->product->stock_available ?? '0.000000', 'expired_quantity' => $u->product->stock_expired ?? '0.000000', 'factor' => $u->factor, 'price' => $u->sale_price_ttc];
+        $rows=\Illuminate\Support\Facades\Schema::hasTable('stock_policies')?DB::table('stock_policies')->where(fn($q)=>$q->whereNull('point_of_sale_id')->orWhere('point_of_sale_id',$shop))->get()->map(fn($r)=>(array)$r)->all():[];
+        $data = $page->getCollection()->map(function ($u) use($shop,$rows) {
+            $policy=app(\App\Services\StockPolicyService::class)->effective($shop,$u->product_id,$rows);
+            $state=app(\App\Services\StockPolicyService::class)->classify((string)($u->product->stock_available??'0'),$policy)['state'];
+            return ['id' => $u->id, 'product_unit_id' => $u->id, 'name' => $u->product->name.' / '.$u->label, 'image' => $u->product->image, 'quantity' => $u->product->stock_available ?? '0.000000', 'expired_quantity' => $u->product->stock_expired ?? '0.000000', 'factor' => $u->factor, 'price' => $u->sale_price_ttc,'stock_state'=>$state,'hidden_out'=>$policy['hide_out_of_stock']&&$state==='out'&&!(float)$u->product->stock_expired];
         });
 
         return response()->json(['data' => $data, 'meta' => ['last_page' => $page->lastPage()]]);
@@ -71,6 +75,8 @@ class CartController extends Controller
             if (! $u->is_active || ! $u->product->status || $u->product->allows_fractional === null || $u->sale_price_ttc === null) {
                 Op::fail('product_unit_id', 'Configure the active product and packaging before calculating a price.');
             }
+            $available=app(\App\Services\StockService::class)->available(StockContext::shop($r)->id,$u->product_id,true);
+            if(!BigDecimal::of($available)->isPositive())Op::fail('product_unit_id','replenishment.out');
             $v = QuantityDecimal::parse($r->quantity ?? '1', 'quantity', true);
             $row = $this->cart($r)->where('product_unit_id', $u->id)->first();
             $v = $v->plus($row?->quantity ?? '0');

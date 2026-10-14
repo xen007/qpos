@@ -19,6 +19,13 @@
         $canEditPurchase = auth()->user()->can('purchase_update');
     @endphp
 
+    <x-backend.card><form id="purchase-filters" class="grid gap-3 md:grid-cols-3">
+    <x-backend.select name="supplier_id" :label="__('Supplier')" :options="[''=>__('All')]+App\Models\Supplier::orderBy('name')->pluck('name','id')->all()"/>
+    <x-backend.select name="category_id" :label="__('Category')" :options="[''=>__('All')]+App\Models\Category::orderBy('name')->pluck('name','id')->all()"/>
+    <x-backend.select name="receipt_status" :label="__('Status')" :options="[''=>__('All'),'pending'=>__('Pending'),'partial'=>__('Partial'),'received'=>__('Received'),'cancelled'=>__('Cancelled'),'unknown'=>__('Unknown')]"/>
+    <x-backend.input name="date_from" :label="__('From')" type="date"/><x-backend.input name="date_to" :label="__('To')" type="date"/>
+    <button type="reset" class="qpos-button qpos-button-md qpos-button-secondary">{{ __('administration.reset_filters') }}</button>
+    </form></x-backend.card>
     <x-backend.card :padded="false">
         <div class="overflow-x-auto p-4 sm:p-6" tabindex="0" role="region" aria-label="{{ __('Tableau') }}">
             <table id="datatables" class="w-full border-collapse text-sm">
@@ -67,12 +74,13 @@
             const config = JSON.parse(document.getElementById('qpos-purchases-table').textContent);
             const withId = (template, id) => template.replace(':id', id);
 
-            $('#datatables').DataTable({
+            const table=$('#datatables').DataTable({
                 processing: true,
                 serverSide: true,
                 ordering: true,
                 ajax: {
-                    url: config.ajax
+                    url: config.ajax,
+                    data:d=>{for(const [k,v] of new FormData(document.getElementById("purchase-filters")))d[k]=v;}
                 },
 
                 columns: [{
@@ -128,6 +136,9 @@
                     },
                 ]
             });
+            $('#purchase-filters').on('change','select,input',()=>table.ajax.reload());
+            $('#purchase-filters').on('submit',e=>{e.preventDefault();table.ajax.reload();});
+            $('#purchase-filters').on('reset',()=>setTimeout(()=>table.ajax.reload(),0));
         });
     </script>
 @endpush

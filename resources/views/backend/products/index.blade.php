@@ -34,6 +34,8 @@
                     @foreach ($brands as $brand)<option value="{{ $brand->id }}">{{ $brand->name }}</option>@endforeach
                 </select>
             </label>
+            <label>{{ __('Stock') }}<select name="stock_state" class="qpos-control"><option value="">{{ __('All') }}</option>@foreach(['out','low','normal','over'] as $state)<option value="{{ $state }}">{{ __('replenishment.'.$state) }}</option>@endforeach</select></label>
+            <label>{{ __('Supplier') }}<select name="supplier_id" class="qpos-control"><option value="">{{ __('All') }}</option>@foreach(App\Models\Supplier::where('is_active',true)->where('is_internal',false)->get() as $s)<option value="{{ $s->id }}">{{ $s->name }}</option>@endforeach</select></label>
             <button type="reset" class="qpos-button qpos-button-md qpos-button-primary self-end">{{ __('administration.reset_filters') }}</button>
         </form>
     </x-backend.card>
@@ -82,6 +84,7 @@
                     'confirm' => __('Are you sure you want to delete this item?'),
                     'active' => __('Active'),
                     'inactive' => __('Inactive'),
+                    'stockStates'=>collect(['out','low','normal','over'])->mapWithKeys(fn($s)=>[$s=>__('replenishment.'.$s)])->all(),
                 ],
             ],
             JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
@@ -143,7 +146,7 @@
                     {
                         data: 'quantity_value',
                         name: 'quantity_value',
-                        render: (value, type, row) => type !== 'display' ? value : `${window.qposTableActions.quantity(row.quantity_value)} ${escapeHtml(row.unit_short ?? '')}`,
+                        render: (value, type, row) => type !== 'display' ? value : `${window.qposTableActions.quantity(row.quantity_value)} ${escapeHtml(row.unit_short ?? '')}<br><span>${escapeHtml(config.labels.stockStates[row.stock_state]||'')}</span>`,
                     },
                     {
                         data: 'created_at',

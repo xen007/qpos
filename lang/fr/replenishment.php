@@ -15,5 +15,9 @@ return [
 'estimated_cost'=>'Prix estimatif par conditionnement (XAF)',
 'price_on'=>'Date du prix',
 'preferred'=>'Fournisseur préféré',
-'supplier_help'=>'Les prix sont estimatifs et datés. Plusieurs fournisseurs sont possibles ; une seule préférence par produit. La marque ne détermine pas le fournisseur.'
+'supplier_help'=>'Les prix sont estimatifs et datés. Plusieurs fournisseurs sont possibles ; une seule préférence par produit. La marque ne détermine pas le fournisseur.',
+'quick_product'=>'Nouveau produit sans quitter',
+'fractional'=>'Quantité fractionnaire autorisée',
+'zero_stock'=>'Création catalogue uniquement : quantité zéro. Le coût réel sera saisi à la réception.',
+'creation_failed'=>'Impossible de créer le produit.'
 ];
