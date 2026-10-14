@@ -70,6 +70,8 @@ Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('thr
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class,\App\Http\Middleware\RecordUserActivity::class])->group(function () {
+    Route::get('supplier-catalog',[\App\Http\Controllers\Backend\SupplierCatalogController::class,'index'])->name('replenishment.suppliers')->middleware('permission:supplier_catalog_manage');
+    Route::post('supplier-catalog',[\App\Http\Controllers\Backend\SupplierCatalogController::class,'store'])->name('replenishment.suppliers.save')->middleware('permission:supplier_catalog_manage');
     Route::get('stock-policies',[\App\Http\Controllers\Backend\StockPolicyController::class,'index'])->name('replenishment.policies')->middleware('permission:stock_policy_manage');
     Route::post('stock-policies',[\App\Http\Controllers\Backend\StockPolicyController::class,'store'])->name('replenishment.policies.save')->middleware('permission:stock_policy_manage');
     Route::get('system-status',[\App\Http\Controllers\Backend\OperationalStatusController::class,'index'])->name('operations.index')->middleware(['role:Admin','permission:system_monitor']);
