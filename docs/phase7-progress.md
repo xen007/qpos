@@ -44,3 +44,6 @@ OK 7.E.1 : 13 controles email quotidien Mail::fake, rollback, aucun envoi. Sourc
 
 
 **OK fonctionnel 7.G** : UX/exploitation et ajouts propriétaire, 87 contrôles ciblés (83 HTTP/SQL + 4 simulations impression), 39 régressions natives + 29 externes simulées. 27 syntaxes, 2 JSON, 2 scripts Windows CheckOnly, build Vite et garde CSS OK. Voir phase7-exploitation.md ; nouvelle UI visuelle reste ouverte pour H. Source non migrée et tâche Windows non installée. Suite 7.H.
+
+
+**OK 7.G**, commit 39cac31. **7.H livré fonctionnellement avec limites visuelles explicites** : régressions20statistiques/20 droits/15sessionsHTTP + concurrence initiale corrigée et23recontrôles ; source sauvegardée/restaurée83tables/1567 lignes/36 fichiers, migrée93tables sans changement métier/env, caches nettoyés, scheduler/deuxworkers/tâcheWindows installés, backup#1verified/0envoi externe. Voir phase7-report.md. Aucun push. Restent vérifications visuelles des ajouts, zoom 200 %, matériel et intégrations réelles ; ne pas annoncer une certification globale.

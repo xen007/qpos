@@ -21,15 +21,18 @@ final class InitialStockService
         ])->validate();
         return DB::transaction(function()use($shopId,$productId,$data,$userId){
             DB::table('roles')->where('name','Admin')->where('guard_name','web')->sharedLock()->first();
-            $actor=User::whereKey($userId)->sharedLock()->firstOrFail();
-            abort_unless(!$actor->is_suspended&&$actor->can('stock_opening_approve')&&PointOfSale::accessibleBy($actor)->whereKey($shopId)->exists(),403);
+            $actor=User::whereKey($userId)->lockForUpdate()->firstOrFail();
+            abort_unless(!$actor->is_suspended,403);
+            // Lock the product before authorization creates an MVCC read view.
+            // The next replay/classification reads must observe the preceding writer.
             $product=Product::whereKey($productId)->lockForUpdate()->firstOrFail();
+            abort_unless($actor->can('stock_opening_approve')&&PointOfSale::accessibleBy($actor)->whereKey($shopId)->exists(),403);
             $key=Op::key($data);$hash=Op::hash($userId,$shopId,[$productId,$data]);
-            if($old=DB::table('initial_stock_entries')->where('operation_key',$key)->first()){Op::replay($old,$hash);return $old;}
+            if($old=DB::table('initial_stock_entries')->where('operation_key',$key)->lockForUpdate()->first()){Op::replay($old,$hash);return $old;}
             if(!$product->status)Op::fail('product_id','Select an active product.');
             if(DB::table('inventory_items')->where('active_scope',$shopId.':'.$productId)->exists())
                 Op::fail('product_id','Finish or cancel this product inventory before entering startup stock.');
-            $prior=DB::table('initial_stock_entries')->where('point_of_sale_id',$shopId)->where('product_id',$productId)->get();
+            $prior=DB::table('initial_stock_entries')->where('point_of_sale_id',$shopId)->where('product_id',$productId)->orderBy('id')->lockForUpdate()->get();
             if($prior->isNotEmpty()){
                 $first=StockMovement::where('point_of_sale_id',$shopId)->where('correlation_key',$prior->first()->opening_key)->firstOrFail();
                 if($first->occurred_at->format('Y-m-d')!==$data['received_on']) Op::fail('received_on','Use the same startup date for all initial lots of this product in this store.');
