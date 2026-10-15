@@ -52,11 +52,24 @@ final class PurchaseOrderController extends Controller {
   return $r->expectsJson()?response()->json(['order'=>$po]):to_route('backend.admin.purchase-orders.show',$po->id)->with('success',__('replenishment.saved'));
  }
  public function show(Request $r,int $id){
-  $po=$this->find($r,$id);$key=(string)Str::uuid();return view('backend.replenishment.order',compact('po','key'));
+  $po=$this->find($r,$id);$key=(string)Str::uuid();
+  $quantities=app(\App\Services\PurchaseOrderFulfilmentService::class)->quantities($po);
+  return view('backend.replenishment.order',compact('po','key','quantities'));
  }
  public function action(Request $r,int $id,string $action){
   $d=$r->validate(['operation_key'=>'required|string|min:8|max:96','version'=>'required|integer|min:1','reason'=>'required|string|max:500']);
-  $po=app(PurchaseOrderService::class)->action($id,$action,$d,$r->user()->id,StockContext::shop($r)->id);
+  $po=in_array($action,['close','cancel'],true)
+   ?app(\App\Services\PurchaseOrderFulfilmentService::class)->finish($id,$action,$d,$r->user()->id,StockContext::shop($r)->id)
+   :app(PurchaseOrderService::class)->action($id,$action,$d,$r->user()->id,StockContext::shop($r)->id);
+  return $r->expectsJson()?response()->json(['order'=>$po]):to_route('backend.admin.purchase-orders.show',$po->id)->with('success',__('replenishment.saved'));
+ }
+ public function receive(Request $r,int $id){
+  $d=$r->validate(['operation_key'=>'required|string|min:8|max:96','version'=>'required|integer|min:1',
+   'reason'=>'nullable|string|max:500','accept_surplus'=>'nullable|boolean','items'=>'required|array|min:1|max:200',
+   'items.*.purchase_order_item_id'=>'required|integer|distinct','items.*.quantity'=>'required|string',
+   'items.*.expiry_status'=>'required|in:unknown,not_applicable,dated',
+   'items.*.expires_on'=>'nullable|date_format:Y-m-d','items.*.batch_number'=>'nullable|string|max:100']);
+  $po=app(\App\Services\PurchaseOrderFulfilmentService::class)->receive($id,$d,$r->user()->id,StockContext::shop($r)->id);
   return $r->expectsJson()?response()->json(['order'=>$po]):to_route('backend.admin.purchase-orders.show',$po->id)->with('success',__('replenishment.saved'));
  }
  public function detailExport(Request $r,int $id,string $format){return $this->export($r,$format,$id);}

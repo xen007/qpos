@@ -96,6 +96,7 @@ final class PurchaseService
     {
         return DB::transaction(function () use ($purchase,$data,$shop,$userId) {
             $purchase = Purchase::whereKey($purchase->id)->lockForUpdate()->firstOrFail();
+            $this->guardLinkedOrder($purchase, null, $userId, 'amend');
             abort_unless((int)$purchase->point_of_sale_id === (int)$shop->id,404);
             $hash = hash('sha256',json_encode(['purchase'=>$purchase->id,'shop'=>$shop->id,'user'=>$userId,'data'=>$data],JSON_THROW_ON_ERROR));
             $existing = DB::table('purchase_amendments')->where('idempotency_key',$data['idempotency_key'])->first();
@@ -132,10 +133,11 @@ final class PurchaseService
         },3);
     }
 
-    public function receive(Purchase $purchase, array $lines, PointOfSale $shop, int $userId, string $key): PurchaseReceipt
+    public function receive(Purchase $purchase, array $lines, PointOfSale $shop, int $userId, string $key, ?int $purchaseOrderId = null): PurchaseReceipt
     {
-        return DB::transaction(function () use ($purchase, $lines, $shop, $userId, $key) {
+        return DB::transaction(function () use ($purchase, $lines, $shop, $userId, $key, $purchaseOrderId) {
             $purchase = Purchase::query()->whereKey($purchase->id)->lockForUpdate()->firstOrFail();
+            $this->guardLinkedOrder($purchase, $purchaseOrderId, $userId, 'receive');
             if (!in_array($purchase->receipt_status, ['pending','partial','received'], true))
                 throw ValidationException::withMessages(['purchase' => __('Historical or cancelled purchases cannot be received again.')]);
             if (!$purchase->point_of_sale_id || (int)$purchase->point_of_sale_id !== (int)$shop->id)
@@ -302,10 +304,11 @@ final class PurchaseService
         }, 3);
     }
 
-    public function cancel(Purchase $purchase, string $reason, PointOfSale $shop, int $userId): Purchase
+    public function cancel(Purchase $purchase, string $reason, PointOfSale $shop, int $userId, ?int $purchaseOrderId = null): Purchase
     {
-        return DB::transaction(function () use ($purchase, $reason, $shop, $userId) {
+        return DB::transaction(function () use ($purchase, $reason, $shop, $userId, $purchaseOrderId) {
             $purchase = Purchase::whereKey($purchase->id)->lockForUpdate()->firstOrFail();
+            $this->guardLinkedOrder($purchase, $purchaseOrderId, $userId, 'cancel');
             abort_unless((int)$purchase->point_of_sale_id === (int)$shop->id, 404);
             if ($purchase->cancelled_at) {
                 if ($purchase->cancellation_reason !== $reason) throw ValidationException::withMessages(['reason'=>__('This purchase was already cancelled with a different reason.')]);
@@ -322,6 +325,80 @@ final class PurchaseService
             $purchase->receipts()->update(['status'=>'cancelled']);
             $purchase->forceFill(['cancelled_at'=>now('Africa/Douala'),'cancelled_by'=>$userId,'cancellation_reason'=>$reason,'receipt_status'=>'cancelled','payment_status'=>'cancelled'])->save();
             return $purchase;
+        }, 3);
+    }
+
+
+    private function guardLinkedOrder(Purchase $purchase, ?int $orderId, int $actor, string $action): void
+    {
+        // The source remains usable while additive migrations are verified on the copy.
+        if (!\Illuminate\Support\Facades\Schema::hasTable('purchase_orders')) {
+            abort_if($orderId !== null, 422);
+            return;
+        }
+        $order = \App\Models\PurchaseOrder::where('purchase_id', $purchase->id)->first();
+        if (!$order && $orderId === null) return;
+        if (!$order || $order->id !== $orderId || $action === 'amend')
+            throw ValidationException::withMessages(['purchase' => __('replenishment.linked_purchase')]);
+        app(PurchaseOrderService::class)->actor($actor, (int) $purchase->point_of_sale_id,
+            $action === 'receive' ? ['purchase_order_receive', 'purchase_receive'] : ['purchase_order_cancel']);
+        if (!in_array($order->status, ['approved', 'issued', 'confirmed', 'partial'], true))
+            throw ValidationException::withMessages(['purchase' => __('replenishment.stale_draft')]);
+        if ($action === 'cancel' && $purchase->receipts()->exists())
+            throw ValidationException::withMessages(['purchase' => __('replenishment.cancel_received')]);
+    }
+
+    public function reviseOrderQuantities(Purchase $purchase, int $orderId, array $quantities, int $actor, int $shop, string $reason, string $key, bool $closing): Purchase
+    {
+        return DB::transaction(function () use ($purchase, $orderId, $quantities, $actor, $shop, $reason, $key, $closing) {
+            $purchase = Purchase::whereKey($purchase->id)->lockForUpdate()->firstOrFail();
+            $order = \App\Models\PurchaseOrder::whereKey($orderId)->where('purchase_id', $purchase->id)
+                ->where('point_of_sale_id', $shop)->lockForUpdate()->firstOrFail();
+            app(PurchaseOrderService::class)->actor($actor, $shop, [$closing ? 'purchase_order_cancel' : 'purchase_order_surplus']);
+            if (!in_array($order->status, ['approved', 'issued', 'confirmed', 'partial'], true)
+                || $purchase->currency_code !== 'XAF' || trim($reason) === '' || mb_strlen($reason) > 500)
+                throw ValidationException::withMessages(['purchase' => __('replenishment.stale_draft')]);
+            $hash = hash('sha256', json_encode([$orderId, $actor, $shop, $quantities, $reason, $closing], JSON_THROW_ON_ERROR));
+            $prior = DB::table('purchase_amendments')->where('idempotency_key', $key)->first();
+            if ($prior) {
+                if (!hash_equals($prior->request_hash, $hash)) throw ValidationException::withMessages(['purchase' => __('replenishment.key_conflict')]);
+                return $purchase;
+            }
+            $items = $purchase->items()->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            foreach (array_keys($quantities) as $itemId)
+                abort_unless($items->has($itemId) && (int) $items[$itemId]->purchase_order_item_id > 0, 422);
+            $snapshot = fn () => ['purchase' => $purchase->getAttributes(), 'items' => $items->map(fn ($item) => $item->getAttributes())->values()->all()];
+            $before = $snapshot();
+            $subtotal = BigDecimal::zero();
+            foreach ($items as $item) {
+                if (array_key_exists($item->id, $quantities)) {
+                    $qty = QuantityDecimal::parse((string) $quantities[$item->id], 'quantity');
+                    $received = BigDecimal::zero();
+                    foreach ($item->receipts()->whereHas('receipt', fn ($q) => $q->where('status', 'received'))->get() as $row)
+                        $received = $received->plus($row->entered_quantity);
+                    $old = BigDecimal::of($item->entered_quantity);
+                    if ($qty->isLessThan($received) || ($closing && $qty->isGreaterThan($old)) || (!$closing && $qty->isLessThan($old)))
+                        throw ValidationException::withMessages(['quantity' => __('replenishment.receipt_lines')]);
+                    $base = $qty->isZero() ? '0.000000' : QuantityDecimal::toBase((string) $qty, $item->factor_used, (bool) $item->allows_fractional_snapshot);
+                    $exact = BigDecimal::of($item->source_unit_cost)->multipliedBy($qty);
+                    $item->forceFill(['quantity' => (string) $qty, 'entered_quantity' => (string) $qty,
+                        'base_quantity' => $base, 'source_line_amount' => (string) MoneyDecimal::rounded($exact),
+                        'source_line_amount_exact' => (string) $exact])->save();
+                }
+                $subtotal = $subtotal->plus($item->source_line_amount);
+            }
+            $grand = MoneyDecimal::rounded($subtotal->plus($purchase->tax)->plus($purchase->shipping)->minus($purchase->discount_value));
+            $paid = $this->netPaid($purchase);
+            if ($grand->isNegative() || $paid->isGreaterThan($grand))
+                throw ValidationException::withMessages(['purchase' => __('replenishment.supplier_overpayment')]);
+            $purchase->forceFill(['sub_total' => (string) $subtotal, 'grand_total' => (string) $grand,
+                'payment_status' => $paid->isEqualTo($grand) ? 'paid' : ($paid->isZero() ? 'unpaid' : 'partial'),
+                'receipt_status' => $closing ? 'closed' : $purchase->receipt_status])->save();
+            DB::table('purchase_amendments')->insert(['purchase_id' => $purchase->id, 'user_id' => $actor,
+                'idempotency_key' => $key, 'request_hash' => $hash, 'reason' => $reason,
+                'before_values' => json_encode($before, JSON_THROW_ON_ERROR), 'after_values' => json_encode($snapshot(), JSON_THROW_ON_ERROR),
+                'occurred_at' => now('Africa/Douala'), 'created_at' => now(), 'updated_at' => now()]);
+            return $purchase->fresh();
         }, 3);
     }
 

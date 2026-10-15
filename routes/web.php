@@ -84,7 +84,8 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::post('{id}/edit','update')->whereNumber('id')->name('update')->middleware('permission:purchase_order_update');
         Route::get('{id}/export/{format}','detailExport')->whereNumber('id')->whereIn('format',['pdf','xlsx'])->name('detail-export')->middleware('permission:purchase_order_export');
         Route::get('{id}','show')->whereNumber('id')->name('show');
-        Route::post('{id}/{action}','action')->whereNumber('id')->whereIn('action',['approve','issue','confirm','delete'])->name('action');
+        Route::post('{id}/receive','receive')->whereNumber('id')->name('receive')->middleware('permission:purchase_order_receive');
+        Route::post('{id}/{action}','action')->whereNumber('id')->whereIn('action',['approve','issue','confirm','delete','close','cancel'])->name('action');
     });
     Route::get('stock-policies',[\App\Http\Controllers\Backend\StockPolicyController::class,'index'])->name('replenishment.policies')->middleware('permission:stock_policy_manage');
     Route::post('stock-policies',[\App\Http\Controllers\Backend\StockPolicyController::class,'store'])->name('replenishment.policies.save')->middleware('permission:stock_policy_manage');
