@@ -57,7 +57,7 @@ final class PurchaseOrderController extends Controller {
   return view('backend.replenishment.order',compact('po','key','quantities'));
  }
  public function action(Request $r,int $id,string $action){
-  $d=$r->validate(['operation_key'=>'required|string|min:8|max:96','version'=>'required|integer|min:1','reason'=>'required|string|max:500']);
+  $d=$r->validate(['operation_key'=>'required|string|min:8|max:96','version'=>'required|integer|min:1','reason'=>'required|string|max:500','accept_warnings'=>'nullable|boolean']);
   $po=in_array($action,['close','cancel'],true)
    ?app(\App\Services\PurchaseOrderFulfilmentService::class)->finish($id,$action,$d,$r->user()->id,StockContext::shop($r)->id)
    :app(PurchaseOrderService::class)->action($id,$action,$d,$r->user()->id,StockContext::shop($r)->id);

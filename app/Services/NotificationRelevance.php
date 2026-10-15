@@ -38,6 +38,18 @@ final class NotificationRelevance
             return BigDecimal::of($qty??'0')->isPositive()&&$tier===($payload['threshold']??null);
         }
         if($event->kind==='session_orphan')return app(CashSupervisionService::class)->query([(int)$event->point_of_sale_id])->where('id',$event->source_id)->where('suspected',1)->where('paused',0)->exists();
+        if(in_array($event->kind,['purchase_order_created','purchase_order_received'],true)){
+            $order=\App\Models\PurchaseOrder::find($event->source_id);
+            return $order&&(int)$order->point_of_sale_id===(int)$event->point_of_sale_id
+                &&($event->kind==='purchase_order_received'?$order->status==='received':!in_array($order->status,['cancelled','deleted'],true));
+        }
+        if($event->kind==='purchase_order_critical'){
+            $settings=app(ReplenishmentSettings::class)->get((int)$event->point_of_sale_id);
+            if(!$settings['critical_immediate']||!$settings['responsible_user_id'])return false;
+            try{$rows=app(PurchaseOrderSuggestionService::class)->getSuggestions((int)$settings['responsible_user_id'],(int)$event->point_of_sale_id,[(int)$event->source_id],['include_transfers'=>false]);}
+            catch(\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface|\Illuminate\Database\Eloquent\ModelNotFoundException $error){return false;}
+            return !empty($rows[0]['critical'])&&!empty($rows[0]['policy']['alerts_enabled']);
+        }
         if($event->kind==='purchase_created')return DB::table('purchases')->where('id',$event->source_id)->where('currency_code','XAF')->whereNull('cancelled_at')->exists();
         if($event->kind==='backup_failed')return Schema::hasTable('backup_runs')&&DB::table('backup_runs')->where('id',$event->source_id)->where(fn($q)=>$q->where('state','failed')->orWhere('cloud_state','failed'))->exists();
         return true;

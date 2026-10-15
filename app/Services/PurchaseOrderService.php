@@ -56,6 +56,7 @@ final class PurchaseOrderService
  private function replaceLines(PurchaseOrder $po,array $lines):void {
   if(count($lines)>200)$this->fail('replenishment.line_limit');
   $products=Product::whereIn('id',array_column($lines,'product_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+  $previous=$po->items()->pluck('suggestion','product_unit_id')->all();
   $seen=[];$prepared=[];$total=BigDecimal::zero();$known=true;
   foreach($lines as $i=>$l){
    $p=$products->get($l['product_id']);if(!$p||!$p->status||$p->allows_fractional===null)$this->fail('replenishment.product_unavailable');
@@ -66,11 +67,26 @@ final class PurchaseOrderService
    $discount=MoneyDecimal::parse((string)($l['discount_amount']??'0'),"items.$i.discount_amount");
    if($price===null && $discount->isPositive())$this->fail('replenishment.price_required');
    if($price!==null){$amount=BigDecimal::of($price)->multipliedBy($qty)->minus($discount);if($amount->isNegative())$this->fail('replenishment.discount_invalid');$total=$total->plus($amount);}else $known=false;
-   $prepared[]=['product_id'=>$p->id,'product_unit_id'=>$u->id,'quantity_ordered'=>(string)$qty,'unit_price'=>$price,'discount_amount'=>(string)$discount,'suggestion'=>$l['suggestion']??null,
+   $prepared[]=['product_id'=>$p->id,'product_unit_id'=>$u->id,'quantity_ordered'=>(string)$qty,'unit_price'=>$price,'discount_amount'=>(string)$discount,'suggestion'=>$l['suggestion']??($previous[$u->id]??null),
    'snapshot'=>['name'=>$p->name,'sku'=>$p->sku,'unit_label'=>$u->label,'factor'=>$u->factor,'allows_fractional'=>$p->allows_fractional,'sale_price'=>$u->sale_price_ttc,'supplier_reference'=>DB::table('supplier_catalog')->where('product_id',$p->id)->where('supplier_id',$po->supplier_id)->value('supplier_reference')]];
   }
   $po->items()->delete();foreach($prepared as $line)$po->items()->create($line);
   $po->forceFill(['total_amount'=>$known?(string)MoneyDecimal::rounded($total):null])->save();
+ }
+ private function confirmWarnings(PurchaseOrder $po,int $shop,array $data):void {
+  $quantities=[];$warning=false;
+  foreach($po->items as $line){
+   $quantities[$line->product_id]=($quantities[$line->product_id]??BigDecimal::zero())->plus(BigDecimal::of($line->quantity_ordered)->multipliedBy($line->snapshot['factor']));
+   if(array_intersect($line->suggestion['warnings']??[],['exceeds_maximum','expiry_risk']))$warning=true;
+  }
+  $stock=app(StockAvailability::class)->attach(Product::whereIn('products.id',array_keys($quantities)),$shop)->get()->keyBy('id');
+  $policies=DB::table('stock_policies')->where(fn($q)=>$q->whereNull('point_of_sale_id')->orWhere('point_of_sale_id',$shop))
+   ->where(fn($q)=>$q->whereNull('product_id')->orWhereIn('product_id',array_keys($quantities)))->get()->map(fn($r)=>(array)$r)->all();
+  foreach($quantities as $id=>$quantity){
+   $policy=app(StockPolicyService::class)->effective($shop,$id,$policies);
+   if($policy['maximum_enabled']&&BigDecimal::of($stock[$id]->getRawOriginal('stock_available')??'0')->plus($quantity)->isGreaterThan($policy['maximum']))$warning=true;
+  }
+  if($warning&&empty($data['accept_warnings']))$this->fail('replenishment.confirm_warnings');
  }
  public function action(int $id,string $action,array $d,int $actor,int $shop):PurchaseOrder {
   $permission=match($action){'approve'=>'purchase_order_approve','issue','confirm'=>'purchase_order_send','delete'=>'purchase_order_delete',default=>throw new \InvalidArgumentException('Unknown action')};
@@ -92,6 +108,7 @@ final class PurchaseOrderService
      $net=BigDecimal::of($line->unit_price)->minus(BigDecimal::of($line->discount_amount)->dividedBy($line->quantity_ordered,12,RoundingMode::HalfUp));
      $data[]=['product_id'=>$p->id,'product_unit_id'=>$u->id,'quantity'=>$line->quantity_ordered,'received_quantity'=>'0','unit_cost'=>(string)MoneyDecimal::rounded($net),'sale_price'=>$u->sale_price_ttc??$p->price];
     }
+    $this->confirmWarnings($po,$shop,$d);
     $purchase=app(PurchaseService::class)->create(['idempotency_key'=>'po-approve-'.$po->id,'date'=>now('Africa/Douala')->toDateString(),'supplier_id'=>$po->supplier_id,'items'=>$data],PointOfSale::findOrFail($shop),$actor);
     $purchaseLines=$purchase->items->values();foreach($po->items->values() as $i=>$line){$line->forceFill(['purchase_item_id'=>$purchaseLines[$i]->id])->save();DB::table('purchase_items')->where('id',$purchaseLines[$i]->id)->update(['purchase_order_item_id'=>$line->id]);}
     $po->purchase_id=$purchase->id;$po->status='approved';$po->approved_at=now('UTC');$po->snapshot=['supplier'=>['id'=>$supplier->id,'name'=>$supplier->name,'address'=>$supplier->address,'phone'=>$supplier->phone],'shop'=>PointOfSale::findOrFail($shop)->only('id','name'),'items'=>$po->items->toArray(),'approved_by'=>$actor,'currency'=>'XAF','total'=>(string)$purchase->grand_total];

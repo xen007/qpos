@@ -14,6 +14,7 @@ final class NotificationCatalog
         'session_orphan'=>['cash_session_supervise','warning'], 'backup_failed'=>['system_monitor','critical'],
         'email_failed'=>['system_monitor','critical'], 'user_created'=>['user_view','info'],
         'role_changed'=>['role_view','warning'],
+        'purchase_order_created'=>['purchase_order_view','info'], 'purchase_order_received'=>['purchase_order_view','info'], 'purchase_order_critical'=>['purchase_order_view','critical'],
     ];
 
     public static function allowed(User $user,object $event): bool
@@ -32,6 +33,14 @@ final class NotificationCatalog
         if($event->kind==='cash_variance'&&(int)$event->target_user_id!==$user->id&&!$user->can('cash_session_supervise')&&!($user->hasRole('shop_admin')&&$user->can('reports_summary')))return false;
         if(in_array($event->kind,['backup_failed','email_failed','session_orphan'],true)&&!RoleAssignment::globalManager($user))return false;
         if($event->kind==='summary_sent'&&!$user->hasAllPermissions(['reports_summary','reports_sales','reports_inventory']))return false;
+        if(in_array($event->kind,['purchase_order_created','purchase_order_received','purchase_order_critical'],true)){
+            if($user->fixed_point_of_sale_id&&(int)$user->fixed_point_of_sale_id!==(int)$event->point_of_sale_id)return false;
+            if($event->kind==='purchase_order_critical'){
+                if(!$user->can('stock_view'))return false;
+                $settings=app(\App\Services\ReplenishmentSettings::class)->get((int)$event->point_of_sale_id);
+                if(!in_array($user->id,array_map('intval',$settings['recipient_ids']),true))return false;
+            }elseif((int)$event->target_user_id!==$user->id)return false;
+        }
         return true;
     }
 
@@ -43,6 +52,8 @@ final class NotificationCatalog
             'cart_pending','cart_completed'=>'/admin/pending-sales',
             'summary_sent'=>'/admin/reporting/summaries/'.$event->source_id,
             'purchase_created'=>'/admin/purchase/'.$event->source_id,
+            'purchase_order_created','purchase_order_received'=>'/admin/purchase-orders/'.$event->source_id,
+            'purchase_order_critical'=>'/admin/purchase-suggestions',
             'cash_variance'=>'/admin/cash', 'session_orphan'=>'/admin/cash-supervision',
             'stock_low'=>$user&&!$user->can('stock_view')?'/admin/cart':'/admin/stock/expiry-alerts', 'stock_out','expiry'=>'/admin/stock/expiry-alerts',
             'backup_failed','email_failed'=>'/admin/system-status',

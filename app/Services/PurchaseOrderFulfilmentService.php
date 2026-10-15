@@ -76,6 +76,8 @@ final class PurchaseOrderFulfilmentService
             $purchase->refresh();
             $order->forceFill(['status' => $purchase->receipt_status, 'total_amount' => $purchase->grand_total, 'version' => $order->version + 1])->save();
             $this->event($order, 'receive', $data, $actor, $hash, $before, ['receipt_id' => $receipt->id, 'surplus' => $changes]);
+            if ($order->status === 'received') app(OperationalNotifications::class)->record('purchase_order_received','po-received:'.$order->id,
+                (int)$order->point_of_sale_id,(int)$order->id,['reference'=>$order->reference],(int)$order->user_id);
             return $order->fresh('items');
         }, 3);
     }

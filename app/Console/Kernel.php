@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('sales:expire-pending')->everyMinute()->withoutOverlapping(10);
         $schedule->command('reports:daily')->everyMinute()->timezone('Africa/Douala')->withoutOverlapping(10);
         $schedule->command('reports:deliver --limit=10')->everyMinute()->withoutOverlapping(10);
+        $schedule->command('qpos:purchase-suggestions-daily --limit=5')->everyMinute()->timezone('Africa/Douala')->withoutOverlapping(10);
+        $schedule->command('qpos:purchase-suggestions-weekly --limit=5')->everyMinute()->timezone('Africa/Douala')->withoutOverlapping(10);
+        $schedule->command('qpos:purchase-alerts-critical --limit=200')->everyMinute()->timezone('Africa/Douala')->withoutOverlapping(10);
         $schedule->command('notifications:pump --limit=500')->everyMinute()->timezone('Africa/Douala')->withoutOverlapping(10);
     }
 

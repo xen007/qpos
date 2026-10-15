@@ -70,6 +70,14 @@ Route::post('resend-otp', [AuthController::class, 'resendOtp'])->middleware('thr
 // ====================== BACKEND =======================
 
 Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSaleContext::class,\App\Http\Middleware\RecordUserActivity::class])->group(function () {
+    Route::controller(\App\Http\Controllers\Backend\ReplenishmentController::class)->middleware('permission:purchase_suggestion_manage')->group(function(){
+        Route::get('purchase-suggestions','index')->name('replenishment.suggestions');
+        Route::post('purchase-suggestions','generate')->name('replenishment.generate');
+        Route::get('purchase-planning/settings','settings')->name('replenishment.settings');
+        Route::post('purchase-planning/settings','saveSettings')->name('replenishment.settings.save');
+        Route::get('purchase-planning/runs','runs')->name('replenishment.runs');
+        Route::get('purchase-planning/runs/{id}','run')->whereNumber('id')->name('replenishment.run');
+    });
     Route::get('supplier-catalog',[\App\Http\Controllers\Backend\SupplierCatalogController::class,'index'])->name('replenishment.suppliers')->middleware('permission:supplier_catalog_manage');
     Route::post('supplier-catalog',[\App\Http\Controllers\Backend\SupplierCatalogController::class,'store'])->name('replenishment.suppliers.save')->middleware('permission:supplier_catalog_manage');
     Route::get('replenishment-options',[\App\Http\Controllers\Backend\ReplenishmentOptionsController::class,'index'])->name('replenishment.options')->middleware('permission:sale_create|purchase_create|purchase_order_create');
