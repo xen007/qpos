@@ -22,6 +22,7 @@ class ReportingController extends Controller
         abort_unless($r->user()?->can(ReportingService::TYPES[$type]), 403);
         if ($type === 'history') abort_unless($r->user()->hasRole('Admin'), 403);
         $f = ReportFilter::fromRequest($r);
+        abort_if($f->supplier !== null && !in_array($type,['sales','seller','shop','category','product','peaks','stock','expiry'],true),422,__('replenishment.supplier_report_only'));
         if($type==='payments') abort_if($f->product!==null||$f->category!==null,422,__('reporting.sales_filters_only'));
         if($type!=='payments') abort_if($f->session!==null||$f->cashier!==null,422,__('reporting.sales_filters_only'));
         if (in_array($type, ['summary', 'cash', 'expenses', 'history'], true)) abort_if($f->salesOnly(), 422, __('reporting.sales_filters_only'));
@@ -33,22 +34,17 @@ class ReportingController extends Controller
     {
         abort_unless($r->user()?->can('dashboard_view'), 403);
         $filter = ReportFilter::fromRequest($r);
+        abort_if($filter->supplier !== null,422,__('replenishment.supplier_report_only'));
         $s = app(ReportingService::class);
         $orphanCount=$r->user()->hasRole('Admin')&&$r->user()->can('cash_session_supervise')&&\Illuminate\Support\Facades\Schema::hasTable('cash_session_supervisions') ? app(\App\Services\CashSupervisionService::class)->query($filter->shops)->whereRaw('paused=0')->where('suspected',1)->count() : 0;
         $clients = $s->events($filter)->where('event_kind', 'sale')->join('orders as customer_orders', 'customer_orders.id', '=', 'events.source_id')->join('customers as served', 'served.id', '=', 'customer_orders.customer_id')->where(fn ($q) => $q->whereNull('served.internal_code')->orWhere('served.internal_code', '<>', 'walking'))->distinct()->count('served.id');
-        // Multi-shop stock is evaluated per shop; never infer an inaccessible shop.
-        $lowStock = collect($filter->shops)->sum(function ($shop) use ($filter) {
-            $products = \App\Models\Product::query()->where('status', true)
-                ->when($filter->product !== null, fn ($q) => $q->where('products.id', $filter->product))
-                ->when($filter->category !== null, fn ($q) => $q->where('products.category_id', $filter->category));
-            return DB::query()->fromSub(app(\App\Services\StockAvailability::class)->attach($products, $shop), 'available')
-                ->where('stock_available', '>', 0)->where('stock_available', '<', 10)->count();
-        });
+        $replenishment=app(\App\Services\ReplenishmentDashboard::class)->data($filter);
+        $lowStock=$replenishment['low'];
         return view('backend.reporting.dashboard', $this->choices($r, $filter) + [
             'filter' => $filter, 'summary' => $s->summary($filter), 'daily' => $s->daily($filter),
             'peaks' => $s->peaks($filter), 'stock' => $s->stockTotals($filter), 'types' => ReportingService::TYPES,
             'clients' => $clients, 'lowStock' => $lowStock,
-            'orphanCount'=>$orphanCount,
+            'orphanCount'=>$orphanCount, 'replenishment'=>$replenishment,
         ]);
     }
 
@@ -139,7 +135,8 @@ class ReportingController extends Controller
         $categories = $categories->merge($currentCategories)->unique(fn ($c) => $c->id.':'.$c->name)->sortBy('name')->values();
         $sessions=DB::table('cash_sessions')->whereIn('point_of_sale_id',$filter->shops)->orderByDesc('id')->limit(200)->get(['id','user_id']);
         $cashiers=DB::table('users')->whereIn('id',DB::table('payments')->whereIn('point_of_sale_id',$filter->shops)->select('user_id'))->orderBy('name')->get(['id','name']);
-        return compact('shops', 'products', 'sellers', 'categories','sessions','cashiers');
+        $suppliers=DB::table('suppliers')->where('is_internal',false)->orderBy('name')->get(['id','name']);
+        return compact('shops', 'products', 'sellers', 'categories','sessions','cashiers','suppliers');
     }
 
     private function authorizeSummary(Request $r): void

@@ -1,6 +1,7 @@
-<!doctype html><html lang="{{ app()->getLocale() }}"><head><meta charset="utf-8"><style>body{font-family:DejaVu Sans,sans-serif;font-size:10px}h1{font-size:18px}table{width:100%;border-collapse:collapse}th,td{padding:6px;border:1px solid #999}thead{display:table-header-group}.break{page-break-before:always}</style></head><body>
+<!doctype html><html lang="{{ app()->getLocale() }}"><head><meta charset="utf-8"><title>{{ __('replenishment.orders') }}</title><style>@page{size:A4;margin:16mm}body{font-family:DejaVu Sans,sans-serif;font-size:10px;overflow-wrap:anywhere}h1{font-size:18px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{padding:6px;border:1px solid #999;word-wrap:break-word}thead{display:table-header-group}.break{page-break-before:always}.logo{max-width:140px;max-height:60px}.print-action{padding:12px 18px;margin-bottom:16px;border:0;border-radius:6px;background:#0f766e;color:white;cursor:pointer;font-size:14px}@media print{.print-action{display:none}}</style></head><body>
+@if(!empty($printable))<button type="button" class="print-action" onclick="window.print()">{{ __('Print') }}</button>@endif
 @foreach($orders as $po)
-<section class="{{ $loop->first?'':'break' }}"><h1>{{ config('system.site_name','QPOS') }} — {{ __('replenishment.orders') }}</h1>
+<section class="{{ $loop->first?'':'break' }}">@if(!empty($logo))<img class="logo" src="{{ $logo }}" alt="{{ __('Logo') }}">@endif<h1>{{ config('system.site_name','QPOS') }} — {{ __('replenishment.orders') }}</h1>
 <p>{{ config('system.contact_address') }} · {{ config('system.contact_phone') }}</p>
 <h2>{{ $po->reference }} · {{ __('replenishment.status_'.$po->status) }}</h2>
 @if($po->status==='draft')<p>{{ __('replenishment.draft_document') }}</p>@endif

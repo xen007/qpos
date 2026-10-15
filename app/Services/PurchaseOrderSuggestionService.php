@@ -108,7 +108,8 @@ final class PurchaseOrderSuggestionService
             if ($product->allows_fractional === null) $warnings[] = 'missing_fraction_rule';
             if ($chosen && $chosen->estimated_cost === null) $warnings[] = 'unknown_cost';
             if ($chosen?->price_on && $chosen->price_on < $today->subDays(90)->toDateString()) $warnings[] = 'old_price';
-            if (!$calculation['history_sufficient']) $warnings[] = $calculation['reason'];
+            if (!$calculation['history_sufficient']) $warnings[] = 'insufficient_history';
+            if ($delay === null) $warnings[] = 'unknown_delay';
             if ($net->isNegative()) $warnings[] = 'returns_exceed_sales';
             if ($overdue->isPositive()) $warnings[] = 'overdue_incoming';
             if ($late->isPositive()) $warnings[] = 'late_incoming';

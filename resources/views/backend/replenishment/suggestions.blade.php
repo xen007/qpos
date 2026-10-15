@@ -6,7 +6,7 @@
 <p>{{ $shop->name }} · {{ __('replenishment.suggestion_help') }}</p>
 <div class="flex flex-wrap gap-3 my-4">
 <a class="qpos-button qpos-button-md qpos-button-secondary" href="{{ route('backend.admin.replenishment.settings',['operation_point_of_sale_id'=>$shop->id]) }}">{{ __('Settings') }}</a>
-<a class="qpos-button qpos-button-md qpos-button-secondary" href="{{ route('backend.admin.replenishment.runs',['operation_point_of_sale_id'=>$shop->id]) }}">{{ __('History') }}</a>
+<a class="qpos-button qpos-button-md qpos-button-secondary" href="{{ route('backend.admin.replenishment.runs',['operation_point_of_sale_id'=>$shop->id]) }}">{{ __('replenishment.history_label') }}</a>
 <a class="qpos-button qpos-button-md qpos-button-secondary" href="{{ route('backend.admin.purchase-orders.create',['operation_point_of_sale_id'=>$shop->id]) }}">{{ __('replenishment.manual_order') }}</a>
 </div>
 <form method="get" class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -15,7 +15,7 @@
 <x-backend.select name="category_id" :label="__('Category')" :options="[''=>__('All')]+$categories" :selected="$filters['category_id']??''"/>
 <x-backend.input name="search" :label="__('Search')" :value="$filters['search']??''" maxlength="100"/>
 <x-backend.select name="window_days" :label="__('replenishment.window')" :options="[30=>'30',60=>'60',90=>'90']" :selected="$filters['window_days']"/>
-<button class="qpos-button qpos-button-md qpos-button-primary">{{ __('Filter') }}</button>
+<button class="qpos-button qpos-button-md qpos-button-primary">{{ __('Apply') }}</button>
 </form>
 </x-backend.card>
 <x-backend.card :title="__('replenishment.proposals')">

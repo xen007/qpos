@@ -73,11 +73,30 @@ final class PurchaseOrderController extends Controller {
   return $r->expectsJson()?response()->json(['order'=>$po]):to_route('backend.admin.purchase-orders.show',$po->id)->with('success',__('replenishment.saved'));
  }
  public function detailExport(Request $r,int $id,string $format){return $this->export($r,$format,$id);}
+ private function pdfLogo(): ?string {
+  $logo=(string)config('system.site_logo');
+  if(!str_starts_with($logo,'/assets/images/'))return null;
+  $root=realpath(public_path('assets/images'));$path=realpath(public_path(ltrim($logo,'/')));
+  if(!$root||!$path||!str_starts_with($path,$root.DIRECTORY_SEPARATOR)||!is_file($path)||filesize($path)>2097152)return null;
+  $info=@getimagesize($path);$mime=$info['mime']??null;
+  if(!in_array($mime,['image/png','image/jpeg','image/gif'],true))return null;
+  return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
+ }
+ public function print(Request $r,int $id){
+  $orders=collect([$this->find($r,$id)]);$logo=$this->pdfLogo();$printable=true;
+  return view('backend.replenishment.orders-pdf',compact('orders','logo','printable'));
+ }
  public function export(Request $r,string $format,?int $id=null){
   abort_unless(in_array($format,['pdf','xlsx'],true),404);
-  $orders=$id?collect([$this->find($r,$id)]):$this->query($r)->with('items')->orderBy('id')->limit(5001)->get();
-  abort_if($orders->count()>5000,422,__('replenishment.export_limit'));
-  if($format==='pdf')return Pdf::loadView('backend.replenishment.orders-pdf',compact('orders'))->setPaper('a4')->download('bons-commande.pdf');
+   $cap=$format==='pdf'?200:5000;
+   $orders=$id?collect([$this->find($r,$id)]):$this->query($r)->withCount('items')->orderBy('id')->limit($cap+1)->get();
+   abort_if($orders->count()>$cap,422,__($format==='pdf'?'replenishment.pdf_limit':'replenishment.export_limit'));
+   if($format==='pdf'){
+    abort_if(($id?$orders->first()->items->count():$orders->sum('items_count'))>1000,422,__('replenishment.pdf_limit'));
+    $orders->each(fn($order)=>$order->loadMissing('items'));
+    $logo=$this->pdfLogo();
+    return Pdf::loadView('backend.replenishment.orders-pdf',compact('orders','logo'))->setPaper('a4')->download('bons-commande.pdf');
+   }
   $rows=[];foreach($orders as $po){if($id)foreach($po->items as $l)$rows[]=[$po->reference,$l->snapshot['name']??'',$l->snapshot['unit_label']??'',$l->quantity_ordered,$l->unit_price??'', $l->discount_amount,'XAF'];else $rows[]=[$po->reference,$po->shop->name,$po->supplier->name,$po->status,$po->expected_date??'',$po->total_amount??'','XAF'];}
   return Excel::download(new \App\Exports\PurchaseOrdersExport($rows,$id?[__('Reference'),__('Product'),__('Packaging'),__('Quantity'),__('Price'),__('Discount'),'Currency']:[__('Reference'),__('Shop'),__('Supplier'),__('Status'),__('Date'),__('Total'),'Currency']),'bons-commande.xlsx');
  }

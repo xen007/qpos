@@ -308,7 +308,7 @@ Les protections indispensables sont livrées dans les lots qui en dépendent. Un
 
 ### Phase 7 — Exploitation et intégrations
 
-Bons de commande intelligents (prévision stock, suggestion automatique selon consommation + délais fournisseurs). Fonction reportée en Phase 7 : consommation, saisonnalité, délais fournisseurs et seuils produit à définir ; hors Phase 5.
+Bons de commande intelligents (prévision stock, suggestion automatique selon consommation + délais fournisseurs) : report initial hors Phase 5, livré le 15/10/2026 dans le module complémentaire A–H. Seuils hérités par produit/boutique, catalogue fournisseur explicite, consommation native nette sur 30/60/90 jours, brouillons planifiés, validation humaine, achat lié unique, réceptions partielles/surplus/reliquats, exports et filtres par provenance réelle. Voir [le bilan réapprovisionnement](replenishment-report.md). Le calcul utilise une moyenne observée, sans modéliser la saisonnalité. Envoi fournisseur externe optionnel non activé ; relations, délais, prix et destinataires réels à configurer par l'exploitant.
 
 Suivi post-audit : « assurances » reportées en Phase 7, périmètre fonctionnel à préciser avant conception. Les integrations de paiement réelles, SMTP et validations de matériel restent distinctes du traçage manuel testé en copie.
 

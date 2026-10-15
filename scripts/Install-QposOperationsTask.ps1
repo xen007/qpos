@@ -12,4 +12,15 @@ $trigger=New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -Repetition
 $settings=New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 2) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
 $principal=New-ScheduledTaskPrincipal -UserId $identity -LogonType Interactive -RunLevel Limited
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
+# The supervisor already owns schedule:work. Retire only this checkout's old
+# Phase 5 launcher; leave unrelated scheduled tasks and their settings intact.
+$legacy=Get-ScheduledTask -TaskName 'QPOS-Phase5' -ErrorAction SilentlyContinue
+$legacyPath=(Join-Path $qposRoot 'scripts\qpos-scheduler.vbs').Replace('/','\')
+if($legacy -and @($legacy.Actions | Where-Object {
+    [IO.Path]::GetFileName($_.Execute) -eq 'wscript.exe' -and
+    $_.Arguments.Replace('/','\').Contains($legacyPath)
+}).Count -eq 1){
+    Disable-ScheduledTask -TaskName $legacy.TaskName | Out-Null
+    Write-Output ('Retired duplicate scheduler: '+$legacy.TaskName)
+}
 Write-Output ('Installed: '+$taskName+'; current user session required.')

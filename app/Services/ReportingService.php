@@ -37,7 +37,7 @@ final class ReportingService
             ->where('o.currency_code', 'XAF')->where('o.sale_state', '<>', 'legacy')->whereIn('o.point_of_sale_id', $f->shops);
         $f->limit($sales, 'o.created_at');
         $this->lineFilters($sales, $f);
-        $sales->selectRaw("o.created_at as occurred_at, o.point_of_sale_id as shop_id, {$seller} as seller_id, o.user_id as cashier_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'sale' as event_kind, o.id as source_id")
+        $sales->selectRaw("o.created_at as occurred_at, o.point_of_sale_id as shop_id, {$seller} as seller_id, o.user_id as cashier_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'sale' as event_kind, o.id as source_id, l.id as line_key")
             ->selectRaw('l.effective_total as net_sales')
             ->selectRaw('COALESCE(costs.cogs, 0) as cogs, COALESCE(costs.unknown_quantity, 0) + GREATEST(COALESCE(l.base_quantity, 0) - COALESCE(costs.allocated_quantity, 0), 0) as unknown_quantity, l.base_quantity as quantity');
 
@@ -65,10 +65,11 @@ final class ReportingService
             ->where('o.currency_code', 'XAF')->where('o.sale_state', '<>', 'legacy')->whereIn('o.point_of_sale_id', $f->shops);
         $f->limit($returns, 'sc.created_at');
         $this->lineFilters($returns, $f);
-        $returns->selectRaw("sc.created_at as occurred_at, o.point_of_sale_id as shop_id, {$seller} as seller_id, o.user_id as cashier_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'return' as event_kind, sc.id as source_id")
+        $returns->selectRaw("sc.created_at as occurred_at, o.point_of_sale_id as shop_id, {$seller} as seller_id, o.user_id as cashier_id, ls.category_id, ls.category_label, l.product_id, l.product_label_snapshot as product_label, 'return' as event_kind, sc.id as source_id, ri.id as line_key")
             ->selectRaw('-(ri.amount + CASE WHEN ri.id = rt.last_id THEN sc.amount - rt.amount ELSE 0 END) as net_sales')
             ->selectRaw('-CASE WHEN ri.saleable = 1 THEN COALESCE(rc.cogs, 0) ELSE 0 END as cogs, -CASE WHEN ri.saleable = 1 THEN COALESCE(rc.unknown_quantity, 0) + GREATEST(ri.base_quantity - COALESCE(rc.allocated_quantity, 0), 0) ELSE 0 END as unknown_quantity, -ri.base_quantity as quantity');
-        return DB::query()->fromSub($sales->unionAll($returns), 'events');
+        $events = DB::query()->fromSub($sales->unionAll($returns), 'events');
+        return $f->supplier ? app(SupplierReportAllocation::class)->events($events,$f) : $events;
     }
 
     private function lineFilters($q, ReportFilter $f): void
@@ -190,6 +191,7 @@ final class ReportingService
             ->whereIn('bs.point_of_sale_id', $f->shops)->where(fn ($q) => $q->where('bs.saleable_quantity', '>', 0)->orWhere('bs.unsaleable_quantity', '>', 0));
         if ($f->product) $q->where('p.id', $f->product);
         if ($f->category) $q->where('p.category_id', $f->category);
+        if ($f->supplier) app(SupplierReportAllocation::class)->filterStock($q,$f->supplier);
         return $q;
     }
 

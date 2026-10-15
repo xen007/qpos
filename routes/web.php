@@ -91,6 +91,7 @@ Route::prefix('admin')->as('backend.admin.')->middleware(['admin', SetPointOfSal
         Route::get('{id}/edit','edit')->whereNumber('id')->name('edit')->middleware('permission:purchase_order_update');
         Route::post('{id}/edit','update')->whereNumber('id')->name('update')->middleware('permission:purchase_order_update');
         Route::get('{id}/export/{format}','detailExport')->whereNumber('id')->whereIn('format',['pdf','xlsx'])->name('detail-export')->middleware('permission:purchase_order_export');
+        Route::get('{id}/print','print')->whereNumber('id')->name('print')->middleware('permission:purchase_order_export');
         Route::get('{id}','show')->whereNumber('id')->name('show');
         Route::post('{id}/receive','receive')->whereNumber('id')->name('receive')->middleware('permission:purchase_order_receive');
         Route::post('{id}/{action}','action')->whereNumber('id')->whereIn('action',['approve','issue','confirm','delete','close','cancel'])->name('action');

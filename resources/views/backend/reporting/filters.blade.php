@@ -27,6 +27,9 @@
             <label>{{ __('reporting.cash_session') }}<input type="number" min="1" name="session_id" list="report-sessions" value="{{ $filter->session }}" class="qpos-control"><datalist id="report-sessions">@foreach($sessions as $session)<option value="{{ $session->id }}">#{{ $session->id }}</option>@endforeach</datalist></label>
         @endif
         @if(request()->routeIs('backend.admin.reporting.statistics'))<label class="text-sm">{{ __('phase7.comparison') }}<select class="qpos-control block w-full" name="comparison"><option value="previous" @selected(request('comparison','previous')==='previous')>{{ __('phase7.previous_period') }}</option><option value="year" @selected(request('comparison')==='year')>{{ __('phase7.previous_year') }}</option></select></label>@endif
+        @if(isset($report) && in_array($report['type'],['sales','seller','shop','category','product','peaks','stock','expiry']))
+        <label class="text-sm">{{ __('Supplier') }}<select name="supplier_id" class="qpos-control block"><option value="">{{ __('All') }}</option>@foreach($suppliers as $supplier)<option value="{{ $supplier->id }}" @selected($filter->supplier===$supplier->id)>{{ $supplier->name }}</option>@endforeach</select></label>
+        @endif
         <button class="qpos-button qpos-button-primary qpos-button-md">{{ __('Apply') }}</button>
     </form>
     <p class="mt-3 text-sm text-qpos-muted">{{ $filter->label() }} · {{ __('reporting.custom_hint') }}</p>
